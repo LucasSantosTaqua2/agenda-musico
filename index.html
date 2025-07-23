@@ -10,10 +10,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
     <style>
         body { background-color: #111827; }
         .modal { display: none; }
@@ -79,7 +75,11 @@
     <div id="edit-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, getRedirectResult } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
 
@@ -91,13 +91,10 @@
                 messagingSenderId: "676045633970",
                 appId: "1:676045633970:web:d9c4916ffa716e96290cab"
             };
-            const appId = firebaseConfig.appId;
             
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            const auth = firebase.auth();
-            const db = firebase.firestore();
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
 
             const loginScreen = document.getElementById('login-screen');
             const loginContainer = document.getElementById('login-container');
@@ -182,20 +179,15 @@
                 lucide.createIcons();
             };
             
-            const signInWithGoogle = () => auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());
-            const signOut = () => auth.signOut();
-
             const handleUser = (user) => {
                 if (user) {
-                    console.log("Usuário autenticado:", user.displayName, user.uid);
                     currentUser = user;
                     loginScreen.style.display = 'none';
                     appContent.style.display = 'block';
-                    const showsCollectionPath = `/artifacts/${appId}/users/${currentUser.uid}/shows`;
+                    const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
                     if (unsubscribeShows) unsubscribeShows();
-                    console.log(`Ouvindo a coleção: ${showsCollectionPath}`);
-                    unsubscribeShows = db.collection(showsCollectionPath).orderBy("date", "desc").onSnapshot(querySnapshot => {
-                        console.log("Dados do Firestore recebidos.");
+                    const q = query(collection(db, showsCollectionPath), orderBy("date", "desc"));
+                    unsubscribeShows = onSnapshot(q, (querySnapshot) => {
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
                         renderShows();
@@ -204,31 +196,21 @@
                         showError("Não foi possível carregar os shows.");
                     });
                 } else {
-                    console.log("Nenhum usuário autenticado. Exibindo tela de login.");
                     currentUser = null;
                     appContent.style.display = 'none';
                     loadingAuth.classList.add('hidden');
                     loginContainer.classList.remove('hidden');
                     loginScreen.style.display = 'flex';
-                    if (unsubscribeShows) {
-                        console.log("Parando de ouvir dados do usuário anterior.");
-                        unsubscribeShows();
-                    }
+                    if (unsubscribeShows) unsubscribeShows();
                     allShows = [];
                     renderShows();
                 }
             };
 
             const initializeAuth = () => {
-                console.log("Iniciando verificação de autenticação...");
-                let authStateEstablished = false;
-
-                auth.getRedirectResult()
-                    .then(result => {
-                        console.log("getRedirectResult concluído.");
-                        if (result.user) {
-                            console.log("Usuário encontrado no resultado do redirecionamento.");
-                            authStateEstablished = true;
+                getRedirectResult(auth)
+                    .then((result) => {
+                        if (result && result.user) {
                             handleUser(result.user);
                         }
                     })
@@ -237,14 +219,11 @@
                         showError(`Erro de login: ${error.message}`);
                     })
                     .finally(() => {
-                        console.log("Bloco finally do getRedirectResult.");
-                        if (!authStateEstablished) {
-                            const unsubscribe = auth.onAuthStateChanged(user => {
-                                console.log("onAuthStateChanged disparado após getRedirectResult.");
-                                unsubscribe(); 
+                        onAuthStateChanged(auth, user => {
+                            if (!currentUser) { // Apenas atualiza se não tiver sido pego pelo redirect
                                 handleUser(user);
-                            });
-                        }
+                            }
+                        });
                     });
             };
             
@@ -254,9 +233,9 @@
                 loginContainer.classList.add('hidden');
                 loadingAuth.classList.remove('hidden');
                 lucide.createIcons();
-                signInWithGoogle();
+                signInWithRedirect(auth, new GoogleAuthProvider());
             });
-            logoutBtn.addEventListener('click', signOut);
+            logoutBtn.addEventListener('click', () => signOut(auth));
             
             notificationPreferenceSelect.addEventListener('change', (e) => notificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none'));
             editNotificationPreferenceSelect.addEventListener('change', (e) => editNotificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none'));
@@ -270,8 +249,8 @@
                 const notificationPreference = document.getElementById('add-notification-preference').value;
                 const notificationTime = document.getElementById('add-notification-time').value;
                 try {
-                    const showsCollectionPath = `/artifacts/${appId}/users/${currentUser.uid}/shows`;
-                    await db.collection(showsCollectionPath).add({ date, artists, location, notificationPreference, notificationTime: notificationPreference === 'none' ? null : notificationTime, notificationSent: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
+                    await addDoc(collection(db, showsCollectionPath), { date, artists, location, notificationPreference, notificationTime: notificationPreference === 'none' ? null : notificationTime, notificationSent: false, createdAt: serverTimestamp() });
                     addShowForm.reset();
                     notificationTimeWrapper.classList.add('hidden');
                     addModal.classList.remove('is-open');
@@ -310,8 +289,8 @@
             confirmDeleteBtn.addEventListener('click', async () => {
                 if (!currentUser || !showIdToModify) return;
                 try {
-                    const showDocPath = `/artifacts/${appId}/users/${currentUser.uid}/shows/${showIdToModify}`;
-                    await db.doc(showDocPath).delete();
+                    const showDocPath = `artifacts/${appId}/users/${currentUser.uid}/shows/${showIdToModify}`;
+                    await deleteDoc(doc(db, showDocPath));
                     deleteModal.classList.remove('is-open');
                     showIdToModify = null;
                 } catch (err) {
@@ -330,8 +309,8 @@
                 const updatedData = { date: document.getElementById('edit-date').value, artists: document.getElementById('edit-artists').value, location: document.getElementById('edit-location').value, notificationPreference: notificationPreference, notificationTime: document.getElementById('edit-notification-time').value, notificationSent: false };
                 if (updatedData.notificationPreference === 'none') { updatedData.notificationTime = null; }
                 try {
-                    const showDocPath = `/artifacts/${appId}/users/${currentUser.uid}/shows/${showIdToModify}`;
-                    await db.doc(showDocPath).update(updatedData);
+                    const showDocPath = `artifacts/${appId}/users/${currentUser.uid}/shows/${showIdToModify}`;
+                    await updateDoc(doc(db, showDocPath), updatedData);
                     editModal.classList.remove('is-open');
                     showIdToModify = null;
                 } catch (err) {
