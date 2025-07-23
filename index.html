@@ -202,12 +202,7 @@
                     const showElement = document.createElement('div');
                     showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col sm:flex-row justify-between items-start gap-4";
                     const notificationText = getNotificationText(show);
-                    const notificationHTML = notificationText ? `
-                        <div class="mt-2 text-xs flex items-center gap-1.5 p-1 px-2 rounded-full w-fit ${show.notificationSent ? 'bg-gray-600 text-gray-400' : 'bg-blue-500/20 text-blue-300'}">
-                            <i data-lucide="${show.notificationSent ? 'bell-off' : 'bell'}" class="w-4 h-4"></i>
-                            <span>${notificationText}</span>
-                        </div>
-                    ` : '';
+                    const notificationHTML = notificationText ? `<div class="mt-2 text-xs flex items-center gap-1.5 p-1 px-2 rounded-full w-fit ${show.notificationSent ? 'bg-gray-600 text-gray-400' : 'bg-blue-500/20 text-blue-300'}"><i data-lucide="${show.notificationSent ? 'bell-off' : 'bell'}" class="w-4 h-4"></i><span>${notificationText}</span></div>` : '';
                     showElement.innerHTML = `
                         <div class="flex-1">
                             <p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p>
@@ -216,14 +211,9 @@
                             ${notificationHTML}
                         </div>
                         <div class="flex gap-2 self-end sm:self-center">
-                            <button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full">
-                                <i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i>
-                            </button>
-                            <button data-id="${show.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full">
-                                <i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i>
-                            </button>
-                        </div>
-                    `;
+                            <button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
+                            <button data-id="${show.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
+                        </div>`;
                     showsList.appendChild(showElement);
                 });
                 lucide.createIcons();
@@ -265,12 +255,17 @@
             };
 
             auth.getRedirectResult()
+                .then(result => {
+                    if (result.user) {
+                        handleUser(result.user);
+                    } else {
+                        auth.onAuthStateChanged(handleUser);
+                    }
+                })
                 .catch(error => {
                     console.error("Erro no getRedirectResult:", error);
                     showError(`Erro de login: ${error.message}`);
-                })
-                .finally(() => {
-                    auth.onAuthStateChanged(handleUser);
+                    handleUser(null);
                 });
             
             loginBtn.addEventListener('click', () => {
