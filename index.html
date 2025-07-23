@@ -58,7 +58,7 @@
     </div>
 
     <div id="app-content" class="hidden">
-        <div class="max-w-3xl mx-auto p-4 md:p-8">
+        <div class="max-w-3xl mx-auto p-4 md:p-8 pb-24">
             <header class="flex items-center justify-between mb-8">
                 <div class="flex items-center gap-3">
                     <i data-lucide="music" class="text-purple-400 w-8 h-8"></i>
@@ -103,7 +103,7 @@
 
     <script type="module">
         const { initializeApp } = window.firebaseApp;
-        const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
+        const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from window.firebaseAuth;
         const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy } = window.firebaseFirestore;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -207,7 +207,6 @@
                     return artistMatch && locationMatch && dateMatch;
                 });
                 if (allShows.length > 0 && filteredShows.length === 0) { emptyState.classList.remove('hidden'); emptyState.querySelector('p').textContent = 'Nenhum show encontrado para os filtros aplicados.'; } else if (allShows.length === 0) { emptyState.classList.remove('hidden'); emptyState.querySelector('p').textContent = 'Nenhum show encontrado.'; } else { emptyState.classList.add('hidden'); }
-                
                 filteredShows.forEach(show => {
                     const showElement = document.createElement('div');
                     showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4";
