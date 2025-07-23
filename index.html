@@ -117,6 +117,8 @@
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
             const db = getFirestore(app);
+            // CORREÇÃO: A variável appId estava faltando.
+            const appId = firebaseConfig.appId;
 
             const loginScreen = document.getElementById('login-screen');
             const loginContainer = document.getElementById('login-container');
