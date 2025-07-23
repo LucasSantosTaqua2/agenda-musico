@@ -211,9 +211,9 @@
                 });
                 lucide.createIcons();
             };
-
+            
             const checkAndSendNotifications = async () => {
-                if (Notification.permission !== 'granted') return;
+                if (Notification.permission !== 'granted' || !currentUser) return;
                 const now = new Date();
                 for (const show of allShows) {
                     if (show.notificationPreference === 'none' || show.notificationSent || !show.notificationTime || !show.date) continue;
