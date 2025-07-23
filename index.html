@@ -209,10 +209,22 @@
                 if (allShows.length > 0 && filteredShows.length === 0) { emptyState.classList.remove('hidden'); emptyState.querySelector('p').textContent = 'Nenhum show encontrado para os filtros aplicados.'; } else if (allShows.length === 0) { emptyState.classList.remove('hidden'); emptyState.querySelector('p').textContent = 'Nenhum show encontrado.'; } else { emptyState.classList.add('hidden'); }
                 filteredShows.forEach(show => {
                     const showElement = document.createElement('div');
-                    showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col sm:flex-row justify-between items-start gap-4";
+                    showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col justify-between items-start gap-4";
                     const notificationText = getNotificationText(show);
-                    const notificationHTML = notificationText ? `<div class="mt-2 text-xs flex items-center gap-1.5 p-1 px-2 rounded-full w-fit ${show.notificationSent ? 'bg-gray-600 text-gray-400' : 'bg-blue-500/20 text-blue-300'}"><i data-lucide="${show.notificationSent ? 'bell-off' : 'bell'}" class="w-4 h-4"></i><span>${notificationText}</span></div>` : '';
-                    showElement.innerHTML = `<div class="flex-1"><p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p><p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p><p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>${notificationHTML}</div><div class="flex gap-2 self-end sm:self-center"><button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button><button data-id="${show.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button></div>`;
+                    const notificationHTML = notificationText ? `<div class="text-xs flex items-center gap-1.5 p-1 px-2 rounded-full w-fit ${show.notificationSent ? 'bg-gray-600 text-gray-400' : 'bg-blue-500/20 text-blue-300'}"><i data-lucide="${show.notificationSent ? 'bell-off' : 'bell'}" class="w-4 h-4"></i><span>${notificationText}</span></div>` : '';
+                    showElement.innerHTML = `
+                        <div>
+                            <p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p>
+                            <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
+                            <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
+                        </div>
+                        <div class="flex justify-between items-center w-full mt-4">
+                            ${notificationHTML}
+                            <div class="flex gap-2">
+                                <button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
+                                <button data-id="${show.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
+                            </div>
+                        </div>`;
                     showsList.appendChild(showElement);
                 });
                 lucide.createIcons();
@@ -247,7 +259,7 @@
                     appContent.style.display = 'block';
                     const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
                     if (unsubscribeShows) unsubscribeShows();
-                    const q = query(collection(db, showsCollectionPath), orderBy("date", "desc"));
+                    const q = query(collection(db, showsCollectionPath), orderBy("date", "asc"));
                     unsubscribeShows = onSnapshot(q, (querySnapshot) => {
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
