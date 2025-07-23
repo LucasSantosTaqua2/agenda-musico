@@ -154,25 +154,9 @@
             const editNotificationPreferenceSelect = document.getElementById('edit-notification-preference');
             const editNotificationTimeWrapper = document.getElementById('edit-notification-time-wrapper');
 
-            const showError = (message) => {
-                errorBanner.textContent = message;
-                errorBanner.classList.remove('hidden');
-            };
-
-            const formatDate = (dateString) => {
-                if (!dateString) return 'Data inválida';
-                const date = new Date(dateString + 'T00:00:00');
-                return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            };
-
-            const getNotificationText = (show) => {
-                if (!show.notificationPreference || show.notificationPreference === 'none') return '';
-                if (show.notificationSent) return 'Notificado';
-                const preferenceMap = { 'on_day': 'No dia', '1_day_before': '1 dia antes', '2_days_before': '2 dias antes' };
-                const preferenceText = preferenceMap[show.notificationPreference];
-                const timeText = show.notificationTime ? ` às ${show.notificationTime}` : '';
-                return `${preferenceText}${timeText}`;
-            };
+            const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
+            const formatDate = (dateString) => { if (!dateString) return 'Data inválida'; const date = new Date(dateString + 'T00:00:00'); return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
+            const getNotificationText = (show) => { if (!show.notificationPreference || show.notificationPreference === 'none') return ''; if (show.notificationSent) return 'Notificado'; const preferenceMap = { 'on_day': 'No dia', '1_day_before': '1 dia antes', '2_days_before': '2 dias antes' }; const preferenceText = preferenceMap[show.notificationPreference]; const timeText = show.notificationTime ? ` às ${show.notificationTime}` : ''; return `${preferenceText}${timeText}`; };
 
             const renderShows = () => {
                 showsList.innerHTML = '';
@@ -180,50 +164,25 @@
                 const artistFilter = filterArtistInput.value.toLowerCase();
                 const locationFilter = filterLocationInput.value.toLowerCase();
                 const dateFilter = filterDateInput.value;
-
                 const filteredShows = allShows.filter(show => {
                     const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter);
                     const locationMatch = (show.location || '').toLowerCase().includes(locationFilter);
                     const dateMatch = !dateFilter || (show.date === dateFilter);
                     return artistMatch && locationMatch && dateMatch;
                 });
-
-                if (allShows.length > 0 && filteredShows.length === 0) {
-                     emptyState.classList.remove('hidden');
-                     emptyState.querySelector('p').textContent = 'Nenhum show encontrado para os filtros aplicados.';
-                } else if (allShows.length === 0) {
-                     emptyState.classList.remove('hidden');
-                     emptyState.querySelector('p').textContent = 'Nenhum show encontrado.';
-                } else {
-                    emptyState.classList.add('hidden');
-                }
-
+                if (allShows.length > 0 && filteredShows.length === 0) { emptyState.classList.remove('hidden'); emptyState.querySelector('p').textContent = 'Nenhum show encontrado para os filtros aplicados.'; } else if (allShows.length === 0) { emptyState.classList.remove('hidden'); emptyState.querySelector('p').textContent = 'Nenhum show encontrado.'; } else { emptyState.classList.add('hidden'); }
                 filteredShows.forEach(show => {
                     const showElement = document.createElement('div');
                     showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col sm:flex-row justify-between items-start gap-4";
                     const notificationText = getNotificationText(show);
                     const notificationHTML = notificationText ? `<div class="mt-2 text-xs flex items-center gap-1.5 p-1 px-2 rounded-full w-fit ${show.notificationSent ? 'bg-gray-600 text-gray-400' : 'bg-blue-500/20 text-blue-300'}"><i data-lucide="${show.notificationSent ? 'bell-off' : 'bell'}" class="w-4 h-4"></i><span>${notificationText}</span></div>` : '';
-                    showElement.innerHTML = `
-                        <div class="flex-1">
-                            <p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p>
-                            <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
-                            <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
-                            ${notificationHTML}
-                        </div>
-                        <div class="flex gap-2 self-end sm:self-center">
-                            <button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
-                            <button data-id="${show.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
-                        </div>`;
+                    showElement.innerHTML = `<div class="flex-1"><p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p><p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p><p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>${notificationHTML}</div><div class="flex gap-2 self-end sm:self-center"><button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button><button data-id="${show.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button></div>`;
                     showsList.appendChild(showElement);
                 });
                 lucide.createIcons();
             };
             
-            const signInWithGoogle = () => {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                auth.signInWithRedirect(provider);
-            };
-
+            const signInWithGoogle = () => auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());
             const signOut = () => auth.signOut();
 
             const handleUser = (user) => {
@@ -231,7 +190,6 @@
                     currentUser = user;
                     loginScreen.style.display = 'none';
                     appContent.style.display = 'block';
-                    
                     const showsCollectionPath = `/artifacts/${appId}/users/${currentUser.uid}/shows`;
                     if (unsubscribeShows) unsubscribeShows();
                     unsubscribeShows = db.collection(showsCollectionPath).orderBy("date", "desc").onSnapshot(querySnapshot => {
@@ -254,20 +212,27 @@
                 }
             };
 
-            auth.getRedirectResult()
-                .then(result => {
-                    if (result.user) {
-                        handleUser(result.user);
-                    } else {
-                        auth.onAuthStateChanged(handleUser);
-                    }
-                })
-                .catch(error => {
-                    console.error("Erro no getRedirectResult:", error);
-                    showError(`Erro de login: ${error.message}`);
-                    handleUser(null);
-                });
+            const initializeAuth = () => {
+                auth.getRedirectResult()
+                    .then(result => {
+                        if (result.user) {
+                            handleUser(result.user);
+                        } else {
+                            const unsubscribe = auth.onAuthStateChanged(user => {
+                                handleUser(user);
+                                unsubscribe();
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Erro no getRedirectResult:", error);
+                        showError(`Erro de login: ${error.message}`);
+                        handleUser(null);
+                    });
+            };
             
+            initializeAuth();
+
             loginBtn.addEventListener('click', () => {
                 loginContainer.classList.add('hidden');
                 loadingAuth.classList.remove('hidden');
@@ -276,33 +241,20 @@
             });
             logoutBtn.addEventListener('click', signOut);
             
-            notificationPreferenceSelect.addEventListener('change', (e) => {
-                notificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none');
-            });
-
-            editNotificationPreferenceSelect.addEventListener('change', (e) => {
-                editNotificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none');
-            });
+            notificationPreferenceSelect.addEventListener('change', (e) => notificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none'));
+            editNotificationPreferenceSelect.addEventListener('change', (e) => editNotificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none'));
 
             addShowForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser) return;
-                
                 const date = document.getElementById('add-date').value;
                 const artists = document.getElementById('add-artists').value;
                 const location = document.getElementById('add-location').value;
                 const notificationPreference = document.getElementById('add-notification-preference').value;
                 const notificationTime = document.getElementById('add-notification-time').value;
-
                 try {
                     const showsCollectionPath = `/artifacts/${appId}/users/${currentUser.uid}/shows`;
-                    await db.collection(showsCollectionPath).add({
-                        date, artists, location, 
-                        notificationPreference,
-                        notificationTime: notificationPreference === 'none' ? null : notificationTime,
-                        notificationSent: false, 
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    await db.collection(showsCollectionPath).add({ date, artists, location, notificationPreference, notificationTime: notificationPreference === 'none' ? null : notificationTime, notificationSent: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
                     addShowForm.reset();
                     notificationTimeWrapper.classList.add('hidden');
                     addModal.classList.remove('is-open');
@@ -322,11 +274,7 @@
             showsList.addEventListener('click', (e) => {
                 const deleteBtn = e.target.closest('.delete-btn');
                 const editBtn = e.target.closest('.edit-btn');
-
-                if (deleteBtn) {
-                    showIdToModify = deleteBtn.dataset.id;
-                    deleteModal.classList.add('is-open');
-                }
+                if (deleteBtn) { showIdToModify = deleteBtn.dataset.id; deleteModal.classList.add('is-open'); }
                 if (editBtn) {
                     showIdToModify = editBtn.dataset.id;
                     const showData = allShows.find(s => s.id === showIdToModify);
@@ -356,28 +304,14 @@
                 }
             });
 
-            cancelDeleteBtn.addEventListener('click', () => {
-                deleteModal.classList.remove('is-open');
-                showIdToModify = null;
-            });
+            cancelDeleteBtn.addEventListener('click', () => { deleteModal.classList.remove('is-open'); showIdToModify = null; });
 
             editShowForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser || !showIdToModify) return;
-
                 const notificationPreference = document.getElementById('edit-notification-preference').value;
-                const updatedData = {
-                    date: document.getElementById('edit-date').value,
-                    artists: document.getElementById('edit-artists').value,
-                    location: document.getElementById('edit-location').value,
-                    notificationPreference: notificationPreference,
-                    notificationTime: document.getElementById('edit-notification-time').value,
-                    notificationSent: false
-                };
-                 if (updatedData.notificationPreference === 'none') {
-                    updatedData.notificationTime = null;
-                }
-
+                const updatedData = { date: document.getElementById('edit-date').value, artists: document.getElementById('edit-artists').value, location: document.getElementById('edit-location').value, notificationPreference: notificationPreference, notificationTime: document.getElementById('edit-notification-time').value, notificationSent: false };
+                if (updatedData.notificationPreference === 'none') { updatedData.notificationTime = null; }
                 try {
                     const showDocPath = `/artifacts/${appId}/users/${currentUser.uid}/shows/${showIdToModify}`;
                     await db.doc(showDocPath).update(updatedData);
@@ -389,21 +323,10 @@
                 }
             });
 
-            cancelEditBtn.addEventListener('click', () => {
-                editModal.classList.remove('is-open');
-                showIdToModify = null;
-            });
+            cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); showIdToModify = null; });
         });
 
-        const manifest = {
-            "name": "Agenda de Shows", "short_name": "Agenda", "start_url": ".",
-            "display": "standalone", "background_color": "#111827", "theme_color": "#111827",
-            "description": "Sua agenda de shows pessoal.",
-            "icons": [
-                { "src": "https://placehold.co/192x192/8b5cf6/ffffff?text=♫", "sizes": "192x192", "type": "image/png" },
-                { "src": "https://placehold.co/512x512/8b5cf6/ffffff?text=♫", "sizes": "512x512", "type": "image/png" }
-            ]
-        };
+        const manifest = { "name": "Agenda de Shows", "short_name": "Agenda", "start_url": ".", "display": "standalone", "background_color": "#111827", "theme_color": "#111827", "description": "Sua agenda de shows pessoal.", "icons": [{ "src": "https://placehold.co/192x192/8b5cf6/ffffff?text=♫", "sizes": "192x192", "type": "image/png" }, { "src": "https://placehold.co/512x512/8b5cf6/ffffff?text=♫", "sizes": "512x512", "type": "image/png" }] };
         const manifestString = JSON.stringify(manifest);
         const manifestUri = 'data:application/manifest+json,' + encodeURIComponent(manifestString);
         document.getElementById('manifest-link').href = manifestUri;
