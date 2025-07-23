@@ -24,7 +24,7 @@
 <body class="text-white font-sans">
 
     <div id="login-screen" class="min-h-screen flex flex-col justify-center items-center p-4">
-        <div id="login-container" class="text-center">
+        <div id="login-container" class="text-center hidden">
             <i data-lucide="music" class="text-purple-400 w-16 h-16 mx-auto mb-4"></i>
             <h1 class="text-4xl font-bold text-gray-100 mb-2">Agenda de Shows</h1>
             <p class="text-gray-400 mb-8">Acesse sua agenda de qualquer lugar.</p>
@@ -33,7 +33,7 @@
                 Entrar com Google
             </button>
         </div>
-        <div id="loading-auth" class="text-center hidden">
+        <div id="loading-auth" class="text-center">
              <i data-lucide="loader-2" class="text-purple-400 w-16 h-16 mx-auto mb-4 animate-spin"></i>
              <p class="text-gray-400">Verificando login...</p>
         </div>
@@ -265,20 +265,14 @@
             };
 
             auth.getRedirectResult()
-                .then(result => {
-                    if (!result.user) {
-                        loadingAuth.classList.add('hidden');
-                        loginContainer.classList.remove('hidden');
-                    }
-                })
                 .catch(error => {
                     console.error("Erro no getRedirectResult:", error);
                     showError(`Erro de login: ${error.message}`);
-                    handleUser(null);
+                })
+                .finally(() => {
+                    auth.onAuthStateChanged(handleUser);
                 });
             
-            auth.onAuthStateChanged(handleUser);
-
             loginBtn.addEventListener('click', () => {
                 loginContainer.classList.add('hidden');
                 loadingAuth.classList.remove('hidden');
@@ -415,9 +409,9 @@
                 { "src": "https://placehold.co/512x512/8b5cf6/ffffff?text=♫", "sizes": "512x512", "type": "image/png" }
             ]
         };
-        const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-        const manifestURL = URL.createObjectURL(manifestBlob);
-        document.getElementById('manifest-link').href = manifestURL;
+        const manifestString = JSON.stringify(manifest);
+        const manifestUri = 'data:application/manifest+json,' + encodeURIComponent(manifestString);
+        document.getElementById('manifest-link').href = manifestUri;
     </script>
 </body>
 </html>
