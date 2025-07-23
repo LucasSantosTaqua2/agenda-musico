@@ -10,6 +10,16 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+
+        window.firebaseApp = { initializeApp };
+        window.firebaseAuth = { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
+        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy };
+    </script>
+    
     <style>
         body { background-color: #111827; }
         .modal { display: none; }
@@ -20,18 +30,30 @@
 <body class="text-white font-sans">
 
     <div id="login-screen" class="min-h-screen flex flex-col justify-center items-center p-4">
-        <div id="login-container" class="text-center hidden">
+        <div id="login-container" class="w-full max-w-sm text-center hidden">
             <i data-lucide="music" class="text-purple-400 w-16 h-16 mx-auto mb-4"></i>
             <h1 class="text-4xl font-bold text-gray-100 mb-2">Agenda de Shows</h1>
-            <p class="text-gray-400 mb-8">Acesse sua agenda de qualquer lugar.</p>
-            <button id="login-btn" class="bg-white text-gray-800 font-semibold py-3 px-6 rounded-lg flex items-center gap-3 mx-auto hover:bg-gray-200 transition-colors">
-                <svg class="w-6 h-6" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
-                Entrar com Google
-            </button>
+            <p class="text-gray-400 mb-8">Crie uma conta ou faça login para continuar.</p>
+            
+            <form id="login-form" class="text-left">
+                <div id="login-error" class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm hidden"></div>
+                <div>
+                    <label for="email" class="text-sm font-medium text-gray-400">E-mail</label>
+                    <input id="email" type="email" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                </div>
+                <div class="mt-4">
+                    <label for="password" class="text-sm font-medium text-gray-400">Senha</label>
+                    <input id="password" type="password" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                </div>
+                <div class="mt-6 flex flex-col sm:flex-row gap-4">
+                    <button type="submit" id="login-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">Entrar</button>
+                    <button type="button" id="register-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">Registrar</button>
+                </div>
+            </form>
         </div>
         <div id="loading-auth" class="text-center">
              <i data-lucide="loader-2" class="text-purple-400 w-16 h-16 mx-auto mb-4 animate-spin"></i>
-             <p class="text-gray-400">Verificando login...</p>
+             <p class="text-gray-400">Carregando...</p>
         </div>
     </div>
 
@@ -76,9 +98,9 @@
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, getRedirectResult, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        const { initializeApp } = window.firebaseApp;
+        const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
+        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy } = window.firebaseFirestore;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -100,8 +122,11 @@
             const loginContainer = document.getElementById('login-container');
             const loadingAuth = document.getElementById('loading-auth');
             const appContent = document.getElementById('app-content');
+            const loginForm = document.getElementById('login-form');
             const loginBtn = document.getElementById('login-btn');
+            const registerBtn = document.getElementById('register-btn');
             const logoutBtn = document.getElementById('logout-btn');
+            const loginError = document.getElementById('login-error');
             
             const showsList = document.getElementById('shows-list');
             const loadingState = document.getElementById('loading-state');
@@ -152,6 +177,7 @@
             const editNotificationTimeWrapper = document.getElementById('edit-notification-time-wrapper');
 
             const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
+            const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
             const formatDate = (dateString) => { if (!dateString) return 'Data inválida'; const date = new Date(dateString + 'T00:00:00'); return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
             const getNotificationText = (show) => { if (!show.notificationPreference || show.notificationPreference === 'none') return ''; if (show.notificationSent) return 'Notificado'; const preferenceMap = { 'on_day': 'No dia', '1_day_before': '1 dia antes', '2_days_before': '2 dias antes' }; const preferenceText = preferenceMap[show.notificationPreference]; const timeText = show.notificationTime ? ` às ${show.notificationTime}` : ''; return `${preferenceText}${timeText}`; };
 
@@ -180,6 +206,7 @@
             };
             
             const handleUser = (user) => {
+                loadingAuth.classList.add('hidden');
                 if (user) {
                     currentUser = user;
                     loginScreen.style.display = 'none';
@@ -198,7 +225,6 @@
                 } else {
                     currentUser = null;
                     appContent.style.display = 'none';
-                    loadingAuth.classList.add('hidden');
                     loginContainer.classList.remove('hidden');
                     loginScreen.style.display = 'flex';
                     if (unsubscribeShows) unsubscribeShows();
@@ -207,36 +233,44 @@
                 }
             };
 
-            const initializeAuth = async () => {
-                try {
-                    const result = await getRedirectResult(auth);
-                    if (result && result.user) {
-                        handleUser(result.user);
-                        return;
-                    }
-                } catch (error) {
-                    console.error("Erro no getRedirectResult:", error);
-                    showError(`Erro de login: ${error.message}`);
-                }
+            onAuthStateChanged(auth, handleUser);
 
-                onAuthStateChanged(auth, user => {
-                    if (!currentUser) {
-                        handleUser(user);
-                    }
-                });
-            };
-            
-            initializeAuth();
+            loginForm.addEventListener('submit', (e) => e.preventDefault());
 
             loginBtn.addEventListener('click', () => {
-                loginContainer.classList.add('hidden');
-                loadingAuth.classList.remove('hidden');
-                lucide.createIcons();
-                setPersistence(auth, browserLocalPersistence)
-                    .then(() => {
-                        signInWithRedirect(auth, new GoogleAuthProvider());
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
+                
+                signInWithEmailAndPassword(auth, email, password)
+                    .catch(error => {
+                        console.error("Erro de login:", error.code);
+                        if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                            showLoginError("E-mail ou senha inválidos.");
+                        } else {
+                            showLoginError("Ocorreu um erro ao fazer login.");
+                        }
                     });
             });
+
+            registerBtn.addEventListener('click', () => {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
+
+                createUserWithEmailAndPassword(auth, email, password)
+                    .catch(error => {
+                        console.error("Erro de registro:", error.code);
+                        if (error.code === 'auth/email-already-in-use') {
+                            showLoginError("Este e-mail já está em uso.");
+                        } else if (error.code === 'auth/weak-password') {
+                            showLoginError("A senha deve ter pelo menos 6 caracteres.");
+                        } else {
+                            showLoginError("Ocorreu um erro ao registrar.");
+                        }
+                    });
+            });
+
             logoutBtn.addEventListener('click', () => signOut(auth));
             
             notificationPreferenceSelect.addEventListener('change', (e) => notificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none'));
