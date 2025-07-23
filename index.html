@@ -70,6 +70,10 @@
                 </button>
             </header>
             <div id="error-banner" class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-6 hidden"></div>
+            <div id="notification-banner" class="bg-blue-900/50 border border-blue-700 text-blue-200 p-4 rounded-lg mb-6 hidden items-center justify-between gap-4">
+                <p class="text-sm">Para receber lembretes dos shows, você precisa ativar as notificações.</p>
+                <button id="enable-notifications-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Ativar</button>
+            </div>
             <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8">
                 <h3 class="text-lg font-semibold mb-3 flex items-center gap-2"><i data-lucide="filter" class="w-5 h-5"></i>Filtros</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -117,7 +121,6 @@
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
             const db = getFirestore(app);
-            // CORREÇÃO: A variável appId estava faltando.
             const appId = firebaseConfig.appId;
 
             const loginScreen = document.getElementById('login-screen');
@@ -137,6 +140,8 @@
             const filterLocationInput = document.getElementById('filter-location');
             const filterDateInput = document.getElementById('filter-date');
             const errorBanner = document.getElementById('error-banner');
+            const notificationBanner = document.getElementById('notification-banner');
+            const enableNotificationsBtn = document.getElementById('enable-notifications-btn');
             
             const addModal = document.getElementById('add-modal');
             const openAddModalBtn = document.getElementById('open-add-modal-btn');
@@ -206,7 +211,27 @@
                 });
                 lucide.createIcons();
             };
-            
+
+            const checkAndSendNotifications = async () => {
+                if (Notification.permission !== 'granted') return;
+                const now = new Date();
+                for (const show of allShows) {
+                    if (show.notificationPreference === 'none' || show.notificationSent || !show.notificationTime || !show.date) continue;
+                    const [hours, minutes] = show.notificationTime.split(':');
+                    const notificationDateTime = new Date(show.date + 'T00:00:00');
+                    notificationDateTime.setHours(hours, minutes, 0, 0);
+                    if (show.notificationPreference === '1_day_before') notificationDateTime.setDate(notificationDateTime.getDate() - 1);
+                    if (show.notificationPreference === '2_days_before') notificationDateTime.setDate(notificationDateTime.getDate() - 2);
+                    if (now >= notificationDateTime) {
+                        new Notification('Lembrete de Show', { body: `Lembrete para o show com ${show.artists} em ${show.location}!`, icon: 'https://placehold.co/192x192/8b5cf6/ffffff?text=♫' });
+                        try {
+                            const showDocPath = `artifacts/${appId}/users/${currentUser.uid}/shows/${show.id}`;
+                            await updateDoc(doc(db, showDocPath), { notificationSent: true });
+                        } catch (err) { console.error('Falha ao atualizar status da notificação:', err); }
+                    }
+                }
+            };
+
             const handleUser = (user) => {
                 loadingAuth.classList.add('hidden');
                 if (user) {
@@ -220,6 +245,7 @@
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
                         renderShows();
+                        checkAndSendNotifications();
                     }, err => {
                         console.error("Erro ao buscar shows:", err);
                         showError("Não foi possível carregar os shows.");
@@ -243,15 +269,11 @@
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
-                
                 signInWithEmailAndPassword(auth, email, password)
                     .catch(error => {
-                        console.error("Erro de login:", error.code);
                         if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
                             showLoginError("E-mail ou senha inválidos.");
-                        } else {
-                            showLoginError("Ocorreu um erro ao fazer login.");
-                        }
+                        } else { showLoginError("Ocorreu um erro ao fazer login."); }
                     });
             });
 
@@ -259,32 +281,48 @@
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
-
                 createUserWithEmailAndPassword(auth, email, password)
                     .catch(error => {
-                        console.error("Erro de registro:", error.code);
                         if (error.code === 'auth/email-already-in-use') {
                             showLoginError("Este e-mail já está em uso.");
                         } else if (error.code === 'auth/weak-password') {
                             showLoginError("A senha deve ter pelo menos 6 caracteres.");
-                        } else {
-                            showLoginError("Ocorreu um erro ao registrar.");
-                        }
+                        } else { showLoginError("Ocorreu um erro ao registrar."); }
                     });
             });
 
             logoutBtn.addEventListener('click', () => signOut(auth));
             
+            const requestPermissionIfNeeded = async (preference) => {
+                if (preference !== 'none' && 'Notification' in window && Notification.permission === 'default') {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        notificationBanner.classList.add('hidden');
+                        checkAndSendNotifications();
+                    }
+                }
+            };
+
+            enableNotificationsBtn.addEventListener('click', () => {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        notificationBanner.classList.add('hidden');
+                        checkAndSendNotifications();
+                    }
+                });
+            });
+
             notificationPreferenceSelect.addEventListener('change', (e) => notificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none'));
             editNotificationPreferenceSelect.addEventListener('change', (e) => editNotificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none'));
 
             addShowForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser) return;
+                const notificationPreference = document.getElementById('add-notification-preference').value;
+                await requestPermissionIfNeeded(notificationPreference);
                 const date = document.getElementById('add-date').value;
                 const artists = document.getElementById('add-artists').value;
                 const location = document.getElementById('add-location').value;
-                const notificationPreference = document.getElementById('add-notification-preference').value;
                 const notificationTime = document.getElementById('add-notification-time').value;
                 try {
                     const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
@@ -344,6 +382,7 @@
                 e.preventDefault();
                 if (!currentUser || !showIdToModify) return;
                 const notificationPreference = document.getElementById('edit-notification-preference').value;
+                await requestPermissionIfNeeded(notificationPreference);
                 const updatedData = { date: document.getElementById('edit-date').value, artists: document.getElementById('edit-artists').value, location: document.getElementById('edit-location').value, notificationPreference: notificationPreference, notificationTime: document.getElementById('edit-notification-time').value, notificationSent: false };
                 if (updatedData.notificationPreference === 'none') { updatedData.notificationTime = null; }
                 try {
@@ -358,6 +397,13 @@
             });
 
             cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); showIdToModify = null; });
+            
+            if ('Notification' in window && Notification.permission === 'default') {
+                notificationBanner.classList.remove('hidden');
+                notificationBanner.classList.add('flex');
+            }
+            
+            setInterval(checkAndSendNotifications, 60000);
         });
 
         const manifest = { "name": "Agenda de Shows", "short_name": "Agenda", "start_url": ".", "display": "standalone", "background_color": "#111827", "theme_color": "#111827", "description": "Sua agenda de shows pessoal.", "icons": [{ "src": "https://placehold.co/192x192/8b5cf6/ffffff?text=♫", "sizes": "192x192", "type": "image/png" }, { "src": "https://placehold.co/512x512/8b5cf6/ffffff?text=♫", "sizes": "512x512", "type": "image/png" }] };
