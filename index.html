@@ -81,6 +81,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM carregado. Iniciando aplicação.");
             lucide.createIcons();
 
             const firebaseConfig = {
@@ -94,6 +95,7 @@
             const appId = firebaseConfig.appId;
             
             if (!firebase.apps.length) {
+                console.log("Inicializando Firebase...");
                 firebase.initializeApp(firebaseConfig);
             }
             const auth = firebase.auth();
@@ -182,17 +184,27 @@
                 lucide.createIcons();
             };
             
-            const signInWithGoogle = () => auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());
-            const signOut = () => auth.signOut();
+            const signInWithGoogle = () => {
+                console.log("Iniciando login com Google...");
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithRedirect(provider);
+            };
+            const signOut = () => {
+                console.log("Fazendo logout...");
+                auth.signOut();
+            };
 
             const handleUser = (user) => {
                 if (user) {
+                    console.log("Usuário autenticado:", user.displayName);
                     currentUser = user;
                     loginScreen.style.display = 'none';
                     appContent.style.display = 'block';
                     const showsCollectionPath = `/artifacts/${appId}/users/${currentUser.uid}/shows`;
                     if (unsubscribeShows) unsubscribeShows();
+                    console.log(`Ouvindo a coleção: ${showsCollectionPath}`);
                     unsubscribeShows = db.collection(showsCollectionPath).orderBy("date", "desc").onSnapshot(querySnapshot => {
+                        console.log("Dados do Firestore recebidos.");
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
                         renderShows();
@@ -201,32 +213,51 @@
                         showError("Não foi possível carregar os shows.");
                     });
                 } else {
+                    console.log("Nenhum usuário autenticado. Exibindo tela de login.");
                     currentUser = null;
                     appContent.style.display = 'none';
                     loadingAuth.classList.add('hidden');
                     loginContainer.classList.remove('hidden');
                     loginScreen.style.display = 'flex';
-                    if (unsubscribeShows) unsubscribeShows();
+                    if (unsubscribeShows) {
+                        console.log("Parando de ouvir dados do usuário anterior.");
+                        unsubscribeShows();
+                    }
                     allShows = [];
                     renderShows();
                 }
             };
 
             const initializeAuth = () => {
+                console.log("Iniciando verificação de autenticação...");
+                let initialCheckDone = false;
+                
+                auth.onAuthStateChanged(user => {
+                    console.log("onAuthStateChanged disparado.");
+                    if (!initialCheckDone) {
+                        console.log("Este é o gatilho inicial de onAuthStateChanged, ignorando por enquanto.");
+                        return;
+                    }
+                    console.log("onAuthStateChanged processando usuário.");
+                    handleUser(user);
+                });
+
                 auth.getRedirectResult()
                     .then(result => {
+                        console.log("getRedirectResult concluído.");
+                        initialCheckDone = true;
                         if (result.user) {
+                            console.log("Usuário encontrado no resultado do redirecionamento.");
                             handleUser(result.user);
                         } else {
-                            const unsubscribe = auth.onAuthStateChanged(user => {
-                                handleUser(user);
-                                unsubscribe();
-                            });
+                            console.log("Nenhum usuário no resultado do redirecionamento, verificando auth.currentUser.");
+                            handleUser(auth.currentUser);
                         }
                     })
                     .catch(error => {
                         console.error("Erro no getRedirectResult:", error);
                         showError(`Erro de login: ${error.message}`);
+                        initialCheckDone = true;
                         handleUser(null);
                     });
             };
@@ -247,6 +278,7 @@
             addShowForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser) return;
+                console.log("Adicionando novo show...");
                 const date = document.getElementById('add-date').value;
                 const artists = document.getElementById('add-artists').value;
                 const location = document.getElementById('add-location').value;
@@ -255,6 +287,7 @@
                 try {
                     const showsCollectionPath = `/artifacts/${appId}/users/${currentUser.uid}/shows`;
                     await db.collection(showsCollectionPath).add({ date, artists, location, notificationPreference, notificationTime: notificationPreference === 'none' ? null : notificationTime, notificationSent: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    console.log("Show adicionado com sucesso.");
                     addShowForm.reset();
                     notificationTimeWrapper.classList.add('hidden');
                     addModal.classList.remove('is-open');
@@ -268,14 +301,15 @@
             filterLocationInput.addEventListener('input', renderShows);
             filterDateInput.addEventListener('input', renderShows);
 
-            openAddModalBtn.addEventListener('click', () => addModal.classList.add('is-open'));
-            cancelAddBtn.addEventListener('click', () => addModal.classList.remove('is-open'));
+            openAddModalBtn.addEventListener('click', () => { console.log("Abrindo modal de adição."); addModal.classList.add('is-open'); });
+            cancelAddBtn.addEventListener('click', () => { console.log("Fechando modal de adição."); addModal.classList.remove('is-open'); });
 
             showsList.addEventListener('click', (e) => {
                 const deleteBtn = e.target.closest('.delete-btn');
                 const editBtn = e.target.closest('.edit-btn');
-                if (deleteBtn) { showIdToModify = deleteBtn.dataset.id; deleteModal.classList.add('is-open'); }
+                if (deleteBtn) { console.log("Botão de deletar clicado."); showIdToModify = deleteBtn.dataset.id; deleteModal.classList.add('is-open'); }
                 if (editBtn) {
+                    console.log("Botão de editar clicado.");
                     showIdToModify = editBtn.dataset.id;
                     const showData = allShows.find(s => s.id === showIdToModify);
                     if (showData) {
@@ -292,9 +326,11 @@
 
             confirmDeleteBtn.addEventListener('click', async () => {
                 if (!currentUser || !showIdToModify) return;
+                console.log(`Confirmando exclusão do show: ${showIdToModify}`);
                 try {
                     const showDocPath = `/artifacts/${appId}/users/${currentUser.uid}/shows/${showIdToModify}`;
                     await db.doc(showDocPath).delete();
+                    console.log("Show excluído com sucesso.");
                     deleteModal.classList.remove('is-open');
                     showIdToModify = null;
                 } catch (err) {
@@ -304,17 +340,19 @@
                 }
             });
 
-            cancelDeleteBtn.addEventListener('click', () => { deleteModal.classList.remove('is-open'); showIdToModify = null; });
+            cancelDeleteBtn.addEventListener('click', () => { console.log("Exclusão cancelada."); deleteModal.classList.remove('is-open'); showIdToModify = null; });
 
             editShowForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser || !showIdToModify) return;
+                console.log(`Salvando alterações do show: ${showIdToModify}`);
                 const notificationPreference = document.getElementById('edit-notification-preference').value;
                 const updatedData = { date: document.getElementById('edit-date').value, artists: document.getElementById('edit-artists').value, location: document.getElementById('edit-location').value, notificationPreference: notificationPreference, notificationTime: document.getElementById('edit-notification-time').value, notificationSent: false };
                 if (updatedData.notificationPreference === 'none') { updatedData.notificationTime = null; }
                 try {
                     const showDocPath = `/artifacts/${appId}/users/${currentUser.uid}/shows/${showIdToModify}`;
                     await db.doc(showDocPath).update(updatedData);
+                    console.log("Show atualizado com sucesso.");
                     editModal.classList.remove('is-open');
                     showIdToModify = null;
                 } catch (err) {
@@ -323,7 +361,7 @@
                 }
             });
 
-            cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); showIdToModify = null; });
+            cancelEditBtn.addEventListener('click', () => { console.log("Edição cancelada."); editModal.classList.remove('is-open'); showIdToModify = null; });
         });
 
         const manifest = { "name": "Agenda de Shows", "short_name": "Agenda", "start_url": ".", "display": "standalone", "background_color": "#111827", "theme_color": "#111827", "description": "Sua agenda de shows pessoal.", "icons": [{ "src": "https://placehold.co/192x192/8b5cf6/ffffff?text=♫", "sizes": "192x192", "type": "image/png" }, { "src": "https://placehold.co/512x512/8b5cf6/ffffff?text=♫", "sizes": "512x512", "type": "image/png" }] };
