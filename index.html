@@ -207,18 +207,19 @@
                     return artistMatch && locationMatch && dateMatch;
                 });
                 if (allShows.length > 0 && filteredShows.length === 0) { emptyState.classList.remove('hidden'); emptyState.querySelector('p').textContent = 'Nenhum show encontrado para os filtros aplicados.'; } else if (allShows.length === 0) { emptyState.classList.remove('hidden'); emptyState.querySelector('p').textContent = 'Nenhum show encontrado.'; } else { emptyState.classList.add('hidden'); }
+                
                 filteredShows.forEach(show => {
                     const showElement = document.createElement('div');
-                    showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col justify-between items-start gap-4";
+                    showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4";
                     const notificationText = getNotificationText(show);
-                    const notificationHTML = notificationText ? `<div class="text-xs flex items-center gap-1.5 p-1 px-2 rounded-full w-fit ${show.notificationSent ? 'bg-gray-600 text-gray-400' : 'bg-blue-500/20 text-blue-300'}"><i data-lucide="${show.notificationSent ? 'bell-off' : 'bell'}" class="w-4 h-4"></i><span>${notificationText}</span></div>` : '';
+                    const notificationHTML = notificationText ? `<div class="text-xs flex items-center gap-1.5 p-1 px-2 rounded-full w-fit ${show.notificationSent ? 'bg-gray-600 text-gray-400' : 'bg-blue-500/20 text-blue-300'}"><i data-lucide="${show.notificationSent ? 'bell-off' : 'bell'}" class="w-4 h-4"></i><span>${notificationText}</span></div>` : `<div></div>`;
                     showElement.innerHTML = `
-                        <div>
+                        <div class="flex-grow w-full">
                             <p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p>
                             <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
                             <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
                         </div>
-                        <div class="flex justify-between items-center w-full mt-4">
+                        <div class="flex justify-between items-center w-full">
                             ${notificationHTML}
                             <div class="flex gap-2">
                                 <button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
