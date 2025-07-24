@@ -10,6 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
@@ -78,6 +79,7 @@
                 <nav class="-mb-px flex space-x-6" aria-label="Tabs">
                     <button id="tab-agenda" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent tab-active">Agenda</button>
                     <button id="tab-calendario" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Calendário</button>
+                    <button id="tab-setlists" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Setlists</button>
                     <button id="tab-dashboard" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Dashboard</button>
                 </nav>
             </div>
@@ -90,14 +92,15 @@
                         <input id="filter-location" type="text" placeholder="Filtrar por local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
                         <input id="filter-date" type="date" class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
                     </div>
+                     <button id="export-pdf-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+                        <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF
+                    </button>
                 </div>
                 <div>
                     <h2 class="text-2xl font-bold mb-4 text-gray-200">Shows Agendados</h2>
                     <div id="shows-list-agendados" class="space-y-4"></div>
-                    
                     <h2 class="text-2xl font-bold mb-4 mt-10 text-gray-200">Histórico (Realizados/Cancelados)</h2>
                     <div id="shows-list-realizados" class="space-y-4"></div>
-
                     <div id="loading-state" class="text-center text-gray-400 py-8">Carregando shows...</div>
                     <div id="empty-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
                         <p class="text-gray-400">Nenhum show encontrado.</p>
@@ -120,6 +123,13 @@
                  </div>
                  <div id="calendar-show-details" class="mt-6 space-y-4"></div>
             </div>
+            
+            <div id="view-setlists" class="hidden">
+                <button id="open-add-setlist-modal-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
+                    <i data-lucide="plus" class="w-5 h-5"></i> Criar Nova Setlist
+                </button>
+                <div id="setlists-list" class="space-y-4"></div>
+            </div>
 
             <div id="view-dashboard" class="hidden space-y-8">
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
@@ -141,6 +151,7 @@
     <div id="edit-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="confirm-status-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
+    <div id="setlist-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
 
     <script type="module">
         const { initializeApp } = window.firebaseApp;
