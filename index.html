@@ -361,27 +361,10 @@
                 const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 return `${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}, ${formattedDate}`;
             };
-            const formatNotificationTimestamp = (timestamp) => {
-                if (!timestamp || typeof timestamp.toDate !== 'function') {
-                    return ''; // Retorna vazio se o timestamp for inválido
-                }
-                const date = timestamp.toDate();
-                const formattedDate = date.toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
-                const formattedTime = date.toLocaleTimeString('pt-BR', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                return `${formattedDate} às ${formattedTime}`;
-            };
             // --- Funções de Notificação ---
 const notifyLinkedMusicians = async (message) => {
-                if (!currentUser || !userSettings.isManager) return;
+                  if (!currentUser || !userSettings.isManager) return;
                 try {
-                    // Acessa a própria subcoleção de seguidores para encontrar os músicos
                     const followersPath = `artifacts/${appId}/users/${currentUser.uid}/followers`;
                     const querySnapshot = await getDocs(collection(db, followersPath));
 
@@ -390,9 +373,10 @@ const notifyLinkedMusicians = async (message) => {
                         const notification = {
                             message: message,
                             read: false,
-                            timestamp: serverTimestamp()
+                            timestamp: serverTimestamp(),
+                            showDate: showDate || null, // Salva a data do show
+                            showTime: showTime || null  // Salva a hora do show
                         };
-                        // Adiciona a notificação na subcoleção do músico
                         addDoc(collection(db, `artifacts/${appId}/users/${musicianId}/notifications`), notification);
                     });
                 } catch (error) {
@@ -400,7 +384,7 @@ const notifyLinkedMusicians = async (message) => {
                 }
             };
             const renderNotifications = () => {
-                         notificationsList.innerHTML = '';
+                          notificationsList.innerHTML = '';
                 const unreadCount = allNotifications.filter(n => !n.read).length;
 
                 if (unreadCount > 0) {
@@ -420,11 +404,14 @@ const notifyLinkedMusicians = async (message) => {
                     const isUnread = !notif.read ? 'bg-purple-500/10' : '';
                     notifElement.className = `p-3 border-b border-gray-700 ${isUnread}`;
                     
-                    // --- LINHA ATUALIZADA ---
-                    // Agora inclui a mensagem e o timestamp formatado
+                    // Lógica para exibir a data e hora do show, se existirem
+                    const dateInfo = notif.showDate 
+                        ? `<p class="text-xs text-gray-400 mt-1">${formatDate(notif.showDate)}${notif.showTime ? ` às ${notif.showTime}` : ''}</p>` 
+                        : '';
+
                     notifElement.innerHTML = `
                         <p class="text-sm text-gray-200">${notif.message}</p>
-                        <p class="text-xs text-gray-500 mt-1">${formatNotificationTimestamp(notif.timestamp)}</p>
+                        ${dateInfo}
                     `;
                     
                     notificationsList.appendChild(notifElement);
@@ -884,7 +871,7 @@ const notifyLinkedMusicians = async (message) => {
                     await addDoc(collection(db, showsCollectionPath), { date, time, artists, location, status, observacoes, setlistId, isManaged, createdAt: serverTimestamp() });
                     addShowForm.reset();
                     addModal.classList.remove('is-open');
-                    notifyLinkedMusicians(`Novo show adicionado: ${artists} em ${location}`);
+                    notifyLinkedMusicians(`Novo show adicionado: ${artists} em ${location}`, date, time);
                 } catch (err) {
                     console.error("Erro ao adicionar show:", err);
                     showError("Ocorreu um erro ao salvar o show.");
@@ -932,7 +919,7 @@ const notifyLinkedMusicians = async (message) => {
                     deleteModal.classList.remove('is-open');
 
                     if (showToDelete && collectionName === 'shows') {
-                        notifyLinkedMusicians(`Show cancelado/removido: ${showToDelete.artists} em ${showToDelete.location}`);
+                       notifyLinkedMusicians(`Show cancelado/removido: ${showToDelete.artists} em ${showToDelete.location}`, showToDelete.date, showToDelete.time);
                     }
                     itemToModifyId = null;
                 } catch (err) {
@@ -962,7 +949,7 @@ const notifyLinkedMusicians = async (message) => {
                     await updateDoc(doc(db, showDocPath), updatedData);
                     editModal.classList.remove('is-open');
                     itemToModifyId = null;
-                    notifyLinkedMusicians(`Show atualizado: ${updatedData.artists} em ${updatedData.location}`);
+                    notifyLinkedMusicians(`Show atualizado: ${updatedData.artists} em ${updatedData.location}`, updatedData.date, updatedData.time);
                 } catch (err) {
                     showError("Não foi possível salvar as alterações.");
                 }
