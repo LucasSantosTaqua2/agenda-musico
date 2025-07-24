@@ -15,11 +15,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
 
         window.firebaseApp = { initializeApp };
         window.firebaseAuth = { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
-        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc };
+        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where };
     </script>
     
     <style>
@@ -214,7 +214,7 @@
     <script type="module">
         const { initializeApp } = window.firebaseApp;
         const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
-        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc } = window.firebaseFirestore;
+        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where } = window.firebaseFirestore;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -431,7 +431,14 @@
                     const showsCollectionPath = `artifacts/${appId}/users/${userSettings.managedBy || currentUser.uid}/shows`;
                     
                     if (unsubscribeShows) unsubscribeShows();
-                    const qShows = query(collection(db, showsCollectionPath));
+
+                    let qShows;
+                    if (userSettings.managedBy) {
+                        qShows = query(collection(db, showsCollectionPath), where("isManaged", "==", true));
+                    } else {
+                        qShows = query(collection(db, showsCollectionPath));
+                    }
+
                     unsubscribeShows = onSnapshot(qShows, (querySnapshot) => {
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
@@ -935,6 +942,7 @@
                     showError("Não foi possível desvincular a conta.");
                 }
             });
+
         });
 
         const manifest = { "name": "Agenda de Shows", "short_name": "Agenda", "start_url": ".", "display": "standalone", "background_color": "#111827", "theme_color": "#111827", "description": "Sua agenda de shows pessoal.", "icons": [{ "src": "https://placehold.co/192x192/8b5cf6/ffffff?text=♫", "sizes": "192x192", "type": "image/png" }, { "src": "https://placehold.co/512x512/8b5cf6/ffffff?text=♫", "sizes": "512x512", "type": "image/png" }] };
