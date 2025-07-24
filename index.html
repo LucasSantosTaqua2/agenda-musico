@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#111827"> 
     <title>Agenda de Shows</title>
-    
+
     <link id="manifest-link" rel="manifest">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -21,7 +21,7 @@
         window.firebaseAuth = { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
         window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where };
     </script>
-    
+
     <style>
         body { background-color: #111827; }
         .modal { display: none; }
@@ -80,7 +80,7 @@
                 </button>
             </header>
             <div id="error-banner" class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-6 hidden"></div>
-            
+
             <div class="border-b border-gray-700 mb-6">
                 <nav class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
                     <button id="tab-agenda" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent tab-active">Agenda</button>
@@ -130,7 +130,7 @@
                  </div>
                  <div id="calendar-show-details" class="mt-6 space-y-4"></div>
             </div>
-            
+
             <div id="view-setlists" class="hidden">
                 <button id="open-add-setlist-modal-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
                     <i data-lucide="plus" class="w-5 h-5"></i> Criar Nova Setlist
@@ -211,166 +211,23 @@
     <div id="confirm-status-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="setlist-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
 
+
     <script type="module">
         const { initializeApp } = window.firebaseApp;
-        const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
-        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where } = window.firebaseFirestore;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            
-            const firebaseConfig = {
-                apiKey: "AIzaSyBIPPMg_OUyC2AKmJpy36ljJCjdvZVUxuE",
-                authDomain: "minha-agenda-de-shows.firebaseapp.com",
-                projectId: "minha-agenda-de-shows",
-                storageBucket: "minha-agenda-de-shows.firebasestorage.app",
-                messagingSenderId: "676045633970",
-                appId: "1:676045633970:web:d9c4916ffa716e96290cab"
-            };
-            
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-            const appId = firebaseConfig.appId;
-
-            const loginScreen = document.getElementById('login-screen');
-            const loginContainer = document.getElementById('login-container');
-            const loadingAuth = document.getElementById('loading-auth');
-            const appContent = document.getElementById('app-content');
-            const loginForm = document.getElementById('login-form');
-            const loginBtn = document.getElementById('login-btn');
-            const registerBtn = document.getElementById('register-btn');
-            const logoutBtn = document.getElementById('logout-btn');
-            const loginError = document.getElementById('login-error');
-            
-            const showsListAgendados = document.getElementById('shows-list-agendados');
-            const showsListRealizados = document.getElementById('shows-list-realizados');
-            const loadingState = document.getElementById('loading-state');
-            const emptyState = document.getElementById('empty-state');
-            const filterArtistInput = document.getElementById('filter-artist');
-            const filterLocationInput = document.getElementById('filter-location');
-            const filterDateInput = document.getElementById('filter-date');
-            const errorBanner = document.getElementById('error-banner');
-            
-            const addModal = document.getElementById('add-modal');
-            const openAddModalBtn = document.getElementById('open-add-modal-btn');
-            const deleteModal = document.getElementById('confirmation-modal');
+@@ -258,6 +259,7 @@
             const editModal = document.getElementById('edit-modal');
             const confirmStatusModal = document.getElementById('confirm-status-modal');
             const setlistModal = document.getElementById('setlist-modal');
 
+
             const tabAgenda = document.getElementById('tab-agenda');
             const tabCalendario = document.getElementById('tab-calendario');
-            const tabSetlists = document.getElementById('tab-setlists');
-            const tabDashboard = document.getElementById('tab-dashboard');
-            const tabConfiguracoes = document.getElementById('tab-configuracoes');
-            const viewAgenda = document.getElementById('view-agenda');
-            const viewCalendario = document.getElementById('view-calendario');
-            const viewSetlists = document.getElementById('view-setlists');
-            const viewDashboard = document.getElementById('view-dashboard');
-            const viewConfiguracoes = document.getElementById('view-configuracoes');
-            
-            let allShows = [];
-            let allSetlists = [];
-            let currentUser = null;
-            let userSettings = {};
-            let itemToModifyId = null;
-            let itemTypeToDelete = '';
-            let unsubscribeShows = null;
-            let unsubscribeSetlists = null;
-            let currentCalendarDate = new Date();
-            let showsPerMonthChart = null;
-            let topLocationsChart = null;
-            let topSetlistsChart = null;
-
-            const setupModalHTML = () => {
-                addModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="text-green-400"></i>Adicionar Novo Show</h2><form id="add-show-form" class="space-y-4"></form></div>`;
-                editModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="pencil" class="text-yellow-400"></i>Editar Show</h2><form id="edit-show-form" class="space-y-4"></form></div>`;
-                deleteModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl"><i data-lucide="alert-triangle" class="mx-auto text-yellow-400 w-12 h-12 mb-4"></i><p id="delete-confirm-text" class="text-lg text-gray-200 mb-6"></p><div class="flex justify-center gap-4"><button id="cancel-delete-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button><button id="confirm-delete-btn" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg">Confirmar</button></div></div>`;
-                confirmStatusModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl"><i data-lucide="help-circle" class="mx-auto text-blue-400 w-12 h-12 mb-4"></i><h2 class="text-xl font-semibold mb-2">Confirmar Show Passado</h2><p id="confirm-status-text" class="text-gray-300 mb-6"></p><div class="flex flex-col gap-3"><button id="confirm-realizado-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg">Sim, foi Realizado</button><button id="confirm-cancelado-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg">Não, foi Cancelado</button></div></div>`;
-                setlistModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 id="setlist-modal-title" class="text-xl font-semibold mb-4 flex items-center gap-2"></h2><form id="setlist-form" class="space-y-4"><input type="hidden" id="setlist-id"><div class="md:col-span-2"><label for="setlist-name" class="text-sm font-medium text-gray-400 mb-1">Nome da Setlist</label><input id="setlist-name" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div><div class="md:col-span-2"><label for="setlist-songs" class="text-sm font-medium text-gray-400 mb-1">Músicas (uma por linha)</label><textarea id="setlist-songs" rows="8" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></textarea></div><div class="md:col-span-2 flex justify-end gap-4 mt-4"><button type="button" id="cancel-setlist-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button><button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg">Salvar Setlist</button></div></form></div>`;
-                
-                const showModalFieldsHTML = (prefix) => `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label for="${prefix}-date" class="text-sm font-medium text-gray-400 mb-1">Data</label><input id="${prefix}-date" type="date" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                        <div><label for="${prefix}-artists" class="text-sm font-medium text-gray-400 mb-1">Artistas</label><input id="${prefix}-artists" type="text" placeholder="Ex: João Silva" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                        <div class="md:col-span-2"><label for="${prefix}-location" class="text-sm font-medium text-gray-400 mb-1">Local</label><input id="${prefix}-location" type="text" placeholder="Ex: Virada Cultural, SP" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                        <div><label for="${prefix}-status" class="text-sm font-medium text-gray-400 mb-1">Status</label><select id="${prefix}-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option><option value="cancelado">Cancelado</option><option value="realizado">Realizado</option></select></div>
-                        <div><label for="${prefix}-setlist" class="text-sm font-medium text-gray-400 mb-1">Setlist</label><select id="${prefix}-setlist" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="">Nenhuma</option></select></div>
-                    </div>
-                    <div><label for="${prefix}-observacoes" class="text-sm font-medium text-gray-400 mb-1">Observações</label><textarea id="${prefix}-observacoes" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></textarea></div>
-                    <div class="flex justify-end gap-4 mt-4"><button type="button" id="cancel-${prefix}-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button><button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">${prefix === 'add' ? 'Adicionar' : 'Salvar'}</button></div>`;
-
-                document.getElementById('add-show-form').innerHTML = showModalFieldsHTML('add');
-                document.getElementById('edit-show-form').innerHTML = showModalFieldsHTML('edit');
-                lucide.createIcons();
-            };
-            setupModalHTML();
-
-            const addShowForm = document.getElementById('add-show-form');
-            const cancelAddBtn = document.getElementById('cancel-add-btn');
-            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-            const editShowForm = document.getElementById('edit-show-form');
-            const cancelEditBtn = document.getElementById('cancel-edit-btn');
-            const confirmRealizadoBtn = document.getElementById('confirm-realizado-btn');
-            const confirmCanceladoBtn = document.getElementById('confirm-cancelado-btn');
-            const openAddSetlistModalBtn = document.getElementById('open-add-setlist-modal-btn');
-            const setlistForm = document.getElementById('setlist-form');
-            const cancelSetlistBtn = document.getElementById('cancel-setlist-btn');
-            const exportPdfBtn = document.getElementById('export-pdf-btn');
-            const managerModeToggle = document.getElementById('manager-mode-toggle');
-            const artistNameInput = document.getElementById('artist-name-input');
-            const copyInviteCodeBtn = document.getElementById('copy-invite-code-btn');
-            const linkForm = document.getElementById('link-form');
-            const unlinkBtn = document.getElementById('unlink-btn');
-
-            const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
-            const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
-            const formatDate = (dateString) => { if (!dateString) return 'Data inválida'; const date = new Date(dateString + 'T00:00:00'); return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
-            
-            const statusMap = {
-                confirmado: { text: 'Confirmado', color: 'bg-green-500/20 text-green-300' },
-                aguardando: { text: 'Aguardando', color: 'bg-yellow-500/20 text-yellow-300' },
-                cancelado: { text: 'Cancelado', color: 'bg-red-500/20 text-red-300' },
-                realizado: { text: 'Realizado', color: 'bg-blue-500/20 text-blue-300' }
-            };
-
-            const renderShows = () => {
-                showsListAgendados.innerHTML = '';
-                showsListRealizados.innerHTML = '';
-                loadingState.classList.add('hidden');
-                
-                const artistFilter = filterArtistInput.value.toLowerCase();
-                const locationFilter = filterLocationInput.value.toLowerCase();
-                const dateFilter = filterDateInput.value;
-
-                const agendados = allShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado');
-                const historico = allShows.filter(s => s.status === 'realizado' || s.status === 'cancelado');
-
-                const applyFilters = (show) => {
-                    const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter);
-                    const locationMatch = (show.location || '').toLowerCase().includes(locationFilter);
-                    const dateMatch = !dateFilter || (show.date === dateFilter);
-                    return artistMatch && locationMatch && dateMatch;
-                };
-
-                const filteredAgendados = agendados.filter(applyFilters).sort((a, b) => new Date(a.date) - new Date(b.date));
-                const filteredHistorico = historico.filter(applyFilters).sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                if (allShows.length > 0 && filteredAgendados.length === 0 && filteredHistorico.length === 0) {
-                    emptyState.classList.remove('hidden');
-                    emptyState.querySelector('p').textContent = 'Nenhum show encontrado para os filtros aplicados.';
-                } else if (allShows.length === 0) {
-                    emptyState.classList.remove('hidden');
-                    emptyState.querySelector('p').textContent = 'Nenhum show encontrado.';
-                } else {
-                    emptyState.classList.add('hidden');
-                }
+@@ -370,12 +372,13 @@
 
                 const createShowElement = (show) => {
                     const showElement = document.createElement('div');
                     showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4";
+
                     const statusInfo = statusMap[show.status] || { text: '', color: ''};
                     const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
                     const setlist = allSetlists.find(s => s.id === show.setlistId);
@@ -379,11 +236,7 @@
 
                     showElement.innerHTML = `
                         <div class="flex justify-between items-start w-full">
-                            <div>
-                                <p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p>
-                                <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
-                                <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
-                                ${setlistHTML}
+@@ -387,13 +390,7 @@
                             </div>
                             ${statusHTML}
                         </div>
@@ -397,41 +250,18 @@
                     return showElement;
                 };
 
-                filteredAgendados.forEach(show => showsListAgendados.appendChild(createShowElement(show)));
-                filteredHistorico.forEach(show => showsListRealizados.appendChild(createShowElement(show)));
-                
-                lucide.createIcons();
-            };
-            
-            const checkPastShows = () => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0); 
-                const pendingPastShows = allShows.filter(show => {
-                    const showDate = new Date(show.date + 'T00:00:00');
-                    return showDate < today && (show.status === 'confirmado' || show.status === 'aguardando');
-                });
-
-                if (pendingPastShows.length > 0) {
-                    const showToConfirm = pendingPastShows[0];
-                    itemToModifyId = showToConfirm.id;
-                    document.getElementById('confirm-status-text').textContent = `O show de ${showToConfirm.artists} em ${showToConfirm.location} (${formatDate(showToConfirm.date)}) foi realizado?`;
-                    confirmStatusModal.classList.add('is-open');
-                }
-            };
-            
-            const handleUser = async (user) => {
-                loadingAuth.classList.add('hidden');
-                if (user) {
-                    currentUser = user;
-                    await loadUserSettings(user.uid);
-                    
-                    loginScreen.style.display = 'none';
-                    appContent.style.display = 'block';
-                    
+@@ -431,524 +428,522 @@
                     const showsCollectionPath = `artifacts/${appId}/users/${userSettings.managedBy || currentUser.uid}/shows`;
-                    
+
                     if (unsubscribeShows) unsubscribeShows();
-                    const qShows = query(collection(db, showsCollectionPath));
+
+                    let qShows;
+                    if (userSettings.managedBy) {
+                        qShows = query(collection(db, showsCollectionPath), where("isManaged", "==", true));
+                    } else {
+                        qShows = query(collection(db, showsCollectionPath));
+                    }
+
                     unsubscribeShows = onSnapshot(qShows, (querySnapshot) => {
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
@@ -488,7 +318,7 @@
                 managerToggle.checked = userSettings.isManager || false;
                 managerSettings.classList.toggle('hidden', !userSettings.isManager);
                 musicianSettings.classList.toggle('hidden', userSettings.isManager);
-                
+
                 if (userSettings.isManager) {
                     document.getElementById('artist-name-input').value = userSettings.artistName || '';
                     document.getElementById('invite-code').textContent = currentUser.uid;
@@ -502,7 +332,7 @@
                     linkForm.classList.remove('hidden');
                     managedByInfo.classList.add('hidden');
                 }
-                
+
                 const isMusician = !!userSettings.managedBy;
                 openAddModalBtn.classList.toggle('hidden', isMusician);
                 document.getElementById('open-add-setlist-modal-btn').classList.toggle('hidden', isMusician);
@@ -540,7 +370,7 @@
             });
 
             logoutBtn.addEventListener('click', () => signOut(auth));
-            
+
             addShowForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser) return;
@@ -644,7 +474,7 @@
             });
 
             cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); itemToModifyId = null; });
-            
+
             const updatePastShowStatus = async (status) => {
                 if (!currentUser || !itemToModifyId) return;
                 try {
@@ -692,7 +522,7 @@
                     calendarGrid.insertAdjacentHTML('beforeend', `<div data-date="${dateStr}" class="calendar-day p-2 cursor-pointer hover:bg-gray-700 rounded-full ${dayClass}">${day}</div>`);
                 }
             };
-            
+
             document.getElementById('prev-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1); renderCalendar(); });
             document.getElementById('next-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1); renderCalendar(); });
 
@@ -852,7 +682,7 @@
                 const artistFilter = filterArtistInput.value;
                 const locationFilter = filterLocationInput.value;
                 const dateFilter = filterDateInput.value;
-                
+
                 const agendados = allShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado').filter(show => {
                     const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter.toLowerCase());
                     const locationMatch = (show.location || '').toLowerCase().includes(locationFilter.toLowerCase());
@@ -862,7 +692,7 @@
 
                 doc.setFontSize(18);
                 doc.text("Agenda de Shows", 14, 22);
-                
+
                 let y = 40;
                 doc.setFontSize(14);
                 doc.text("Shows Agendados", 14, y);
