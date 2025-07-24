@@ -15,11 +15,13 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        // LINHA CORRIGIDA
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, deleteField } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
 
         window.firebaseApp = { initializeApp };
         window.firebaseAuth = { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
-        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where };
+        // LINHA CORRIGIDA
+        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, deleteField };
     </script>
     
     <style>
@@ -215,7 +217,8 @@
     <script type="module">
         const { initializeApp } = window.firebaseApp;
         const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
-        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where } = window.firebaseFirestore;
+        // LINHA CORRIGIDA
+        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, deleteField } = window.firebaseFirestore;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -285,9 +288,6 @@
             let topLocationsChart = null;
             let topSetlistsChart = null;
 
-            // =================================================================
-            // INÍCIO DO CÓDIGO CORRIGIDO (FUNÇÕES ADICIONADAS)
-            // =================================================================
             const openEditShowModal = (showId) => {
                 itemToModifyId = showId;
                 const show = allShows.find(s => s.id === showId);
@@ -318,7 +318,6 @@
                 const setlist = allSetlists.find(s => s.id === show.setlistId);
                 const songsHTML = setlist ? setlist.songs.split('\n').map(song => `<li class="text-gray-400 ml-4">${song}</li>`).join('') : '<p class="text-sm text-gray-500">Nenhuma setlist associada.</p>';
 
-                // Botões de ação (só aparecem para o gerente)
                 const actionButtonsHTML = !userSettings.managedBy ? `
                     <div class="flex gap-2 mt-6 border-t border-gray-700 pt-4">
                         <button id="detail-edit-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
@@ -349,11 +348,10 @@
                     ${actionButtonsHTML}
                 `;
 
-                lucide.createIcons(); // Recria os ícones do Lucide dentro do modal
+                lucide.createIcons();
 
                 showDetailsModal.classList.add('is-open');
 
-                // Adiciona eventos aos botões dentro do modal
                 document.getElementById('close-details-modal').addEventListener('click', () => showDetailsModal.classList.remove('is-open'));
                 if (!userSettings.managedBy) {
                     document.getElementById('detail-edit-btn').addEventListener('click', () => {
@@ -366,10 +364,7 @@
                     });
                 }
             };
-            // =================================================================
-            // FIM DO CÓDIGO CORRIGIDO
-            // =================================================================
-
+            
             const setupModalHTML = () => {
                 addModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="text-green-400"></i>Adicionar Novo Show</h2><form id="add-show-form" class="space-y-4"></form></div>`;
                 editModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="pencil" class="text-yellow-400"></i>Editar Show</h2><form id="edit-show-form" class="space-y-4"></form></div>`;
@@ -516,7 +511,6 @@
                     
                     if (unsubscribeShows) unsubscribeShows();
                     
-                    // A query é feita no caminho do dono dos shows (seja o próprio usuário ou o gerente)
                     const qShows = query(collection(db, showsCollectionPath));
                     
                     unsubscribeShows = onSnapshot(qShows, (querySnapshot) => {
@@ -525,7 +519,7 @@
                         renderShows();
                         renderCalendar();
                         renderDashboard();
-                        if (!userSettings.managedBy) { // Apenas o gerente confirma shows passados
+                        if (!userSettings.managedBy) {
                             checkPastShows();
                         }
                     }, (error) => {
@@ -567,12 +561,12 @@
                     if (docSnap.exists()) {
                         userSettings = docSnap.data();
                     } else {
-                        userSettings = { isManager: false, managedBy: null }; // Default settings
+                        userSettings = { isManager: false, managedBy: null };
                         await setDoc(settingsRef, userSettings);
                     }
                 } catch (error) {
                     console.error("Erro ao carregar configurações do usuário:", error);
-                    userSettings = {}; // Reset on error
+                    userSettings = {};
                 } finally {
                     updateSettingsUI();
                 }
@@ -598,7 +592,6 @@
                     linkFormEl.classList.add('hidden');
                     managedByInfo.classList.remove('hidden');
                     
-                    // Busca o nome do gerente para exibir
                     const managerSettingsRef = doc(db, `artifacts/${appId}/user_settings`, userSettings.managedBy);
                     const managerSnap = await getDoc(managerSettingsRef);
                     const managerName = managerSnap.exists() ? managerSnap.data().artistName : 'Gerente não encontrado';
@@ -613,7 +606,6 @@
                 openAddModalBtn.classList.toggle('hidden', isMusician);
                 document.getElementById('open-add-setlist-modal-btn').classList.toggle('hidden', isMusician);
                 
-                // Força a atualização da lista de shows para refletir as permissões
                 renderShows(); 
             };
 
@@ -760,7 +752,7 @@
                     views[index].classList.remove('hidden');
                     lucide.createIcons();
                     if(views[index].id === 'view-dashboard') {
-                        renderDashboard(); // Re-renderiza os gráficos quando a aba é selecionada
+                        renderDashboard();
                     }
                 });
             });
@@ -799,7 +791,11 @@
                         showsOnDay.forEach(show => {
                             const statusInfo = statusMap[show.status] || { text: '', color: ''};
                             const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
-                            calendarShowDetails.insertAdjacentHTML('beforeend', `<div class="bg-gray-800 rounded-lg p-4 cursor-pointer" onclick="openShowDetailsModal('${show.id}')"><div class="flex justify-between items-start"><p class="font-bold text-purple-300">${show.artists}</p>${statusHTML}</div><p class="text-sm text-gray-400 mt-1">${show.location}</p></div>`);
+                            const showCard = document.createElement('div');
+                            showCard.className = "bg-gray-800 rounded-lg p-4 cursor-pointer";
+                            showCard.innerHTML = `<div class="flex justify-between items-start"><p class="font-bold text-purple-300 pointer-events-none">${show.artists}</p>${statusHTML}</div><p class="text-sm text-gray-400 mt-1 pointer-events-none">${show.location}</p>`;
+                            showCard.addEventListener('click', () => openShowDetailsModal(show.id));
+                            calendarShowDetails.appendChild(showCard);
                         });
                     } else { calendarShowDetails.innerHTML = `<p class="text-center text-gray-500">Nenhum show neste dia.</p>`; }
                 }
@@ -1006,7 +1002,6 @@
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
                     await setDoc(settingsRef, { isManager }, { merge: true });
-                    // Recarrega o usuário para aplicar novas regras e UI
                     await handleUser(currentUser); 
                 } catch (err) {
                     showError("Não foi possível alterar o modo.");
@@ -1026,7 +1021,6 @@
 
             copyInviteCodeBtn.addEventListener('click', () => {
                 navigator.clipboard.writeText(currentUser.uid).then(() => {
-                    // Feedback visual temporário
                     const icon = copyInviteCodeBtn.querySelector('i');
                     icon.dataset.lucide = 'check';
                     lucide.createIcons();
@@ -1044,7 +1038,6 @@
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
                     await setDoc(settingsRef, { managedBy: managerId }, { merge: true });
-                    // Recarrega o usuário para aplicar novas regras e UI
                     await handleUser(currentUser);
                 } catch (err) {
                     showError("Não foi possível vincular a conta. Verifique o código.");
@@ -1054,16 +1047,13 @@
             unlinkBtn.addEventListener('click', async () => {
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
-                    // Usamos update para remover o campo
                     await updateDoc(settingsRef, { managedBy: deleteField() });
-                    // Recarrega o usuário para aplicar novas regras e UI
                     await handleUser(currentUser); 
                 } catch (err) {
                     showError("Não foi possível desvincular a conta.");
                 }
             });
 
-            // Listener para fechar modais clicando fora
             [addModal, editModal, deleteModal, confirmStatusModal, setlistModal, showDetailsModal].forEach(modal => {
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
