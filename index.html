@@ -140,8 +140,12 @@
                     <canvas id="shows-per-month-chart"></canvas>
                 </div>
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Artistas Mais Frequentes</h3>
-                    <canvas id="top-artists-chart"></canvas>
+                    <h3 class="text-xl font-semibold mb-4">Locais Mais Frequentes</h3>
+                    <canvas id="top-locations-chart"></canvas>
+                </div>
+                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Setlists Mais Usadas</h3>
+                    <canvas id="top-setlists-chart"></canvas>
                 </div>
             </div>
         </div>
@@ -216,13 +220,14 @@
             let allShows = [];
             let allSetlists = [];
             let currentUser = null;
-            let itemToModifyId = null; 
+            let itemToModifyId = null;
             let itemTypeToDelete = '';
             let unsubscribeShows = null;
             let unsubscribeSetlists = null;
             let currentCalendarDate = new Date();
             let showsPerMonthChart = null;
-            let topArtistsChart = null;
+            let topLocationsChart = null;
+            let topSetlistsChart = null;
 
             const setupModalHTML = () => {
                 addModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="text-green-400"></i>Adicionar Novo Show</h2><form id="add-show-form" class="space-y-4"></form></div>`;
@@ -259,6 +264,7 @@
             const openAddSetlistModalBtn = document.getElementById('open-add-setlist-modal-btn');
             const setlistForm = document.getElementById('setlist-form');
             const cancelSetlistBtn = document.getElementById('cancel-setlist-btn');
+            const exportPdfBtn = document.getElementById('export-pdf-btn');
 
             const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
             const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
@@ -455,7 +461,7 @@
             filterDateInput.addEventListener('input', renderShows);
 
             openAddModalBtn.addEventListener('click', () => addModal.classList.add('is-open'));
-            document.getElementById('cancel-add-btn').addEventListener('click', () => addModal.classList.remove('is-open'));
+            cancelAddBtn.addEventListener('click', () => addModal.classList.remove('is-open'));
 
             const allListsContainer = document.getElementById('app-content');
             allListsContainer.addEventListener('click', (e) => {
@@ -463,14 +469,14 @@
                 const editBtn = e.target.closest('.edit-btn');
                 if (deleteBtn) {
                     itemToModifyId = deleteBtn.dataset.id;
-                    itemTypeToDelete = deleteBtn.closest('[data-type]') ? 'setlist' : 'show';
+                    itemTypeToDelete = deleteBtn.closest('[data-type="setlist-card"]') ? 'setlist' : 'show';
                     const text = itemTypeToDelete === 'setlist' ? 'Tem certeza que deseja excluir esta setlist?' : 'Tem certeza que deseja excluir este show?';
                     document.getElementById('delete-confirm-text').textContent = text;
                     deleteModal.classList.add('is-open');
                 }
                 if (editBtn) {
                     itemToModifyId = editBtn.dataset.id;
-                    if (editBtn.closest('[data-type="setlist"]')) {
+                    if (editBtn.closest('[data-type="setlist-card"]')) {
                         openSetlistModal(itemToModifyId);
                     } else {
                         const showData = allShows.find(s => s.id === itemToModifyId);
@@ -559,14 +565,78 @@
             const monthYearTitle = document.getElementById('month-year-title');
             const calendarShowDetails = document.getElementById('calendar-show-details');
 
-            const renderCalendar = () => { /* ... */ };
+            const renderCalendar = () => {
+                calendarGrid.innerHTML = '';
+                const month = currentCalendarDate.getMonth();
+                const year = currentCalendarDate.getFullYear();
+                monthYearTitle.textContent = `${currentCalendarDate.toLocaleString('pt-BR', { month: 'long' })} ${year}`;
+                const firstDayOfMonth = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for (let i = 0; i < firstDayOfMonth; i++) { calendarGrid.insertAdjacentHTML('beforeend', '<div></div>'); }
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const showsOnDay = allShows.filter(s => s.date === dateStr);
+                    const dayClass = showsOnDay.length > 0 ? 'has-event' : '';
+                    calendarGrid.insertAdjacentHTML('beforeend', `<div data-date="${dateStr}" class="calendar-day p-2 cursor-pointer hover:bg-gray-700 rounded-full ${dayClass}">${day}</div>`);
+                }
+            };
+            
             document.getElementById('prev-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1); renderCalendar(); });
             document.getElementById('next-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1); renderCalendar(); });
-            calendarGrid.addEventListener('click', (e) => { /* ... */ });
 
-            const renderDashboard = () => { renderShowsPerMonth(); renderTopArtists(); };
-            const renderShowsPerMonth = () => { /* ... */ };
-            const renderTopArtists = () => { /* ... */ };
+            calendarGrid.addEventListener('click', (e) => {
+                if (e.target.classList.contains('calendar-day') && e.target.dataset.date) {
+                    document.querySelectorAll('.calendar-day.selected').forEach(el => el.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    const dateStr = e.target.dataset.date;
+                    const showsOnDay = allShows.filter(s => s.date === dateStr);
+                    calendarShowDetails.innerHTML = '';
+                    if (showsOnDay.length > 0) {
+                        showsOnDay.forEach(show => {
+                            const statusInfo = statusMap[show.status] || { text: '', color: ''};
+                            const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
+                            calendarShowDetails.insertAdjacentHTML('beforeend', `<div class="bg-gray-800 rounded-lg p-4"><div class="flex justify-between items-start"><p class="font-bold text-purple-300">${show.artists}</p>${statusHTML}</div><p class="text-sm text-gray-400 mt-1">${show.location}</p></div>`);
+                        });
+                    } else { calendarShowDetails.innerHTML = `<p class="text-center text-gray-500">Nenhum show neste dia.</p>`; }
+                }
+            });
+
+            const renderDashboard = () => {
+                renderShowsPerMonth();
+                renderTopArtists();
+            };
+
+            const renderShowsPerMonth = () => {
+                const ctx = document.getElementById('shows-per-month-chart').getContext('2d');
+                const labels = [];
+                const data = [];
+                const now = new Date();
+                for (let i = 11; i >= 0; i--) {
+                    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    labels.push(date.toLocaleString('pt-BR', { month: 'short', year: '2-digit' }));
+                    const monthShows = allShows.filter(s => {
+                        const showDate = new Date(s.date + 'T00:00:00');
+                        return showDate.getFullYear() === date.getFullYear() && showDate.getMonth() === date.getMonth();
+                    });
+                    data.push(monthShows.length);
+                }
+                if (showsPerMonthChart) showsPerMonthChart.destroy();
+                showsPerMonthChart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Nº de Shows', data, backgroundColor: '#8b5cf6' }] }, options: { scales: { y: { beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 } }, x: { ticks: { color: '#9ca3af' } } }, plugins: { legend: { labels: { color: '#9ca3af' } } } } });
+            };
+
+            const renderTopArtists = () => {
+                const ctx = document.getElementById('top-artists-chart').getContext('2d');
+                const artistCounts = {};
+                allShows.forEach(show => {
+                    const artists = (show.artists || '').split(',').map(a => a.trim()).filter(a => a);
+                    artists.forEach(artist => { artistCounts[artist] = (artistCounts[artist] || 0) + 1; });
+                });
+                const sortedArtists = Object.entries(artistCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                const labels = sortedArtists.map(a => a[0]);
+                const data = sortedArtists.map(a => a[1]);
+                if (topArtistsChart) topArtistsChart.destroy();
+                topArtistsChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#6d28d9', '#5b21b6'] }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } } } });
+            };
 
             // Lógica de Setlists
             const setlistsList = document.getElementById('setlists-list');
@@ -578,7 +648,7 @@
                 allSetlists.forEach(setlist => {
                     const setlistElement = document.createElement('div');
                     setlistElement.className = "bg-gray-800 rounded-lg p-5 shadow-md";
-                    setlistElement.dataset.type = 'setlist';
+                    setlistElement.dataset.type = 'setlist-card';
                     const songsHTML = (setlist.songs || '').split('\n').map(song => `<li class="text-gray-400">${song}</li>`).join('');
                     setlistElement.innerHTML = `
                         <div class="flex justify-between items-start">
@@ -648,8 +718,7 @@
                 });
             };
 
-            // Exportar PDF
-            document.getElementById('export-pdf-btn').addEventListener('click', () => {
+            exportPdfBtn.addEventListener('click', () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 const artistFilter = filterArtistInput.value;
