@@ -362,8 +362,8 @@
                 return `${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}, ${formattedDate}`;
             };
             // --- Funções de Notificação ---
-const notifyLinkedMusicians = async (message) => {
-                   if (!currentUser || !userSettings.isManager) return;
+const notifyLinkedMusicians = async (message, showDate, showTime) => {
+                if (!currentUser || !userSettings.isManager) return;
                 try {
                     const followersPath = `artifacts/${appId}/users/${currentUser.uid}/followers`;
                     const querySnapshot = await getDocs(collection(db, followersPath));
