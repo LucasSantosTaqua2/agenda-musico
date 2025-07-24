@@ -363,9 +363,10 @@
             };
             
             // --- Funções de Notificação ---
-            const notifyLinkedMusicians = async (message) => {
+const notifyLinkedMusicians = async (message) => {
                 if (!currentUser || !userSettings.isManager) return;
                 try {
+                    // Acessa a própria subcoleção de seguidores para encontrar os músicos
                     const followersPath = `artifacts/${appId}/users/${currentUser.uid}/followers`;
                     const querySnapshot = await getDocs(collection(db, followersPath));
 
@@ -376,13 +377,13 @@
                             read: false,
                             timestamp: serverTimestamp()
                         };
+                        // Adiciona a notificação na subcoleção do músico
                         addDoc(collection(db, `artifacts/${appId}/users/${musicianId}/notifications`), notification);
                     });
                 } catch (error) {
                     console.error("Erro ao tentar notificar músicos:", error);
                 }
             };
-
             const renderNotifications = () => {
                 notificationsList.innerHTML = '';
                 const unreadCount = allNotifications.filter(n => !n.read).length;
@@ -1253,17 +1254,21 @@ setlistForm.addEventListener('submit', async (e) => {
                 });
             });
 
-            linkForm.addEventListener('submit', async (e) => {
+linkForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const managerId = document.getElementById('manager-code-input').value.trim();
                 if (!managerId || !currentUser) return;
                 
                 const musicianSettingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
+                // NOVO: Referência para a lista de seguidores do gerente
                 const followerRef = doc(db, `artifacts/${appId}/users/${managerId}/followers`, currentUser.uid);
 
                 try {
+                    // Passo 1: O músico atualiza seu próprio status
                     await setDoc(musicianSettingsRef, { managedBy: managerId }, { merge: true });
+                    // NOVO Passo 2: O músico se adiciona na lista de seguidores do gerente
                     await setDoc(followerRef, { joinedAt: serverTimestamp() });
+                    
                     await handleUser(currentUser);
                 } catch (err) {
                     console.error("Erro ao vincular conta:", err);
@@ -1271,15 +1276,19 @@ setlistForm.addEventListener('submit', async (e) => {
                 }
             });
 
-            unlinkBtn.addEventListener('click', async () => {
+unlinkBtn.addEventListener('click', async () => {
                 if (!currentUser || !userSettings.managedBy) return;
 
                 const musicianSettingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
+                // NOVO: Referência ao seu registro na lista de seguidores do gerente
                 const followerRef = doc(db, `artifacts/${appId}/users/${userSettings.managedBy}/followers`, currentUser.uid);
 
                 try {
+                    // Passo 1: Remove o vínculo do seu próprio perfil
                     await updateDoc(musicianSettingsRef, { managedBy: deleteField() });
+                    // NOVO Passo 2: Se remove da lista de seguidores do gerente
                     await deleteDoc(followerRef);
+                    
                     await handleUser(currentUser); 
                 } catch (err) {
                     showError("Não foi possível desvincular a conta.");
