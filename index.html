@@ -579,8 +579,8 @@
 
             const allListsContainer = document.getElementById('app-content');
             allListsContainer.addEventListener('click', (e) => {
-                const showCard = e.target.closest('.show-card');
-                if (showCard) {
+                const showCard = e.target.closest('[data-id]');
+                if (showCard && (showCard.parentElement.id === 'shows-list-agendados' || showCard.parentElement.id === 'shows-list-realizados')) {
                     openShowDetailsModal(showCard.dataset.id);
                     return;
                 }
