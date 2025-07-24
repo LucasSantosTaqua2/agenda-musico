@@ -15,12 +15,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
-        // LINHA CORRIGIDA
         import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, deleteField } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
 
         window.firebaseApp = { initializeApp };
         window.firebaseAuth = { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
-        // LINHA CORRIGIDA
         window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, deleteField };
     </script>
     
@@ -217,7 +215,6 @@
     <script type="module">
         const { initializeApp } = window.firebaseApp;
         const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
-        // LINHA CORRIGIDA
         const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, deleteField } = window.firebaseFirestore;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -309,15 +306,71 @@
                 deleteModal.classList.add('is-open');
             };
 
+            // NOVA FUNÇÃO PARA DOWNLOAD DE PDF
+            const downloadSetlistAsPDF = (setlistId) => {
+                const setlist = allSetlists.find(s => s.id === setlistId);
+                if (!setlist) {
+                    showError("Setlist não encontrada para download.");
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(22);
+                doc.text(setlist.name, 14, 22);
+
+                if (userSettings && userSettings.artistName) {
+                    doc.setFontSize(14);
+                    doc.setTextColor(100);
+                    doc.text(userSettings.artistName, 14, 30);
+                }
+
+                const songs = setlist.songs.split('\n');
+                doc.setFontSize(12);
+                doc.setTextColor(0);
+                let y = 45;
+
+                songs.forEach((song, index) => {
+                    if (y > 280) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    doc.text(`${index + 1}. ${song.trim()}`, 14, y);
+                    y += 10;
+                });
+
+                const fileName = `Setlist-${setlist.name.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+                doc.save(fileName);
+            };
+
+            // FUNÇÃO ATUALIZADA
             const openShowDetailsModal = (showId) => {
                 const show = allShows.find(s => s.id === showId);
                 if (!show) return;
 
                 const detailsContent = document.getElementById('show-details-content');
                 const statusInfo = statusMap[show.status] || { text: '', color: ''};
+                
                 const setlist = allSetlists.find(s => s.id === show.setlistId);
-                const songsHTML = setlist ? setlist.songs.split('\n').map(song => `<li class="text-gray-400 ml-4">${song}</li>`).join('') : '<p class="text-sm text-gray-500">Nenhuma setlist associada.</p>';
+                let setlistHTML = '';
 
+                if (setlist) {
+                    setlistHTML = `
+                        <p class="font-semibold text-gray-300 flex items-center gap-2">
+                            <i data-lucide="list-music" class="w-5 h-5"></i> Setlist: ${setlist.name}
+                        </p>
+                        <button id="download-setlist-pdf-btn" class="mt-2 w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+                            <i data-lucide="download" class="w-5 h-5"></i> Baixar Setlist em PDF
+                        </button>
+                    `;
+                } else {
+                    setlistHTML = `
+                        <p class="font-semibold text-gray-300 flex items-center gap-2"><i data-lucide="list-music" class="w-5 h-5"></i> Setlist</p>
+                        <p class="text-sm text-gray-500 mt-1">Nenhuma setlist associada.</p>
+                    `;
+                }
+                
                 const actionButtonsHTML = !userSettings.managedBy ? `
                     <div class="flex gap-2 mt-6 border-t border-gray-700 pt-4">
                         <button id="detail-edit-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
@@ -340,19 +393,21 @@
                         
                         ${show.observacoes ? `<div class="pt-2"><p class="font-semibold text-gray-300">Observações:</p><p class="text-gray-400 whitespace-pre-wrap">${show.observacoes}</p></div>` : ''}
 
-                        <div class="pt-2">
-                            <p class="font-semibold text-gray-300 flex items-center gap-2"><i data-lucide="list-music" class="w-5 h-5"></i> Setlist: ${setlist ? setlist.name : ''}</p>
-                            <ul class="mt-1">${songsHTML}</ul>
-                        </div>
+                        <div class="pt-2">${setlistHTML}</div>
                     </div>
                     ${actionButtonsHTML}
                 `;
 
                 lucide.createIcons();
-
                 showDetailsModal.classList.add('is-open');
 
                 document.getElementById('close-details-modal').addEventListener('click', () => showDetailsModal.classList.remove('is-open'));
+                
+                const downloadBtn = document.getElementById('download-setlist-pdf-btn');
+                if (downloadBtn) {
+                    downloadBtn.addEventListener('click', () => downloadSetlistAsPDF(setlist.id));
+                }
+
                 if (!userSettings.managedBy) {
                     document.getElementById('detail-edit-btn').addEventListener('click', () => {
                         showDetailsModal.classList.remove('is-open');
@@ -497,7 +552,7 @@
                 }
             };
             
-           const handleUser = async (user) => {
+            const handleUser = async (user) => {
                 loadingAuth.classList.add('hidden');
                 if (user) {
                     currentUser = user;
@@ -511,17 +566,12 @@
                     
                     if (unsubscribeShows) unsubscribeShows();
                     
-                    // --- INÍCIO DA CORREÇÃO ---
-                    // Agora, a query é montada de forma condicional
                     let qShows;
                     if (userSettings.managedBy) {
-                        // Se for um músico, pede apenas os shows marcados como "managed"
                         qShows = query(collection(db, showsCollectionPath), where("isManaged", "==", true));
                     } else {
-                        // Se for o gerente (ou um usuário normal), pede todos os seus shows
                         qShows = query(collection(db, showsCollectionPath));
                     }
-                    // --- FIM DA CORREÇÃO ---
 
                     unsubscribeShows = onSnapshot(qShows, (querySnapshot) => {
                         allShows = [];
@@ -541,7 +591,6 @@
                     const setlistsCollectionPath = `artifacts/${appId}/users/${setlistOwnerId}/setlists`;
                     if (unsubscribeSetlists) unsubscribeSetlists();
 
-                    // Para as setlists, a regra não exige filtro, então a query pode ser simples
                     const qSetlists = query(collection(db, setlistsCollectionPath), orderBy("name", "asc"));
                     
                     unsubscribeSetlists = onSnapshot(qSetlists, (querySnapshot) => {
@@ -566,6 +615,7 @@
                     renderShows();
                 }
             };
+
             const loadUserSettings = async (uid) => {
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
                 try {
@@ -697,7 +747,7 @@
 
             confirmDeleteBtn.addEventListener('click', async () => {
                 if (!currentUser || !itemToModifyId) return;
-                const ownerId = userSettings.managedBy || currentUser.uid;
+                const ownerId = currentUser.uid; // Only owners can delete
                 const collectionName = itemTypeToDelete === 'setlist' ? 'setlists' : 'shows';
                 try {
                     const docPath = `artifacts/${appId}/users/${ownerId}/${collectionName}/${itemToModifyId}`;
@@ -725,7 +775,7 @@
                     isManaged: userSettings.isManager || false
                 };
                 try {
-                    const ownerId = userSettings.managedBy || currentUser.uid;
+                    const ownerId = currentUser.uid; // Only owners can edit
                     const showDocPath = `artifacts/${appId}/users/${ownerId}/shows/${itemToModifyId}`;
                     await updateDoc(doc(db, showDocPath), updatedData);
                     editModal.classList.remove('is-open');
@@ -740,7 +790,7 @@
             const updatePastShowStatus = async (status) => {
                 if (!currentUser || !itemToModifyId) return;
                 try {
-                    const ownerId = userSettings.managedBy || currentUser.uid;
+                    const ownerId = currentUser.uid;
                     const showDocPath = `artifacts/${appId}/users/${ownerId}/shows/${itemToModifyId}`;
                     await updateDoc(doc(db, showDocPath), { status: status });
                     confirmStatusModal.classList.remove('is-open');
