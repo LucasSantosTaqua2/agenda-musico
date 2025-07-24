@@ -135,6 +135,7 @@
     <div id="add-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="edit-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
+    <div id="confirm-status-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
 
     <script type="module">
         const { initializeApp } = window.firebaseApp;
@@ -180,6 +181,7 @@
             const openAddModalBtn = document.getElementById('open-add-modal-btn');
             const deleteModal = document.getElementById('confirmation-modal');
             const editModal = document.getElementById('edit-modal');
+            const confirmStatusModal = document.getElementById('confirm-status-modal');
 
             const tabAgenda = document.getElementById('tab-agenda');
             const tabCalendario = document.getElementById('tab-calendario');
@@ -200,12 +202,13 @@
                 addModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="text-green-400"></i>Adicionar Novo Show</h2><form id="add-show-form" class="grid grid-cols-1 md:grid-cols-2 gap-4"></form></div>`;
                 editModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="pencil" class="text-yellow-400"></i>Editar Show</h2><form id="edit-show-form" class="grid grid-cols-1 md:grid-cols-2 gap-4"></form></div>`;
                 deleteModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl"><i data-lucide="alert-triangle" class="mx-auto text-yellow-400 w-12 h-12 mb-4"></i><p class="text-lg text-gray-200 mb-6">Tem certeza que deseja excluir este show?</p><div class="flex justify-center gap-4"><button id="cancel-delete-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button><button id="confirm-delete-btn" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg">Confirmar</button></div></div>`;
+                confirmStatusModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl"><i data-lucide="help-circle" class="mx-auto text-blue-400 w-12 h-12 mb-4"></i><h2 class="text-xl font-semibold mb-2">Confirmar Show Passado</h2><p id="confirm-status-text" class="text-gray-300 mb-6"></p><div class="flex flex-col gap-3"><button id="confirm-realizado-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg">Sim, foi Realizado</button><button id="confirm-cancelado-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg">Não, foi Cancelado</button></div></div>`;
                 
                 const modalFormFieldsHTML = (prefix) => `
                     <div><label for="${prefix}-date" class="text-sm font-medium text-gray-400 mb-1">Data</label><input id="${prefix}-date" type="date" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
                     <div><label for="${prefix}-artists" class="text-sm font-medium text-gray-400 mb-1">Artistas</label><input id="${prefix}-artists" type="text" placeholder="Ex: João Silva" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
                     <div class="md:col-span-2"><label for="${prefix}-location" class="text-sm font-medium text-gray-400 mb-1">Local</label><input id="${prefix}-location" type="text" placeholder="Ex: Virada Cultural, SP" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                    <div><label for="${prefix}-status" class="text-sm font-medium text-gray-400 mb-1">Status</label><select id="${prefix}-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option><option value="cancelado">Cancelado</option></select></div>
+                    <div><label for="${prefix}-status" class="text-sm font-medium text-gray-400 mb-1">Status</label><select id="${prefix}-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option><option value="cancelado">Cancelado</option><option value="realizado">Realizado</option></select></div>
                     <div class="md:col-span-2"><label for="${prefix}-observacoes" class="text-sm font-medium text-gray-400 mb-1">Observações</label><textarea id="${prefix}-observacoes" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></textarea></div>
                     <div class="md:col-span-2 flex justify-end gap-4 mt-4"><button type="button" id="cancel-${prefix}-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button><button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">${prefix === 'add' ? 'Adicionar' : 'Salvar'}</button></div>`;
 
@@ -221,6 +224,8 @@
             const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
             const editShowForm = document.getElementById('edit-show-form');
             const cancelEditBtn = document.getElementById('cancel-edit-btn');
+            const confirmRealizadoBtn = document.getElementById('confirm-realizado-btn');
+            const confirmCanceladoBtn = document.getElementById('confirm-cancelado-btn');
 
             const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
             const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
@@ -229,7 +234,8 @@
             const statusMap = {
                 confirmado: { text: 'Confirmado', color: 'bg-green-500/20 text-green-300' },
                 aguardando: { text: 'Aguardando', color: 'bg-yellow-500/20 text-yellow-300' },
-                cancelado: { text: 'Cancelado', color: 'bg-red-500/20 text-red-300' }
+                cancelado: { text: 'Cancelado', color: 'bg-red-500/20 text-red-300' },
+                realizado: { text: 'Realizado', color: 'bg-blue-500/20 text-blue-300' }
             };
 
             const renderShows = () => {
@@ -249,7 +255,7 @@
                     const showElement = document.createElement('div');
                     showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4";
                     const statusInfo = statusMap[show.status] || { text: '', color: ''};
-                    const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '<div></div>';
+                    const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
                     showElement.innerHTML = `
                         <div class="flex justify-between items-start w-full">
                             <div>
@@ -259,7 +265,7 @@
                             </div>
                             ${statusHTML}
                         </div>
-                        ${show.observacoes ? `<div class="w-full mt-2 pt-2 border-t border-gray-700 text-sm text-gray-400"><p class="font-semibold text-gray-300">Observações:</p><p>${show.observacoes}</p></div>` : ''}
+                        ${show.observacoes ? `<div class="w-full mt-2 pt-2 border-t border-gray-700 text-sm text-gray-400"><p class="font-semibold text-gray-300">Observações:</p><p>${show.observacoes.replace(/\n/g, '<br>')}</p></div>` : ''}
                         <div class="flex justify-end items-center w-full mt-2">
                             <div class="flex gap-2">
                                 <button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
@@ -269,6 +275,22 @@
                     showsList.appendChild(showElement);
                 });
                 lucide.createIcons();
+            };
+            
+            const checkPastShows = () => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); 
+                const pendingPastShows = allShows.filter(show => {
+                    const showDate = new Date(show.date + 'T00:00:00');
+                    return showDate < today && (show.status === 'confirmado' || show.status === 'aguardando');
+                });
+
+                if (pendingPastShows.length > 0) {
+                    const showToConfirm = pendingPastShows[0];
+                    showIdToModify = showToConfirm.id;
+                    document.getElementById('confirm-status-text').textContent = `O show de ${showToConfirm.artists} em ${showToConfirm.location} (${formatDate(showToConfirm.date)}) foi realizado?`;
+                    confirmStatusModal.classList.add('is-open');
+                }
             };
             
             const handleUser = (user) => {
@@ -286,6 +308,7 @@
                         renderShows();
                         renderCalendar();
                         renderDashboard();
+                        checkPastShows();
                     }, err => {
                         console.error("Erro ao buscar shows:", err);
                         showError("Não foi possível carregar os shows.");
@@ -357,7 +380,7 @@
             filterDateInput.addEventListener('input', renderShows);
 
             openAddModalBtn.addEventListener('click', () => addModal.classList.add('is-open'));
-            document.getElementById('cancel-add-btn').addEventListener('click', () => addModal.classList.remove('is-open'));
+            cancelAddBtn.addEventListener('click', () => addModal.classList.remove('is-open'));
 
             showsList.addEventListener('click', (e) => {
                 const deleteBtn = e.target.closest('.delete-btn');
@@ -416,6 +439,22 @@
 
             cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); showIdToModify = null; });
             
+            const updatePastShowStatus = async (status) => {
+                if (!currentUser || !showIdToModify) return;
+                try {
+                    const showDocPath = `artifacts/${appId}/users/${currentUser.uid}/shows/${showIdToModify}`;
+                    await updateDoc(doc(db, showDocPath), { status: status });
+                    confirmStatusModal.classList.remove('is-open');
+                    showIdToModify = null;
+                    // A re-renderização e a próxima verificação acontecerão automaticamente pelo onSnapshot
+                } catch (err) {
+                    showError("Não foi possível atualizar o status do show.");
+                }
+            };
+
+            confirmRealizadoBtn.addEventListener('click', () => updatePastShowStatus('realizado'));
+            confirmCanceladoBtn.addEventListener('click', () => updatePastShowStatus('cancelado'));
+
             // Lógica das Abas
             const tabs = [tabAgenda, tabCalendario, tabDashboard];
             const views = [viewAgenda, viewCalendario, viewDashboard];
@@ -439,14 +478,9 @@
                 const month = currentCalendarDate.getMonth();
                 const year = currentCalendarDate.getFullYear();
                 monthYearTitle.textContent = `${currentCalendarDate.toLocaleString('pt-BR', { month: 'long' })} ${year}`;
-
                 const firstDayOfMonth = new Date(year, month, 1).getDay();
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-                for (let i = 0; i < firstDayOfMonth; i++) {
-                    calendarGrid.insertAdjacentHTML('beforeend', '<div></div>');
-                }
-
+                for (let i = 0; i < firstDayOfMonth; i++) { calendarGrid.insertAdjacentHTML('beforeend', '<div></div>'); }
                 for (let day = 1; day <= daysInMonth; day++) {
                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const showsOnDay = allShows.filter(s => s.date === dateStr);
@@ -455,14 +489,8 @@
                 }
             };
             
-            document.getElementById('prev-month-btn').addEventListener('click', () => {
-                currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-                renderCalendar();
-            });
-            document.getElementById('next-month-btn').addEventListener('click', () => {
-                currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-                renderCalendar();
-            });
+            document.getElementById('prev-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1); renderCalendar(); });
+            document.getElementById('next-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1); renderCalendar(); });
 
             calendarGrid.addEventListener('click', (e) => {
                 if (e.target.classList.contains('calendar-day') && e.target.dataset.date) {
@@ -475,19 +503,9 @@
                         showsOnDay.forEach(show => {
                             const statusInfo = statusMap[show.status] || { text: '', color: ''};
                             const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
-                            calendarShowDetails.insertAdjacentHTML('beforeend', `
-                                <div class="bg-gray-800 rounded-lg p-4">
-                                    <div class="flex justify-between items-start">
-                                        <p class="font-bold text-purple-300">${show.artists}</p>
-                                        ${statusHTML}
-                                    </div>
-                                    <p class="text-sm text-gray-400 mt-1">${show.location}</p>
-                                </div>
-                            `);
+                            calendarShowDetails.insertAdjacentHTML('beforeend', `<div class="bg-gray-800 rounded-lg p-4"><div class="flex justify-between items-start"><p class="font-bold text-purple-300">${show.artists}</p>${statusHTML}</div><p class="text-sm text-gray-400 mt-1">${show.location}</p></div>`);
                         });
-                    } else {
-                         calendarShowDetails.innerHTML = `<p class="text-center text-gray-500">Nenhum show neste dia.</p>`;
-                    }
+                    } else { calendarShowDetails.innerHTML = `<p class="text-center text-gray-500">Nenhum show neste dia.</p>`; }
                 }
             });
 
@@ -512,31 +530,21 @@
                     data.push(monthShows.length);
                 }
                 if (showsPerMonthChart) showsPerMonthChart.destroy();
-                showsPerMonthChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels, datasets: [{ label: 'Nº de Shows', data, backgroundColor: '#8b5cf6' }] },
-                    options: { scales: { y: { beginAtZero: true, ticks: { color: '#9ca3af' } }, x: { ticks: { color: '#9ca3af' } } }, plugins: { legend: { labels: { color: '#9ca3af' } } } }
-                });
+                showsPerMonthChart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Nº de Shows', data, backgroundColor: '#8b5cf6' }] }, options: { scales: { y: { beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 } }, x: { ticks: { color: '#9ca3af' } } }, plugins: { legend: { labels: { color: '#9ca3af' } } } } });
             };
 
             const renderTopArtists = () => {
                 const ctx = document.getElementById('top-artists-chart').getContext('2d');
                 const artistCounts = {};
                 allShows.forEach(show => {
-                    const artists = show.artists.split(',').map(a => a.trim());
-                    artists.forEach(artist => {
-                        artistCounts[artist] = (artistCounts[artist] || 0) + 1;
-                    });
+                    const artists = (show.artists || '').split(',').map(a => a.trim()).filter(a => a);
+                    artists.forEach(artist => { artistCounts[artist] = (artistCounts[artist] || 0) + 1; });
                 });
                 const sortedArtists = Object.entries(artistCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
                 const labels = sortedArtists.map(a => a[0]);
                 const data = sortedArtists.map(a => a[1]);
                 if (topArtistsChart) topArtistsChart.destroy();
-                topArtistsChart = new Chart(ctx, {
-                    type: 'pie',
-                    data: { labels, datasets: [{ data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#6d28d9', '#5b21b6'] }] },
-                    options: { plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } } }
-                });
+                topArtistsChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#6d28d9', '#5b21b6'] }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } } } });
             };
 
         });
