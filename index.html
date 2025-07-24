@@ -9,12 +9,26 @@
     <link id="manifest-link" rel="manifest">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+
+        window.firebaseApp = { initializeApp };
+        window.firebaseAuth = { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
+        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy };
+    </script>
     
     <style>
         body { background-color: #111827; }
         .modal { display: none; }
         .modal.is-open { display: flex; }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+        .tab-active { border-color: #8b5cf6; color: #c4b5fd; }
+        .calendar-day.has-event { background-color: #8b5cf6; color: white; border-radius: 50%; font-weight: bold; }
+        .calendar-day.selected { background-color: #c4b5fd; color: #111827; }
     </style>
 </head>
 <body class="text-white font-sans">
@@ -24,7 +38,6 @@
             <i data-lucide="music" class="text-purple-400 w-16 h-16 mx-auto mb-4"></i>
             <h1 class="text-4xl font-bold text-gray-100 mb-2">Agenda de Shows</h1>
             <p class="text-gray-400 mb-8">Crie uma conta ou faça login para continuar.</p>
-            
             <form id="login-form" class="text-left">
                 <div id="login-error" class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm hidden"></div>
                 <div>
@@ -60,25 +73,57 @@
                 </button>
             </header>
             <div id="error-banner" class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-6 hidden"></div>
-            <div id="notification-banner" class="bg-blue-900/50 border border-blue-700 text-blue-200 p-4 rounded-lg mb-6 hidden items-center justify-between gap-4">
-                <p class="text-sm">Para receber lembretes dos shows, você precisa ativar as notificações.</p>
-                <button id="enable-notifications-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Ativar</button>
+            
+            <div class="border-b border-gray-700 mb-6">
+                <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                    <button id="tab-agenda" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent tab-active">Agenda</button>
+                    <button id="tab-calendario" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Calendário</button>
+                    <button id="tab-dashboard" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Dashboard</button>
+                </nav>
             </div>
-            <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8">
-                <h3 class="text-lg font-semibold mb-3 flex items-center gap-2"><i data-lucide="filter" class="w-5 h-5"></i>Filtros</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                    <input id="filter-location" type="text" placeholder="Filtrar por local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                    <input id="filter-date" type="date" class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+
+            <div id="view-agenda">
+                <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8">
+                    <h3 class="text-lg font-semibold mb-3 flex items-center gap-2"><i data-lucide="filter" class="w-5 h-5"></i>Filtros</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        <input id="filter-location" type="text" placeholder="Filtrar por local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        <input id="filter-date" type="date" class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                    </div>
+                </div>
+                <div>
+                    <div id="shows-list" class="space-y-4"></div>
+                    <div id="loading-state" class="text-center text-gray-400 py-8">Carregando shows...</div>
+                    <div id="empty-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
+                        <p class="text-gray-400">Nenhum show encontrado.</p>
+                        <p class="text-gray-500 text-sm mt-2">Clique no botão '+' para adicionar um show.</p>
+                    </div>
                 </div>
             </div>
-            <div>
-                <h2 class="text-2xl font-bold mb-4 text-gray-200">Agenda</h2>
-                <div id="shows-list" class="space-y-4"></div>
-                <div id="loading-state" class="text-center text-gray-400 py-8">Carregando shows...</div>
-                <div id="empty-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
-                    <p class="text-gray-400">Nenhum show encontrado.</p>
-                    <p class="text-gray-500 text-sm mt-2">Clique no botão '+' para adicionar um show.</p>
+
+            <div id="view-calendario" class="hidden">
+                 <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-700"><i data-lucide="chevron-left"></i></button>
+                        <h2 id="month-year-title" class="text-xl font-bold"></h2>
+                        <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-700"><i data-lucide="chevron-right"></i></button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center font-semibold text-xs text-gray-400 mb-2">
+                        <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center"></div>
+                 </div>
+                 <div id="calendar-show-details" class="mt-6 space-y-4"></div>
+            </div>
+
+            <div id="view-dashboard" class="hidden space-y-8">
+                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Shows por Mês (Últimos 12 meses)</h3>
+                    <canvas id="shows-per-month-chart"></canvas>
+                </div>
+                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Artistas Mais Frequentes</h3>
+                    <canvas id="top-artists-chart"></canvas>
                 </div>
             </div>
         </div>
@@ -92,19 +137,13 @@
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        const { initializeApp } = window.firebaseApp;
+        const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
+        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy } = window.firebaseFirestore;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(registration => console.log('Service Worker registrado com sucesso:', registration))
-                    .catch(error => console.error('Falha ao registrar Service Worker:', error));
-            }
-
+            
             const firebaseConfig = {
                 apiKey: "AIzaSyBIPPMg_OUyC2AKmJpy36ljJCjdvZVUxuE",
                 authDomain: "minha-agenda-de-shows.firebaseapp.com",
@@ -136,18 +175,26 @@
             const filterLocationInput = document.getElementById('filter-location');
             const filterDateInput = document.getElementById('filter-date');
             const errorBanner = document.getElementById('error-banner');
-            const notificationBanner = document.getElementById('notification-banner');
-            const enableNotificationsBtn = document.getElementById('enable-notifications-btn');
             
             const addModal = document.getElementById('add-modal');
             const openAddModalBtn = document.getElementById('open-add-modal-btn');
             const deleteModal = document.getElementById('confirmation-modal');
             const editModal = document.getElementById('edit-modal');
+
+            const tabAgenda = document.getElementById('tab-agenda');
+            const tabCalendario = document.getElementById('tab-calendario');
+            const tabDashboard = document.getElementById('tab-dashboard');
+            const viewAgenda = document.getElementById('view-agenda');
+            const viewCalendario = document.getElementById('view-calendario');
+            const viewDashboard = document.getElementById('view-dashboard');
             
             let allShows = [];
             let currentUser = null;
             let showIdToModify = null;
             let unsubscribeShows = null;
+            let currentCalendarDate = new Date();
+            let showsPerMonthChart = null;
+            let topArtistsChart = null;
 
             const setupModalHTML = () => {
                 addModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="text-green-400"></i>Adicionar Novo Show</h2><form id="add-show-form" class="grid grid-cols-1 md:grid-cols-2 gap-4"></form></div>`;
@@ -158,8 +205,8 @@
                     <div><label for="${prefix}-date" class="text-sm font-medium text-gray-400 mb-1">Data</label><input id="${prefix}-date" type="date" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
                     <div><label for="${prefix}-artists" class="text-sm font-medium text-gray-400 mb-1">Artistas</label><input id="${prefix}-artists" type="text" placeholder="Ex: João Silva" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
                     <div class="md:col-span-2"><label for="${prefix}-location" class="text-sm font-medium text-gray-400 mb-1">Local</label><input id="${prefix}-location" type="text" placeholder="Ex: Virada Cultural, SP" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                    <div><label for="${prefix}-notification-preference" class="text-sm font-medium text-gray-400 mb-1">Lembrete</label><select id="${prefix}-notification-preference" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="none">Não notificar</option><option value="on_day">No dia do show</option><option value="1_day_before">1 dia antes</option><option value="2_days_before">2 dias antes</option></select></div>
-                    <div id="${prefix}-notification-time-wrapper" class="hidden"><label for="${prefix}-notification-time" class="text-sm font-medium text-gray-400 mb-1">Horário</label><input id="${prefix}-notification-time" type="time" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" value="09:00"></div>
+                    <div><label for="${prefix}-status" class="text-sm font-medium text-gray-400 mb-1">Status</label><select id="${prefix}-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option><option value="cancelado">Cancelado</option></select></div>
+                    <div class="md:col-span-2"><label for="${prefix}-observacoes" class="text-sm font-medium text-gray-400 mb-1">Observações</label><textarea id="${prefix}-observacoes" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></textarea></div>
                     <div class="md:col-span-2 flex justify-end gap-4 mt-4"><button type="button" id="cancel-${prefix}-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button><button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">${prefix === 'add' ? 'Adicionar' : 'Salvar'}</button></div>`;
 
                 document.getElementById('add-show-form').innerHTML = modalFormFieldsHTML('add');
@@ -174,15 +221,16 @@
             const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
             const editShowForm = document.getElementById('edit-show-form');
             const cancelEditBtn = document.getElementById('cancel-edit-btn');
-            const notificationPreferenceSelect = document.getElementById('add-notification-preference');
-            const notificationTimeWrapper = document.getElementById('add-notification-time-wrapper');
-            const editNotificationPreferenceSelect = document.getElementById('edit-notification-preference');
-            const editNotificationTimeWrapper = document.getElementById('edit-notification-time-wrapper');
 
             const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
             const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
             const formatDate = (dateString) => { if (!dateString) return 'Data inválida'; const date = new Date(dateString + 'T00:00:00'); return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
-            const getNotificationText = (show) => { if (!show.notificationPreference || show.notificationPreference === 'none') return ''; if (show.notificationSent) return 'Notificado'; const preferenceMap = { 'on_day': 'No dia', '1_day_before': '1 dia antes', '2_days_before': '2 dias antes' }; const preferenceText = preferenceMap[show.notificationPreference]; const timeText = show.notificationTime ? ` às ${show.notificationTime}` : ''; return `${preferenceText}${timeText}`; };
+            
+            const statusMap = {
+                confirmado: { text: 'Confirmado', color: 'bg-green-500/20 text-green-300' },
+                aguardando: { text: 'Aguardando', color: 'bg-yellow-500/20 text-yellow-300' },
+                cancelado: { text: 'Cancelado', color: 'bg-red-500/20 text-red-300' }
+            };
 
             const renderShows = () => {
                 showsList.innerHTML = '';
@@ -200,16 +248,19 @@
                 filteredShows.forEach(show => {
                     const showElement = document.createElement('div');
                     showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4";
-                    const notificationText = getNotificationText(show);
-                    const notificationHTML = notificationText ? `<div class="text-xs flex items-center gap-1.5 p-1 px-2 rounded-full w-fit ${show.notificationSent ? 'bg-gray-600 text-gray-400' : 'bg-blue-500/20 text-blue-300'}"><i data-lucide="${show.notificationSent ? 'bell-off' : 'bell'}" class="w-4 h-4"></i><span>${notificationText}</span></div>` : `<div></div>`;
+                    const statusInfo = statusMap[show.status] || { text: '', color: ''};
+                    const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '<div></div>';
                     showElement.innerHTML = `
-                        <div class="flex-grow w-full">
-                            <p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p>
-                            <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
-                            <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
+                        <div class="flex justify-between items-start w-full">
+                            <div>
+                                <p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p>
+                                <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
+                                <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
+                            </div>
+                            ${statusHTML}
                         </div>
-                        <div class="flex justify-between items-center w-full">
-                            ${notificationHTML}
+                        ${show.observacoes ? `<div class="w-full mt-2 pt-2 border-t border-gray-700 text-sm text-gray-400"><p class="font-semibold text-gray-300">Observações:</p><p>${show.observacoes}</p></div>` : ''}
+                        <div class="flex justify-end items-center w-full mt-2">
                             <div class="flex gap-2">
                                 <button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
                                 <button data-id="${show.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
@@ -220,27 +271,6 @@
                 lucide.createIcons();
             };
             
-            const checkAndSendNotifications = async () => {
-                if (Notification.permission !== 'granted' || !currentUser) return;
-                const registration = await navigator.serviceWorker.ready;
-                const now = new Date();
-                for (const show of allShows) {
-                    if (show.notificationPreference === 'none' || show.notificationSent || !show.notificationTime || !show.date) continue;
-                    const [hours, minutes] = show.notificationTime.split(':');
-                    const notificationDateTime = new Date(show.date + 'T00:00:00');
-                    notificationDateTime.setHours(hours, minutes, 0, 0);
-                    if (show.notificationPreference === '1_day_before') notificationDateTime.setDate(notificationDateTime.getDate() - 1);
-                    if (show.notificationPreference === '2_days_before') notificationDateTime.setDate(notificationDateTime.getDate() - 2);
-                    if (now >= notificationDateTime) {
-                        registration.showNotification('Lembrete de Show', { body: `Lembrete para o show com ${show.artists} em ${show.location}!`, icon: 'https://placehold.co/192x192/8b5cf6/ffffff?text=♫' });
-                        try {
-                            const showDocPath = `artifacts/${appId}/users/${currentUser.uid}/shows/${show.id}`;
-                            await updateDoc(doc(db, showDocPath), { notificationSent: true });
-                        } catch (err) { console.error('Falha ao atualizar status da notificação:', err); }
-                    }
-                }
-            };
-
             const handleUser = (user) => {
                 loadingAuth.classList.add('hidden');
                 if (user) {
@@ -254,7 +284,8 @@
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
                         renderShows();
-                        checkAndSendNotifications();
+                        renderCalendar();
+                        renderDashboard();
                     }, err => {
                         console.error("Erro ao buscar shows:", err);
                         showError("Não foi possível carregar os shows.");
@@ -302,42 +333,18 @@
 
             logoutBtn.addEventListener('click', () => signOut(auth));
             
-            const requestPermissionIfNeeded = async (preference) => {
-                if (preference !== 'none' && 'Notification' in window && Notification.permission === 'default') {
-                    const permission = await Notification.requestPermission();
-                    if (permission === 'granted') {
-                        notificationBanner.classList.add('hidden');
-                        checkAndSendNotifications();
-                    }
-                }
-            };
-
-            enableNotificationsBtn.addEventListener('click', () => {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        notificationBanner.classList.add('hidden');
-                        checkAndSendNotifications();
-                    }
-                });
-            });
-
-            notificationPreferenceSelect.addEventListener('change', (e) => notificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none'));
-            editNotificationPreferenceSelect.addEventListener('change', (e) => editNotificationTimeWrapper.classList.toggle('hidden', e.target.value === 'none'));
-
             addShowForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser) return;
-                const notificationPreference = document.getElementById('add-notification-preference').value;
-                await requestPermissionIfNeeded(notificationPreference);
                 const date = document.getElementById('add-date').value;
                 const artists = document.getElementById('add-artists').value;
                 const location = document.getElementById('add-location').value;
-                const notificationTime = document.getElementById('add-notification-time').value;
+                const status = document.getElementById('add-status').value;
+                const observacoes = document.getElementById('add-observacoes').value;
                 try {
                     const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
-                    await addDoc(collection(db, showsCollectionPath), { date, artists, location, notificationPreference, notificationTime: notificationPreference === 'none' ? null : notificationTime, notificationSent: false, createdAt: serverTimestamp() });
+                    await addDoc(collection(db, showsCollectionPath), { date, artists, location, status, observacoes, createdAt: serverTimestamp() });
                     addShowForm.reset();
-                    notificationTimeWrapper.classList.add('hidden');
                     addModal.classList.remove('is-open');
                 } catch (err) {
                     console.error("Erro ao adicionar show:", err);
@@ -350,7 +357,7 @@
             filterDateInput.addEventListener('input', renderShows);
 
             openAddModalBtn.addEventListener('click', () => addModal.classList.add('is-open'));
-            cancelAddBtn.addEventListener('click', () => addModal.classList.remove('is-open'));
+            document.getElementById('cancel-add-btn').addEventListener('click', () => addModal.classList.remove('is-open'));
 
             showsList.addEventListener('click', (e) => {
                 const deleteBtn = e.target.closest('.delete-btn');
@@ -363,9 +370,8 @@
                         document.getElementById('edit-date').value = showData.date || '';
                         document.getElementById('edit-artists').value = showData.artists || '';
                         document.getElementById('edit-location').value = showData.location || '';
-                        document.getElementById('edit-notification-preference').value = showData.notificationPreference || 'none';
-                        document.getElementById('edit-notification-time').value = showData.notificationTime || '09:00';
-                        editNotificationTimeWrapper.classList.toggle('hidden', (showData.notificationPreference || 'none') === 'none');
+                        document.getElementById('edit-status').value = showData.status || 'confirmado';
+                        document.getElementById('edit-observacoes').value = showData.observacoes || '';
                         editModal.classList.add('is-open');
                     }
                 }
@@ -390,10 +396,13 @@
             editShowForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser || !showIdToModify) return;
-                const notificationPreference = document.getElementById('edit-notification-preference').value;
-                await requestPermissionIfNeeded(notificationPreference);
-                const updatedData = { date: document.getElementById('edit-date').value, artists: document.getElementById('edit-artists').value, location: document.getElementById('edit-location').value, notificationPreference: notificationPreference, notificationTime: document.getElementById('edit-notification-time').value, notificationSent: false };
-                if (updatedData.notificationPreference === 'none') { updatedData.notificationTime = null; }
+                const updatedData = {
+                    date: document.getElementById('edit-date').value,
+                    artists: document.getElementById('edit-artists').value,
+                    location: document.getElementById('edit-location').value,
+                    status: document.getElementById('edit-status').value,
+                    observacoes: document.getElementById('edit-observacoes').value
+                };
                 try {
                     const showDocPath = `artifacts/${appId}/users/${currentUser.uid}/shows/${showIdToModify}`;
                     await updateDoc(doc(db, showDocPath), updatedData);
@@ -407,12 +416,129 @@
 
             cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); showIdToModify = null; });
             
-            if ('Notification' in window && Notification.permission === 'default') {
-                notificationBanner.classList.remove('hidden');
-                notificationBanner.classList.add('flex');
-            }
+            // Lógica das Abas
+            const tabs = [tabAgenda, tabCalendario, tabDashboard];
+            const views = [viewAgenda, viewCalendario, viewDashboard];
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('tab-active'));
+                    views.forEach(v => v.classList.add('hidden'));
+                    tab.classList.add('tab-active');
+                    views[index].classList.remove('hidden');
+                    lucide.createIcons();
+                });
+            });
+
+            // Lógica do Calendário
+            const calendarGrid = document.getElementById('calendar-grid');
+            const monthYearTitle = document.getElementById('month-year-title');
+            const calendarShowDetails = document.getElementById('calendar-show-details');
+
+            const renderCalendar = () => {
+                calendarGrid.innerHTML = '';
+                const month = currentCalendarDate.getMonth();
+                const year = currentCalendarDate.getFullYear();
+                monthYearTitle.textContent = `${currentCalendarDate.toLocaleString('pt-BR', { month: 'long' })} ${year}`;
+
+                const firstDayOfMonth = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                for (let i = 0; i < firstDayOfMonth; i++) {
+                    calendarGrid.insertAdjacentHTML('beforeend', '<div></div>');
+                }
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const showsOnDay = allShows.filter(s => s.date === dateStr);
+                    const dayClass = showsOnDay.length > 0 ? 'has-event' : '';
+                    calendarGrid.insertAdjacentHTML('beforeend', `<div data-date="${dateStr}" class="calendar-day p-2 cursor-pointer hover:bg-gray-700 rounded-full ${dayClass}">${day}</div>`);
+                }
+            };
             
-            setInterval(checkAndSendNotifications, 60000);
+            document.getElementById('prev-month-btn').addEventListener('click', () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+                renderCalendar();
+            });
+            document.getElementById('next-month-btn').addEventListener('click', () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+            calendarGrid.addEventListener('click', (e) => {
+                if (e.target.classList.contains('calendar-day') && e.target.dataset.date) {
+                    document.querySelectorAll('.calendar-day.selected').forEach(el => el.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    const dateStr = e.target.dataset.date;
+                    const showsOnDay = allShows.filter(s => s.date === dateStr);
+                    calendarShowDetails.innerHTML = '';
+                    if (showsOnDay.length > 0) {
+                        showsOnDay.forEach(show => {
+                            const statusInfo = statusMap[show.status] || { text: '', color: ''};
+                            const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
+                            calendarShowDetails.insertAdjacentHTML('beforeend', `
+                                <div class="bg-gray-800 rounded-lg p-4">
+                                    <div class="flex justify-between items-start">
+                                        <p class="font-bold text-purple-300">${show.artists}</p>
+                                        ${statusHTML}
+                                    </div>
+                                    <p class="text-sm text-gray-400 mt-1">${show.location}</p>
+                                </div>
+                            `);
+                        });
+                    } else {
+                         calendarShowDetails.innerHTML = `<p class="text-center text-gray-500">Nenhum show neste dia.</p>`;
+                    }
+                }
+            });
+
+            // Lógica do Dashboard
+            const renderDashboard = () => {
+                renderShowsPerMonth();
+                renderTopArtists();
+            };
+
+            const renderShowsPerMonth = () => {
+                const ctx = document.getElementById('shows-per-month-chart').getContext('2d');
+                const labels = [];
+                const data = [];
+                const now = new Date();
+                for (let i = 11; i >= 0; i--) {
+                    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    labels.push(date.toLocaleString('pt-BR', { month: 'short', year: '2-digit' }));
+                    const monthShows = allShows.filter(s => {
+                        const showDate = new Date(s.date + 'T00:00:00');
+                        return showDate.getFullYear() === date.getFullYear() && showDate.getMonth() === date.getMonth();
+                    });
+                    data.push(monthShows.length);
+                }
+                if (showsPerMonthChart) showsPerMonthChart.destroy();
+                showsPerMonthChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: 'Nº de Shows', data, backgroundColor: '#8b5cf6' }] },
+                    options: { scales: { y: { beginAtZero: true, ticks: { color: '#9ca3af' } }, x: { ticks: { color: '#9ca3af' } } }, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+                });
+            };
+
+            const renderTopArtists = () => {
+                const ctx = document.getElementById('top-artists-chart').getContext('2d');
+                const artistCounts = {};
+                allShows.forEach(show => {
+                    const artists = show.artists.split(',').map(a => a.trim());
+                    artists.forEach(artist => {
+                        artistCounts[artist] = (artistCounts[artist] || 0) + 1;
+                    });
+                });
+                const sortedArtists = Object.entries(artistCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                const labels = sortedArtists.map(a => a[0]);
+                const data = sortedArtists.map(a => a[1]);
+                if (topArtistsChart) topArtistsChart.destroy();
+                topArtistsChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: { labels, datasets: [{ data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#6d28d9', '#5b21b6'] }] },
+                    options: { plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } } }
+                });
+            };
+
         });
 
         const manifest = { "name": "Agenda de Shows", "short_name": "Agenda", "start_url": ".", "display": "standalone", "background_color": "#111827", "theme_color": "#111827", "description": "Sua agenda de shows pessoal.", "icons": [{ "src": "https://placehold.co/192x192/8b5cf6/ffffff?text=♫", "sizes": "192x192", "type": "image/png" }, { "src": "https://placehold.co/512x512/8b5cf6/ffffff?text=♫", "sizes": "512x512", "type": "image/png" }] };
