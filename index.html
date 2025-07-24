@@ -363,7 +363,7 @@
             };
             // --- Funções de Notificação ---
 const notifyLinkedMusicians = async (message) => {
-                  if (!currentUser || !userSettings.isManager) return;
+                   if (!currentUser || !userSettings.isManager) return;
                 try {
                     const followersPath = `artifacts/${appId}/users/${currentUser.uid}/followers`;
                     const querySnapshot = await getDocs(collection(db, followersPath));
@@ -374,8 +374,8 @@ const notifyLinkedMusicians = async (message) => {
                             message: message,
                             read: false,
                             timestamp: serverTimestamp(),
-                            showDate: showDate || null, // Salva a data do show
-                            showTime: showTime || null  // Salva a hora do show
+                            showDate: showDate || null,
+                            showTime: showTime || null
                         };
                         addDoc(collection(db, `artifacts/${appId}/users/${musicianId}/notifications`), notification);
                     });
