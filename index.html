@@ -26,7 +26,11 @@
         body { background-color: #111827; }
         .modal { display: none; }
         .modal.is-open { display: flex; }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator,
+        input[type="month"]::-webkit-calendar-picker-indicator { 
+            filter: invert(0.8); 
+        }
         .tab-active { border-color: #8b5cf6; color: #c4b5fd; }
         .calendar-day.has-event { background-color: #8b5cf6; color: white; border-radius: 50%; font-weight: bold; }
         .calendar-day.selected { background-color: #c4b5fd; color: #111827; }
@@ -92,12 +96,18 @@
             </div>
 
             <div id="view-agenda">
-                <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8">
-                    <h3 class="text-lg font-semibold mb-3 flex items-center gap-2"><i data-lucide="filter" class="w-5 h-5"></i>Filtros</h3>
+                <button id="toggle-filters-btn" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 mb-6">
+                    <i data-lucide="filter" class="w-5 h-5"></i>
+                    <span id="toggle-filters-text">Ocultar Filtros</span>
+                </button>
+                <div id="filters-container" class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
                         <input id="filter-location" type="text" placeholder="Filtrar por local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                        <input id="filter-date" type="date" class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        <div>
+                            <label for="filter-month" class="text-xs text-gray-400">Filtrar por Mês/Ano</label>
+                            <input id="filter-month" type="month" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        </div>
                     </div>
                      <button id="export-pdf-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
                          <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
@@ -250,8 +260,6 @@
             const emptyState = document.getElementById('empty-state');
             const filterArtistInput = document.getElementById('filter-artist');
             const filterLocationInput = document.getElementById('filter-location');
-            const filterDateInput = document.getElementById('filter-date');
-            const errorBanner = document.getElementById('error-banner');
             
             const addModal = document.getElementById('add-modal');
             const openAddModalBtn = document.getElementById('open-add-modal-btn');
@@ -278,8 +286,8 @@
             let userSettings = {};
             let itemToModifyId = null;
             let itemTypeToDelete = '';
-            let unsubscribeShows = null;
-            let unsubscribeSetlists = null;
+            let unsubscribeShows = [];
+            let unsubscribeSetlists = [];
             let currentCalendarDate = new Date();
             let showsPerMonthChart = null;
             let topLocationsChart = null;
@@ -290,6 +298,7 @@
                 const show = allShows.find(s => s.id === showId);
                 if (show) {
                     document.getElementById('edit-date').value = show.date;
+                    document.getElementById('edit-time').value = show.time || '';
                     document.getElementById('edit-artists').value = show.artists;
                     document.getElementById('edit-location').value = show.location;
                     document.getElementById('edit-status').value = show.status;
@@ -306,7 +315,6 @@
                 deleteModal.classList.add('is-open');
             };
 
-            // NOVA FUNÇÃO PARA DOWNLOAD DE PDF
             const downloadSetlistAsPDF = (setlistId) => {
                 const setlist = allSetlists.find(s => s.id === setlistId);
                 if (!setlist) {
@@ -344,8 +352,7 @@
                 doc.save(fileName);
             };
 
-            // FUNÇÃO ATUALIZADA
-  const openShowDetailsModal = (showId) => {
+            const openShowDetailsModal = (showId) => {
                 const show = allShows.find(s => s.id === showId);
                 if (!show) return;
 
@@ -371,7 +378,6 @@
                     `;
                 }
                 
-                // NOVO: Os botões de ação só aparecem se o show for pessoal.
                 const actionButtonsHTML = show.isPersonal ? `
                     <div class="flex gap-2 mt-6 border-t border-gray-700 pt-4">
                         <button id="detail-edit-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
@@ -381,6 +387,8 @@
                             <i data-lucide="trash-2" class="w-5 h-5"></i> Excluir
                         </button>
                     </div>` : '';
+                
+                const timeHTML = show.time ? `<p class="flex items-center gap-3"><i data-lucide="clock" class="w-5 h-5 text-gray-400"></i> <span>${show.time}</span></p>` : '';
 
                 detailsContent.innerHTML = `
                     <div class="flex justify-between items-start">
@@ -389,6 +397,7 @@
                     </div>
                     <div class="mt-4 space-y-3">
                         <p class="flex items-center gap-3"><i data-lucide="calendar" class="w-5 h-5 text-gray-400"></i> <span class="font-semibold">${formatDate(show.date)}</span></p>
+                        ${timeHTML}
                         <p class="flex items-center gap-3"><i data-lucide="map-pin" class="w-5 h-5 text-gray-400"></i> <span>${show.location}</span></p>
                         <div class="flex items-center gap-3"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> <span class="text-sm font-bold py-1 px-3 rounded-full ${statusInfo.color}">${statusInfo.text}</span></div>
                         
@@ -409,7 +418,6 @@
                     downloadBtn.addEventListener('click', () => downloadSetlistAsPDF(setlist.id));
                 }
 
-                // Só adiciona os listeners se os botões existirem
                 if (show.isPersonal) {
                     document.getElementById('detail-edit-btn').addEventListener('click', () => {
                         showDetailsModal.classList.remove('is-open');
@@ -433,7 +441,8 @@
                 const showModalFieldsHTML = (prefix) => `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div><label for="${prefix}-date" class="text-sm font-medium text-gray-400 mb-1">Data</label><input id="${prefix}-date" type="date" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                        <div><label for="${prefix}-artists" class="text-sm font-medium text-gray-400 mb-1">Artistas</label><input id="${prefix}-artists" type="text" placeholder="Ex: João Silva" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
+                        <div><label for="${prefix}-time" class="text-sm font-medium text-gray-400 mb-1">Horário</label><input id="${prefix}-time" type="time" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></div>
+                        <div class="md:col-span-2"><label for="${prefix}-artists" class="text-sm font-medium text-gray-400 mb-1">Artistas</label><input id="${prefix}-artists" type="text" placeholder="Ex: João Silva" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
                         <div class="md:col-span-2"><label for="${prefix}-location" class="text-sm font-medium text-gray-400 mb-1">Local</label><input id="${prefix}-location" type="text" placeholder="Ex: Virada Cultural, SP" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
                         <div><label for="${prefix}-status" class="text-sm font-medium text-gray-400 mb-1">Status</label><select id="${prefix}-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option><option value="cancelado">Cancelado</option><option value="realizado">Realizado</option></select></div>
                         <div><label for="${prefix}-setlist" class="text-sm font-medium text-gray-400 mb-1">Setlist</label><select id="${prefix}-setlist" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="">Nenhuma</option></select></div>
@@ -467,7 +476,13 @@
 
             const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
             const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
-            const formatDate = (dateString) => { if (!dateString) return 'Data inválida'; const date = new Date(dateString + 'T00:00:00'); return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
+            const formatDate = (dateString) => {
+                if (!dateString) return 'Data inválida';
+                const date = new Date(dateString + 'T00:00:00');
+                const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+                const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                return `${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}, ${formattedDate}`;
+            };
             
             const statusMap = {
                 confirmado: { text: 'Confirmado', color: 'bg-green-500/20 text-green-300' },
@@ -483,7 +498,7 @@
                 
                 const artistFilter = filterArtistInput.value.toLowerCase();
                 const locationFilter = filterLocationInput.value.toLowerCase();
-                const dateFilter = filterDateInput.value;
+                const monthFilter = document.getElementById('filter-month').value;
 
                 const agendados = allShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado');
                 const historico = allShows.filter(s => s.status === 'realizado' || s.status === 'cancelado');
@@ -491,11 +506,11 @@
                 const applyFilters = (show) => {
                     const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter);
                     const locationMatch = (show.location || '').toLowerCase().includes(locationFilter);
-                    const dateMatch = !dateFilter || (show.date === dateFilter);
+                    const dateMatch = !monthFilter || (show.date && show.date.startsWith(monthFilter));
                     return artistMatch && locationMatch && dateMatch;
                 };
 
-                const filteredAgendados = agendados.filter(applyFilters).sort((a, b) => new Date(a.date) - new Date(b.date));
+                const filteredAgendados = agendados.filter(applyFilters).sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
                 const filteredHistorico = historico.filter(applyFilters).sort((a, b) => new Date(b.date) - new Date(a.date));
 
                 if (allShows.length > 0 && filteredAgendados.length === 0 && filteredHistorico.length === 0) {
@@ -508,7 +523,13 @@
                     emptyState.classList.add('hidden');
                 }
 
-             const createShowElement = (show) => {
+                filteredAgendados.forEach(show => showsListAgendados.appendChild(createShowElement(show)));
+                filteredHistorico.forEach(show => showsListRealizados.appendChild(createShowElement(show)));
+                
+                lucide.createIcons();
+            };
+            
+            const createShowElement = (show) => {
                 const showElement = document.createElement('div');
                 showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4 cursor-pointer hover:bg-gray-700/50";
                 showElement.dataset.id = show.id;
@@ -516,7 +537,6 @@
                 const statusInfo = statusMap[show.status] || { text: '', color: ''};
                 const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
                 
-                // NOVO: Adiciona a etiqueta "Pessoal" ou "Gerenciado"
                 const typeTag = show.isPersonal 
                     ? `<div class="text-xs font-bold py-1 px-2 rounded-full bg-blue-500/20 text-blue-300">Pessoal</div>`
                     : `<div class="text-xs font-bold py-1 px-2 rounded-full bg-purple-500/20 text-purple-300">Gerenciado</div>`;
@@ -525,10 +545,16 @@
                 const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
                 const obsSnippet = show.observacoes ? `<p class="text-sm text-gray-400 mt-2 italic">"${show.observacoes.substring(0, 50)}..."</p>` : '';
 
+                const timeHTML = show.time ? `<span class="ml-2 text-gray-400 text-base">às ${show.time}</span>` : '';
+
                 showElement.innerHTML = `
                     <div class="flex justify-between items-start w-full">
                         <div>
-                            <p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p>
+                            <p class="font-bold text-lg text-purple-300 flex items-center gap-2">
+                                <i data-lucide="calendar" class="w-5 h-5"></i> 
+                                ${formatDate(show.date)}
+                                ${timeHTML}
+                            </p>
                             <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
                             <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
                             ${setlistHTML}
@@ -541,19 +567,13 @@
                     ${obsSnippet}`;
                 return showElement;
             };
-
-                filteredAgendados.forEach(show => showsListAgendados.appendChild(createShowElement(show)));
-                filteredHistorico.forEach(show => showsListRealizados.appendChild(createShowElement(show)));
-                
-                lucide.createIcons();
-            };
             
             const checkPastShows = () => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0); 
                 const pendingPastShows = allShows.filter(show => {
                     const showDate = new Date(show.date + 'T00:00:00');
-                    return showDate < today && (show.status === 'confirmado' || show.status === 'aguardando');
+                    return showDate < today && (show.status === 'confirmado' || show.status === 'aguardando') && show.isPersonal;
                 });
 
                 if (pendingPastShows.length > 0) {
@@ -564,10 +584,9 @@
                 }
             };
             
-           const handleUser = async (user) => {
+            const handleUser = async (user) => {
                 loadingAuth.classList.add('hidden');
                 
-                // Cancela listeners antigos para evitar duplicação
                 if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
                 if (unsubscribeSetlists) unsubscribeSetlists.forEach(unsub => unsub());
                 
@@ -583,15 +602,13 @@
                     appContent.style.display = 'block';
 
                     const combineAndRenderAll = () => {
-                        // Combina shows, marcando a origem de cada um
                         const allCombinedShows = [
                             ...personalShows.map(s => ({ ...s, isPersonal: true })),
                             ...managedShows.map(s => ({ ...s, isPersonal: false }))
                         ];
                         allShows = allCombinedShows;
                         
-                        // Combina setlists
-                        allSetlists = [...personalSetlists, ...managedSetlists];
+                        allSetlists = [...new Map([...personalSetlists, ...managedSetlists].map(item => [item.id, item])).values()];
 
                         renderShows();
                         renderCalendar();
@@ -604,7 +621,6 @@
                         }
                     };
 
-                    // Listener para os dados PESSOAIS (shows e setlists)
                     const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
                     const qPersonalShows = query(collection(db, personalShowsPath));
                     unsubscribeShows.push(onSnapshot(qPersonalShows, snapshot => {
@@ -619,7 +635,6 @@
                         combineAndRenderAll();
                     }));
                     
-                    // Se estiver vinculado, cria listeners para os dados do GERENTE
                     if (userSettings.managedBy) {
                         const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
                         const qManagedShows = query(collection(db, managedShowsPath), where("isManaged", "==", true));
@@ -636,7 +651,7 @@
                         }));
                     }
                     
-                } else { // Se não há usuário logado
+                } else {
                     currentUser = null;
                     appContent.style.display = 'none';
                     loginContainer.classList.remove('hidden');
@@ -665,7 +680,7 @@
                 }
             };
 
-      const updateSettingsUI = async () => {
+            const updateSettingsUI = async () => {
                 const managerToggle = document.getElementById('manager-mode-toggle');
                 const managerSettings = document.getElementById('manager-settings');
                 const musicianSettings = document.getElementById('musician-settings');
@@ -693,9 +708,8 @@
                     linkFormEl.classList.remove('hidden');
                     managedByInfo.classList.add('hidden');
                 }
-                
-                // REMOVIDO: a lógica que escondia os botões. Agora eles sempre aparecem.
             };
+
             onAuthStateChanged(auth, handleUser);
 
             loginForm.addEventListener('submit', (e) => e.preventDefault());
@@ -732,6 +746,7 @@
                 e.preventDefault();
                 if (!currentUser) return;
                 const date = document.getElementById('add-date').value;
+                const time = document.getElementById('add-time').value;
                 const artists = document.getElementById('add-artists').value;
                 const location = document.getElementById('add-location').value;
                 const status = document.getElementById('add-status').value;
@@ -740,7 +755,7 @@
                 const isManaged = userSettings.isManager || false;
                 try {
                     const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
-                    await addDoc(collection(db, showsCollectionPath), { date, artists, location, status, observacoes, setlistId, isManaged, createdAt: serverTimestamp() });
+                    await addDoc(collection(db, showsCollectionPath), { date, time, artists, location, status, observacoes, setlistId, isManaged, createdAt: serverTimestamp() });
                     addShowForm.reset();
                     addModal.classList.remove('is-open');
                 } catch (err) {
@@ -751,7 +766,15 @@
 
             filterArtistInput.addEventListener('input', renderShows);
             filterLocationInput.addEventListener('input', renderShows);
-            filterDateInput.addEventListener('input', renderShows);
+            
+            const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
+            const filtersContainer = document.getElementById('filters-container');
+            toggleFiltersBtn.addEventListener('click', () => {
+                const isHidden = filtersContainer.classList.toggle('hidden');
+                document.getElementById('toggle-filters-text').textContent = isHidden ? 'Exibir Filtros' : 'Ocultar Filtros';
+            });
+
+            document.getElementById('filter-month').addEventListener('input', renderShows);
 
             openAddModalBtn.addEventListener('click', () => {
                 if(userSettings.isManager && userSettings.artistName) {
@@ -772,10 +795,9 @@
 
             confirmDeleteBtn.addEventListener('click', async () => {
                 if (!currentUser || !itemToModifyId) return;
-                const ownerId = currentUser.uid; // Only owners can delete
                 const collectionName = itemTypeToDelete === 'setlist' ? 'setlists' : 'shows';
                 try {
-                    const docPath = `artifacts/${appId}/users/${ownerId}/${collectionName}/${itemToModifyId}`;
+                    const docPath = `artifacts/${appId}/users/${currentUser.uid}/${collectionName}/${itemToModifyId}`;
                     await deleteDoc(doc(db, docPath));
                     deleteModal.classList.remove('is-open');
                     itemToModifyId = null;
@@ -792,6 +814,7 @@
                 if (!currentUser || !itemToModifyId) return;
                 const updatedData = {
                     date: document.getElementById('edit-date').value,
+                    time: document.getElementById('edit-time').value,
                     artists: document.getElementById('edit-artists').value,
                     location: document.getElementById('edit-location').value,
                     status: document.getElementById('edit-status').value,
@@ -800,7 +823,7 @@
                     isManaged: userSettings.isManager || false
                 };
                 try {
-                    const ownerId = currentUser.uid; // Only owners can edit
+                    const ownerId = currentUser.uid;
                     const showDocPath = `artifacts/${appId}/users/${ownerId}/shows/${itemToModifyId}`;
                     await updateDoc(doc(db, showDocPath), updatedData);
                     editModal.classList.remove('is-open');
@@ -953,7 +976,7 @@
                     setlistElement.className = "bg-gray-800 rounded-lg p-5 shadow-md";
                     setlistElement.dataset.type = 'setlist-card';
                     const songsHTML = (setlist.songs || '').split('\n').map(song => `<li class="text-gray-400">${song}</li>`).join('');
-                    const actionButtons = !userSettings.managedBy ? `
+                    const actionButtons = !userSettings.managedBy || setlist.isPersonal ? `
                         <div class="flex gap-2">
                             <button data-id="${setlist.id}" class="edit-setlist-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
                             <button data-id="${setlist.id}" class="delete-setlist-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
@@ -983,7 +1006,6 @@
                     deleteModal.classList.add('is-open');
                 }
             });
-
 
             const openSetlistModal = (id = null) => {
                 setlistForm.reset();
