@@ -497,7 +497,7 @@
                 }
             };
             
-             const handleUser = async (user) => {
+           const handleUser = async (user) => {
                 loadingAuth.classList.add('hidden');
                 if (user) {
                     currentUser = user;
@@ -566,33 +566,6 @@
                     renderShows();
                 }
             };
-                    const setlistOwnerId = userSettings.managedBy || currentUser.uid;
-                    const setlistsCollectionPath = `artifacts/${appId}/users/${setlistOwnerId}/setlists`;
-                    if (unsubscribeSetlists) unsubscribeSetlists();
-                    const qSetlists = query(collection(db, setlistsCollectionPath), orderBy("name", "asc"));
-                    unsubscribeSetlists = onSnapshot(qSetlists, (querySnapshot) => {
-                        allSetlists = [];
-                        querySnapshot.forEach(doc => allSetlists.push({ id: doc.id, ...doc.data() }));
-                        renderSetlists();
-                        populateSetlistDropdowns();
-                    }, (error) => {
-                        console.error("Erro no listener de setlists:", error);
-                        showError("Erro ao carregar as setlists.");
-                    });
-
-                } else {
-                    currentUser = null;
-                    appContent.style.display = 'none';
-                    loginContainer.classList.remove('hidden');
-                    loginScreen.style.display = 'flex';
-                    if (unsubscribeShows) unsubscribeShows();
-                    if (unsubscribeSetlists) unsubscribeSetlists();
-                    allShows = [];
-                    allSetlists = [];
-                    renderShows();
-                }
-            };
-
             const loadUserSettings = async (uid) => {
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
                 try {
