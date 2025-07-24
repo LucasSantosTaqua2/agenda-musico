@@ -233,7 +233,6 @@
             const db = getFirestore(app);
             const appId = firebaseConfig.appId;
 
-            // Restante do código JavaScript completo...
             const loginScreen = document.getElementById('login-screen');
             const loginContainer = document.getElementById('login-container');
             const loadingAuth = document.getElementById('loading-auth');
@@ -243,6 +242,7 @@
             const registerBtn = document.getElementById('register-btn');
             const logoutBtn = document.getElementById('logout-btn');
             const loginError = document.getElementById('login-error');
+            
             const showsListAgendados = document.getElementById('shows-list-agendados');
             const showsListRealizados = document.getElementById('shows-list-realizados');
             const loadingState = document.getElementById('loading-state');
@@ -251,12 +251,14 @@
             const filterLocationInput = document.getElementById('filter-location');
             const filterDateInput = document.getElementById('filter-date');
             const errorBanner = document.getElementById('error-banner');
+            
             const addModal = document.getElementById('add-modal');
             const openAddModalBtn = document.getElementById('open-add-modal-btn');
             const deleteModal = document.getElementById('confirmation-modal');
             const editModal = document.getElementById('edit-modal');
             const confirmStatusModal = document.getElementById('confirm-status-modal');
             const setlistModal = document.getElementById('setlist-modal');
+
             const tabAgenda = document.getElementById('tab-agenda');
             const tabCalendario = document.getElementById('tab-calendario');
             const tabSetlists = document.getElementById('tab-setlists');
@@ -548,9 +550,10 @@
                 const status = document.getElementById('add-status').value;
                 const observacoes = document.getElementById('add-observacoes').value;
                 const setlistId = document.getElementById('add-setlist').value;
+                const isManaged = userSettings.isManager || false;
                 try {
                     const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
-                    await addDoc(collection(db, showsCollectionPath), { date, artists, location, status, observacoes, setlistId, createdAt: serverTimestamp() });
+                    await addDoc(collection(db, showsCollectionPath), { date, artists, location, status, observacoes, setlistId, isManaged, createdAt: serverTimestamp() });
                     addShowForm.reset();
                     addModal.classList.remove('is-open');
                 } catch (err) {
@@ -627,7 +630,8 @@
                     location: document.getElementById('edit-location').value,
                     status: document.getElementById('edit-status').value,
                     observacoes: document.getElementById('edit-observacoes').value,
-                    setlistId: document.getElementById('edit-setlist').value
+                    setlistId: document.getElementById('edit-setlist').value,
+                    isManaged: userSettings.isManager || false
                 };
                 try {
                     const showDocPath = `artifacts/${appId}/users/${currentUser.uid}/shows/${itemToModifyId}`;
