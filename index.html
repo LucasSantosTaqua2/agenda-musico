@@ -15,11 +15,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, deleteField } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
 
         window.firebaseApp = { initializeApp };
         window.firebaseAuth = { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
-        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, deleteField };
+        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField };
     </script>
     
     <style>
@@ -30,6 +30,21 @@
         input[type="time"]::-webkit-calendar-picker-indicator,
         input[type="month"]::-webkit-calendar-picker-indicator { 
             filter: invert(0.8); 
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: #ef4444; /* red-500 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            border: 2px solid #111827; /* Cor de fundo do body */
         }
         .tab-active { border-color: #8b5cf6; color: #c4b5fd; }
         .calendar-day.has-event { background-color: #8b5cf6; color: white; border-radius: 50%; font-weight: bold; }
@@ -78,11 +93,28 @@
                     <i data-lucide="music" class="text-purple-400 w-8 h-8"></i>
                     <h1 class="text-3xl font-bold text-gray-100">Agenda de Shows</h1>
                 </div>
-                <button id="logout-btn" class="bg-red-500/20 hover:bg-red-500/40 text-red-300 font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
-                    <i data-lucide="log-out" class="w-5 h-5"></i>
-                    Sair
-                </button>
+                <div class="flex items-center gap-4">
+                    <div id="notifications-bell-container" class="relative">
+                        <button id="notifications-bell-btn" class="text-gray-300 hover:text-white">
+                            <i data-lucide="bell" class="w-6 h-6"></i>
+                            <div id="notification-badge" class="notification-badge hidden"></div>
+                        </button>
+                    </div>
+                    <button id="logout-btn" class="bg-red-500/20 hover:bg-red-500/40 text-red-300 font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                        <span>Sair</span>
+                    </button>
+                </div>
             </header>
+
+            <div id="notifications-panel" class="hidden absolute top-20 right-8 w-80 max-w-sm bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50">
+                <div class="p-4 border-b border-gray-700">
+                    <h3 class="font-semibold text-white">Notificações</h3>
+                </div>
+                <div id="notifications-list" class="max-h-96 overflow-y-auto">
+                </div>
+            </div>
+            
             <div id="error-banner" class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-6 hidden"></div>
             
             <div class="border-b border-gray-700 mb-6">
@@ -236,7 +268,7 @@
     <script type="module">
         const { initializeApp } = window.firebaseApp;
         const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
-        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, deleteField } = window.firebaseFirestore;
+        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } = window.firebaseFirestore;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -296,14 +328,21 @@
             const agendadosContent = document.getElementById('agendados-content');
             const historicoContent = document.getElementById('historico-content');
             
+            const notificationsBellContainer = document.getElementById('notifications-bell-container');
+            const notificationBadge = document.getElementById('notification-badge');
+            const notificationsPanel = document.getElementById('notifications-panel');
+            const notificationsList = document.getElementById('notifications-list');
+
             let allShows = [];
             let allSetlists = [];
+            let allNotifications = [];
             let currentUser = null;
             let userSettings = {};
             let itemToModifyId = null;
             let itemTypeToDelete = '';
             let unsubscribeShows = [];
             let unsubscribeSetlists = [];
+            let unsubscribeNotifications = null;
             let currentCalendarDate = new Date();
             let showsPerMonthChart = null;
             let topLocationsChart = null;
@@ -605,6 +644,7 @@
                 
                 if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
                 if (unsubscribeSetlists) unsubscribeSetlists.forEach(unsub => unsub());
+                if (unsubscribeNotifications) unsubscribeNotifications();
                 
                 unsubscribeShows = [];
                 unsubscribeSetlists = [];
@@ -638,35 +678,37 @@
                     };
 
                     const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
-                    const qPersonalShows = query(collection(db, personalShowsPath));
-                    unsubscribeShows.push(onSnapshot(qPersonalShows, snapshot => {
-                        personalShows = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    unsubscribeShows.push(onSnapshot(query(collection(db, personalShowsPath)), s => {
+                        personalShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         combineAndRenderAll();
                     }));
 
                     const personalSetlistsPath = `artifacts/${appId}/users/${currentUser.uid}/setlists`;
-                    const qPersonalSetlists = query(collection(db, personalSetlistsPath), orderBy("name", "asc"));
-                     unsubscribeSetlists.push(onSnapshot(qPersonalSetlists, snapshot => {
-                        personalSetlists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                     unsubscribeSetlists.push(onSnapshot(query(collection(db, personalSetlistsPath), orderBy("name", "asc")), s => {
+                        personalSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         combineAndRenderAll();
                     }));
                     
                     if (userSettings.managedBy) {
                         const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
-                        const qManagedShows = query(collection(db, managedShowsPath), where("isManaged", "==", true));
-                        unsubscribeShows.push(onSnapshot(qManagedShows, snapshot => {
-                            managedShows = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        unsubscribeShows.push(onSnapshot(query(collection(db, managedShowsPath), where("isManaged", "==", true)), s => {
+                            managedShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             combineAndRenderAll();
                         }));
 
                         const managedSetlistsPath = `artifacts/${appId}/users/${userSettings.managedBy}/setlists`;
-                        const qManagedSetlists = query(collection(db, managedSetlistsPath), orderBy("name", "asc"));
-                        unsubscribeSetlists.push(onSnapshot(qManagedSetlists, snapshot => {
-                            managedSetlists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        unsubscribeSetlists.push(onSnapshot(query(collection(db, managedSetlistsPath), orderBy("name", "asc")), s => {
+                            managedSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             combineAndRenderAll();
                         }));
                     }
                     
+                    const notificationsPath = `artifacts/${appId}/users/${currentUser.uid}/notifications`;
+                    unsubscribeNotifications = onSnapshot(query(collection(db, notificationsPath), orderBy("timestamp", "desc")), (snapshot) => {
+                        allNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderNotifications();
+                    });
+
                 } else {
                     currentUser = null;
                     appContent.style.display = 'none';
@@ -674,7 +716,9 @@
                     loginScreen.style.display = 'flex';
                     allShows = [];
                     allSetlists = [];
+                    allNotifications = [];
                     renderShows();
+                    renderNotifications();
                 }
             };
             
@@ -774,6 +818,7 @@
                     await addDoc(collection(db, showsCollectionPath), { date, time, artists, location, status, observacoes, setlistId, isManaged, createdAt: serverTimestamp() });
                     addShowForm.reset();
                     addModal.classList.remove('is-open');
+                    notifyLinkedMusicians(`Novo show adicionado: ${artists} em ${location}`);
                 } catch (err) {
                     console.error("Erro ao adicionar show:", err);
                     showError("Ocorreu um erro ao salvar o show.");
@@ -812,10 +857,16 @@
             confirmDeleteBtn.addEventListener('click', async () => {
                 if (!currentUser || !itemToModifyId) return;
                 const collectionName = itemTypeToDelete === 'setlist' ? 'setlists' : 'shows';
+                
+                const showToDelete = allShows.find(s => s.id === itemToModifyId && s.isPersonal);
+
                 try {
                     const docPath = `artifacts/${appId}/users/${currentUser.uid}/${collectionName}/${itemToModifyId}`;
                     await deleteDoc(doc(db, docPath));
                     deleteModal.classList.remove('is-open');
+                    if (showToDelete) {
+                        notifyLinkedMusicians(`Show cancelado/removido: ${showToDelete.artists} em ${showToDelete.location}`);
+                    }
                     itemToModifyId = null;
                 } catch (err) {
                     showError(`Não foi possível excluir o item.`);
@@ -844,6 +895,7 @@
                     await updateDoc(doc(db, showDocPath), updatedData);
                     editModal.classList.remove('is-open');
                     itemToModifyId = null;
+                    notifyLinkedMusicians(`Show atualizado: ${updatedData.artists} em ${updatedData.location}`);
                 } catch (err) {
                     showError("Não foi possível salvar as alterações.");
                 }
@@ -1211,6 +1263,20 @@
             };
             setupAgendaViewToggle();
 
+            notificationsBellContainer.addEventListener('click', (e) => {
+                e.stopPropagation();
+                notificationsPanel.classList.toggle('hidden');
+                if (!notificationsPanel.classList.contains('hidden')) {
+                    markNotificationsAsRead();
+                }
+            });
+
+            window.addEventListener('click', () => {
+                if (!notificationsPanel.classList.contains('hidden')) {
+                    notificationsPanel.classList.add('hidden');
+                }
+            });
+
         });
 
         const manifest = { 
@@ -1233,7 +1299,8 @@
                   "type": "image/png" 
                 }
             ] 
-        };        const manifestString = JSON.stringify(manifest);
+        };
+        const manifestString = JSON.stringify(manifest);
         const manifestUri = 'data:application/manifest+json,' + encodeURIComponent(manifestString);
         document.getElementById('manifest-link').href = manifestUri;
     </script>
