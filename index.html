@@ -1279,28 +1279,30 @@ linkForm.addEventListener('submit', async (e) => {
 unlinkBtn.addEventListener('click', async () => {
                 if (!currentUser || !userSettings.managedBy) return;
 
+                // --- INÍCIO DA CORREÇÃO ---
+                // Passo 1: Para de ouvir TODOS os listeners de dados existentes.
+                // Isso evita o erro de permissão, pois o app não estará mais escutando
+                // a agenda do gerente quando a permissão for revogada.
+                if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
+                if (unsubscribeSetlists) unsubscribeSetlists.forEach(unsub => unsub());
+                unsubscribeShows = [];
+                unsubscribeSetlists = [];
+                // --- FIM DA CORREÇÃO ---
+
                 const musicianSettingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
-                // NOVO: Referência ao seu registro na lista de seguidores do gerente
                 const followerRef = doc(db, `artifacts/${appId}/users/${userSettings.managedBy}/followers`, currentUser.uid);
 
                 try {
-                    // Passo 1: Remove o vínculo do seu próprio perfil
+                    // Passo 2: Agora, atualiza o banco de dados com segurança.
                     await updateDoc(musicianSettingsRef, { managedBy: deleteField() });
-                    // NOVO Passo 2: Se remove da lista de seguidores do gerente
                     await deleteDoc(followerRef);
                     
+                    // Passo 3: Recarrega o estado do usuário para reativar os listeners corretos (apenas os pessoais).
                     await handleUser(currentUser); 
                 } catch (err) {
+                    console.error("Erro ao desvincular:", err);
                     showError("Não foi possível desvincular a conta.");
                 }
-            });
-
-            [addModal, editModal, deleteModal, confirmStatusModal, setlistModal, showDetailsModal].forEach(modal => {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.classList.remove('is-open');
-                    }
-                });
             });
 
             const setupAgendaViewToggle = () => {
