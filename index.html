@@ -446,7 +446,7 @@
                     await updateDoc(doc(db, showDocPath), { status: status });
                     confirmStatusModal.classList.remove('is-open');
                     showIdToModify = null;
-                    // A re-renderização e a próxima verificação acontecerão automaticamente pelo onSnapshot
+                    checkPastShows();
                 } catch (err) {
                     showError("Não foi possível atualizar o status do show.");
                 }
@@ -455,7 +455,6 @@
             confirmRealizadoBtn.addEventListener('click', () => updatePastShowStatus('realizado'));
             confirmCanceladoBtn.addEventListener('click', () => updatePastShowStatus('cancelado'));
 
-            // Lógica das Abas
             const tabs = [tabAgenda, tabCalendario, tabDashboard];
             const views = [viewAgenda, viewCalendario, viewDashboard];
             tabs.forEach((tab, index) => {
@@ -468,7 +467,6 @@
                 });
             });
 
-            // Lógica do Calendário
             const calendarGrid = document.getElementById('calendar-grid');
             const monthYearTitle = document.getElementById('month-year-title');
             const calendarShowDetails = document.getElementById('calendar-show-details');
@@ -509,7 +507,6 @@
                 }
             });
 
-            // Lógica do Dashboard
             const renderDashboard = () => {
                 renderShowsPerMonth();
                 renderTopArtists();
