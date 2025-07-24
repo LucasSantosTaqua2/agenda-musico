@@ -274,12 +274,12 @@
             lucide.createIcons();
             
             const firebaseConfig = {
-                apiKey: "SUA_API_KEY",
-                authDomain: "SEU_AUTH_DOMAIN",
-                projectId: "SEU_PROJECT_ID",
-                storageBucket: "SEU_STORAGE_BUCKET",
-                messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-                appId: "SEU_APP_ID"
+                apiKey: "AIzaSyBIPPMg_OUyC2AKmJpy36ljJCjdvZVUxuE",
+                authDomain: "minha-agenda-de-shows.firebaseapp.com",
+                projectId: "minha-agenda-de-shows",
+                storageBucket: "minha-agenda-de-shows.firebasestorage.app",
+                messagingSenderId: "676045633970",
+                appId: "1:676045633970:web:d9c4916ffa716e96290cab"
             };
             
             const app = initializeApp(firebaseConfig);
@@ -366,9 +366,8 @@
             const notifyLinkedMusicians = async (message) => {
                 if (!currentUser || !userSettings.isManager) return;
                 try {
-                    const usersRef = collection(db, `artifacts/${appId}/user_settings`);
-                    const q = query(usersRef, where("managedBy", "==", currentUser.uid));
-                    const querySnapshot = await getDocs(q);
+                    const followersPath = `artifacts/${appId}/users/${currentUser.uid}/followers`;
+                    const querySnapshot = await getDocs(collection(db, followersPath));
 
                     querySnapshot.forEach((musicianDoc) => {
                         const musicianId = musicianDoc.id;
@@ -418,6 +417,7 @@
                 });
             };
 
+            // --- Funções de Modais e UI ---
             const openEditShowModal = (showId) => {
                 itemToModifyId = showId;
                 const show = allShows.find(s => s.id === showId);
@@ -435,9 +435,8 @@
 
             const openDeleteConfirmationModal = (showId, name) => {
                 itemToModifyId = showId;
-                const collection = allShows.find(s => s.id === showId)?.isPersonal ? 'shows' : 'setlists'; // Simplified, might need adjustment
-                itemTypeToDelete = collection === 'shows' ? 'show' : 'setlist';
-                document.getElementById('delete-confirm-text').textContent = `Tem certeza de que deseja excluir ${itemTypeToDelete === 'show' ? 'o show' : 'a setlist'} "${name}"?`;
+                itemTypeToDelete = 'show';
+                document.getElementById('delete-confirm-text').textContent = `Tem certeza de que deseja excluir o show "${name}"?`;
                 deleteModal.classList.add('is-open');
             };
 
@@ -447,24 +446,19 @@
                     showError("Setlist não encontrada para download.");
                     return;
                 }
-
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                
                 doc.setFontSize(22);
                 doc.text(setlist.name, 14, 22);
-
                 if (userSettings && userSettings.artistName) {
                     doc.setFontSize(14);
                     doc.setTextColor(100);
                     doc.text(userSettings.artistName, 14, 30);
                 }
-
                 const songs = setlist.songs.split('\n');
                 doc.setFontSize(12);
                 doc.setTextColor(0);
                 let y = 45;
-
                 songs.forEach((song, index) => {
                     if (y > 280) {
                         doc.addPage();
@@ -473,7 +467,6 @@
                     doc.text(`${index + 1}. ${song.trim()}`, 14, y);
                     y += 10;
                 });
-
                 const fileName = `Setlist-${setlist.name.replace(/[^a-z0-9]/gi, '_')}.pdf`;
                 doc.save(fileName);
             };
@@ -481,13 +474,10 @@
             const openShowDetailsModal = (showId) => {
                 const show = allShows.find(s => s.id === showId);
                 if (!show) return;
-
                 const detailsContent = document.getElementById('show-details-content');
                 const statusInfo = statusMap[show.status] || { text: '', color: ''};
-                
                 const setlist = allSetlists.find(s => s.id === show.setlistId);
                 let setlistHTML = '';
-
                 if (setlist) {
                     setlistHTML = `
                         <p class="font-semibold text-gray-300 flex items-center gap-2">
@@ -503,7 +493,6 @@
                         <p class="text-sm text-gray-500 mt-1">Nenhuma setlist associada.</p>
                     `;
                 }
-                
                 const actionButtonsHTML = show.isPersonal ? `
                     <div class="flex gap-2 mt-6 border-t border-gray-700 pt-4">
                         <button id="detail-edit-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
@@ -513,9 +502,7 @@
                             <i data-lucide="trash-2" class="w-5 h-5"></i> Excluir
                         </button>
                     </div>` : '';
-                
                 const timeHTML = show.time ? `<p class="flex items-center gap-3"><i data-lucide="clock" class="w-5 h-5 text-gray-400"></i> <span>${show.time}</span></p>` : '';
-
                 detailsContent.innerHTML = `
                     <div class="flex justify-between items-start">
                         <h2 class="text-2xl font-bold text-purple-300">${show.artists}</h2>
@@ -526,24 +513,18 @@
                         ${timeHTML}
                         <p class="flex items-center gap-3"><i data-lucide="map-pin" class="w-5 h-5 text-gray-400"></i> <span>${show.location}</span></p>
                         <div class="flex items-center gap-3"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> <span class="text-sm font-bold py-1 px-3 rounded-full ${statusInfo.color}">${statusInfo.text}</span></div>
-                        
                         ${show.observacoes ? `<div class="pt-2"><p class="font-semibold text-gray-300">Observações:</p><p class="text-gray-400 whitespace-pre-wrap">${show.observacoes}</p></div>` : ''}
-
                         <div class="pt-2">${setlistHTML}</div>
                     </div>
                     ${actionButtonsHTML}
                 `;
-
                 lucide.createIcons();
                 showDetailsModal.classList.add('is-open');
-
                 document.getElementById('close-details-modal').addEventListener('click', () => showDetailsModal.classList.remove('is-open'));
-                
                 const downloadBtn = document.getElementById('download-setlist-pdf-btn');
                 if (downloadBtn) {
                     downloadBtn.addEventListener('click', () => downloadSetlistAsPDF(setlist.id));
                 }
-
                 if (show.isPersonal) {
                     document.getElementById('detail-edit-btn').addEventListener('click', () => {
                         showDetailsModal.classList.remove('is-open');
