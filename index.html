@@ -603,7 +603,8 @@
 
             const renderDashboard = () => {
                 renderShowsPerMonth();
-                renderTopArtists();
+                renderTopLocations();
+                renderTopSetlists();
             };
 
             const renderShowsPerMonth = () => {
@@ -624,18 +625,34 @@
                 showsPerMonthChart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Nº de Shows', data, backgroundColor: '#8b5cf6' }] }, options: { scales: { y: { beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 } }, x: { ticks: { color: '#9ca3af' } } }, plugins: { legend: { labels: { color: '#9ca3af' } } } } });
             };
 
-            const renderTopArtists = () => {
-                const ctx = document.getElementById('top-artists-chart').getContext('2d');
-                const artistCounts = {};
+            const renderTopLocations = () => {
+                const ctx = document.getElementById('top-locations-chart').getContext('2d');
+                const locationCounts = {};
                 allShows.forEach(show => {
-                    const artists = (show.artists || '').split(',').map(a => a.trim()).filter(a => a);
-                    artists.forEach(artist => { artistCounts[artist] = (artistCounts[artist] || 0) + 1; });
+                    const location = (show.location || 'N/A').trim();
+                    if (location) { locationCounts[location] = (locationCounts[location] || 0) + 1; }
                 });
-                const sortedArtists = Object.entries(artistCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                const labels = sortedArtists.map(a => a[0]);
-                const data = sortedArtists.map(a => a[1]);
-                if (topArtistsChart) topArtistsChart.destroy();
-                topArtistsChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#6d28d9', '#5b21b6'] }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } } } });
+                const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                const labels = sortedLocations.map(a => a[0]);
+                const data = sortedLocations.map(a => a[1]);
+                if (topLocationsChart) topLocationsChart.destroy();
+                topLocationsChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#6d28d9', '#5b21b6'] }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } } } });
+            };
+
+            const renderTopSetlists = () => {
+                const ctx = document.getElementById('top-setlists-chart').getContext('2d');
+                const setlistCounts = {};
+                allShows.forEach(show => {
+                    if (show.setlistId) { setlistCounts[show.setlistId] = (setlistCounts[show.setlistId] || 0) + 1; }
+                });
+                const sortedSetlists = Object.entries(setlistCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                const labels = sortedSetlists.map(s => {
+                    const setlist = allSetlists.find(sl => sl.id === s[0]);
+                    return setlist ? setlist.name : 'Desconhecida';
+                });
+                const data = sortedSetlists.map(s => s[1]);
+                if (topSetlistsChart) topSetlistsChart.destroy();
+                topSetlistsChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#6d28d9', '#5b21b6'] }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } } } });
             };
 
             // Lógica de Setlists
