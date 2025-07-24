@@ -319,6 +319,11 @@
             const setlistForm = document.getElementById('setlist-form');
             const cancelSetlistBtn = document.getElementById('cancel-setlist-btn');
             const exportPdfBtn = document.getElementById('export-pdf-btn');
+            const managerModeToggle = document.getElementById('manager-mode-toggle');
+            const artistNameInput = document.getElementById('artist-name-input');
+            const copyInviteCodeBtn = document.getElementById('copy-invite-code-btn');
+            const linkForm = document.getElementById('link-form');
+            const unlinkBtn = document.getElementById('unlink-btn');
 
             const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
             const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
@@ -460,6 +465,48 @@
                     allSetlists = [];
                     renderShows();
                 }
+            };
+
+            const loadUserSettings = async (uid) => {
+                const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
+                const docSnap = await getDoc(settingsRef);
+                if (docSnap.exists()) {
+                    userSettings = docSnap.data();
+                } else {
+                    userSettings = {};
+                }
+                updateSettingsUI();
+            };
+
+            const updateSettingsUI = () => {
+                const managerToggle = document.getElementById('manager-mode-toggle');
+                const managerSettings = document.getElementById('manager-settings');
+                const musicianSettings = document.getElementById('musician-settings');
+                const linkForm = document.getElementById('link-form');
+                const managedByInfo = document.getElementById('managed-by-info');
+
+                managerToggle.checked = userSettings.isManager || false;
+                managerSettings.classList.toggle('hidden', !userSettings.isManager);
+                musicianSettings.classList.toggle('hidden', userSettings.isManager);
+                
+                if (userSettings.isManager) {
+                    document.getElementById('artist-name-input').value = userSettings.artistName || '';
+                    document.getElementById('invite-code').textContent = currentUser.uid;
+                }
+
+                if (userSettings.managedBy) {
+                    linkForm.classList.add('hidden');
+                    managedByInfo.classList.remove('hidden');
+                    document.getElementById('manager-name-display').textContent = userSettings.managedBy;
+                } else {
+                    linkForm.classList.remove('hidden');
+                    managedByInfo.classList.add('hidden');
+                }
+                
+                const isMusician = !!userSettings.managedBy;
+                openAddModalBtn.classList.toggle('hidden', isMusician);
+                document.getElementById('open-add-setlist-modal-btn').classList.toggle('hidden', isMusician);
+                renderShows(); 
             };
 
             onAuthStateChanged(auth, handleUser);
