@@ -100,8 +100,8 @@
                         <input id="filter-date" type="date" class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
                     </div>
                      <button id="export-pdf-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
-                        <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
-                    </button>
+                         <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
+                     </button>
                 </div>
                 <div>
                     <h2 class="text-2xl font-bold mb-4 text-gray-200">Shows Agendados</h2>
@@ -170,19 +170,19 @@
 
                 <div id="manager-settings" class="hidden space-y-8">
                      <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4">Configurações de Gerente</h3>
-                        <div>
-                            <label for="artist-name-input" class="text-sm font-medium text-gray-400">Nome do Artista Principal</label>
-                            <input id="artist-name-input" type="text" placeholder="Ex: Zé Lucas" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                        </div>
-                        <div class="mt-4">
-                             <p class="text-sm font-medium text-gray-400">Seu Código de Convite</p>
-                             <div class="mt-1 flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
-                                <span id="invite-code" class="text-gray-300 font-mono text-sm"></span>
-                                <button id="copy-invite-code-btn"><i data-lucide="copy" class="w-4 h-4 text-gray-400"></i></button>
-                             </div>
-                        </div>
-                    </div>
+                         <h3 class="text-xl font-semibold mb-4">Configurações de Gerente</h3>
+                         <div>
+                             <label for="artist-name-input" class="text-sm font-medium text-gray-400">Nome do Artista Principal</label>
+                             <input id="artist-name-input" type="text" placeholder="Ex: Zé Lucas" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                         </div>
+                         <div class="mt-4">
+                              <p class="text-sm font-medium text-gray-400">Seu Código de Convite</p>
+                              <div class="mt-1 flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
+                                  <span id="invite-code" class="text-gray-300 font-mono text-sm"></span>
+                                  <button id="copy-invite-code-btn"><i data-lucide="copy" class="w-4 h-4 text-gray-400"></i></button>
+                              </div>
+                         </div>
+                     </div>
                 </div>
 
                 <div id="musician-settings" class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
@@ -284,6 +284,91 @@
             let showsPerMonthChart = null;
             let topLocationsChart = null;
             let topSetlistsChart = null;
+
+            // =================================================================
+            // INÍCIO DO CÓDIGO CORRIGIDO (FUNÇÕES ADICIONADAS)
+            // =================================================================
+            const openEditShowModal = (showId) => {
+                itemToModifyId = showId;
+                const show = allShows.find(s => s.id === showId);
+                if (show) {
+                    document.getElementById('edit-date').value = show.date;
+                    document.getElementById('edit-artists').value = show.artists;
+                    document.getElementById('edit-location').value = show.location;
+                    document.getElementById('edit-status').value = show.status;
+                    document.getElementById('edit-observacoes').value = show.observacoes;
+                    document.getElementById('edit-setlist').value = show.setlistId || '';
+                    editModal.classList.add('is-open');
+                }
+            };
+
+            const openDeleteConfirmationModal = (showId, name) => {
+                itemToModifyId = showId;
+                itemTypeToDelete = 'show';
+                document.getElementById('delete-confirm-text').textContent = `Tem certeza de que deseja excluir o show "${name}"?`;
+                deleteModal.classList.add('is-open');
+            };
+
+            const openShowDetailsModal = (showId) => {
+                const show = allShows.find(s => s.id === showId);
+                if (!show) return;
+
+                const detailsContent = document.getElementById('show-details-content');
+                const statusInfo = statusMap[show.status] || { text: '', color: ''};
+                const setlist = allSetlists.find(s => s.id === show.setlistId);
+                const songsHTML = setlist ? setlist.songs.split('\n').map(song => `<li class="text-gray-400 ml-4">${song}</li>`).join('') : '<p class="text-sm text-gray-500">Nenhuma setlist associada.</p>';
+
+                // Botões de ação (só aparecem para o gerente)
+                const actionButtonsHTML = !userSettings.managedBy ? `
+                    <div class="flex gap-2 mt-6 border-t border-gray-700 pt-4">
+                        <button id="detail-edit-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+                            <i data-lucide="pencil" class="w-5 h-5"></i> Editar
+                        </button>
+                        <button id="detail-delete-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i> Excluir
+                        </button>
+                    </div>` : '';
+
+                detailsContent.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h2 class="text-2xl font-bold text-purple-300">${show.artists}</h2>
+                        <button id="close-details-modal" class="text-gray-400 hover:text-white p-2 -mr-2 -mt-2"><i data-lucide="x" class="w-6 h-6"></i></button>
+                    </div>
+                    <div class="mt-4 space-y-3">
+                        <p class="flex items-center gap-3"><i data-lucide="calendar" class="w-5 h-5 text-gray-400"></i> <span class="font-semibold">${formatDate(show.date)}</span></p>
+                        <p class="flex items-center gap-3"><i data-lucide="map-pin" class="w-5 h-5 text-gray-400"></i> <span>${show.location}</span></p>
+                        <div class="flex items-center gap-3"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> <span class="text-sm font-bold py-1 px-3 rounded-full ${statusInfo.color}">${statusInfo.text}</span></div>
+                        
+                        ${show.observacoes ? `<div class="pt-2"><p class="font-semibold text-gray-300">Observações:</p><p class="text-gray-400 whitespace-pre-wrap">${show.observacoes}</p></div>` : ''}
+
+                        <div class="pt-2">
+                            <p class="font-semibold text-gray-300 flex items-center gap-2"><i data-lucide="list-music" class="w-5 h-5"></i> Setlist: ${setlist ? setlist.name : ''}</p>
+                            <ul class="mt-1">${songsHTML}</ul>
+                        </div>
+                    </div>
+                    ${actionButtonsHTML}
+                `;
+
+                lucide.createIcons(); // Recria os ícones do Lucide dentro do modal
+
+                showDetailsModal.classList.add('is-open');
+
+                // Adiciona eventos aos botões dentro do modal
+                document.getElementById('close-details-modal').addEventListener('click', () => showDetailsModal.classList.remove('is-open'));
+                if (!userSettings.managedBy) {
+                    document.getElementById('detail-edit-btn').addEventListener('click', () => {
+                        showDetailsModal.classList.remove('is-open');
+                        openEditShowModal(showId);
+                    });
+                    document.getElementById('detail-delete-btn').addEventListener('click', () => {
+                        showDetailsModal.classList.remove('is-open');
+                        openDeleteConfirmationModal(showId, show.artists);
+                    });
+                }
+            };
+            // =================================================================
+            // FIM DO CÓDIGO CORRIGIDO
+            // =================================================================
 
             const setupModalHTML = () => {
                 addModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="text-green-400"></i>Adicionar Novo Show</h2><form id="add-show-form" class="space-y-4"></form></div>`;
@@ -426,24 +511,26 @@
                     loginScreen.style.display = 'none';
                     appContent.style.display = 'block';
                     
-                    const showsCollectionPath = `artifacts/${appId}/users/${userSettings.managedBy || currentUser.uid}/shows`;
+                    const showsOwnerId = userSettings.managedBy || currentUser.uid;
+                    const showsCollectionPath = `artifacts/${appId}/users/${showsOwnerId}/shows`;
                     
                     if (unsubscribeShows) unsubscribeShows();
-                    let qShows;
-                    if (userSettings.managedBy) {
-                        qShows = query(collection(db, showsCollectionPath), where("isManaged", "==", true));
-                    } else {
-                        qShows = query(collection(db, showsCollectionPath));
-                    }
+                    
+                    // A query é feita no caminho do dono dos shows (seja o próprio usuário ou o gerente)
+                    const qShows = query(collection(db, showsCollectionPath));
+                    
                     unsubscribeShows = onSnapshot(qShows, (querySnapshot) => {
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
                         renderShows();
                         renderCalendar();
                         renderDashboard();
-                        if (!userSettings.managedBy) {
+                        if (!userSettings.managedBy) { // Apenas o gerente confirma shows passados
                             checkPastShows();
                         }
+                    }, (error) => {
+                        console.error("Erro no listener de shows:", error);
+                        showError("Erro ao carregar os shows. Verifique as permissões do Firestore.");
                     });
 
                     const setlistOwnerId = userSettings.managedBy || currentUser.uid;
@@ -455,6 +542,9 @@
                         querySnapshot.forEach(doc => allSetlists.push({ id: doc.id, ...doc.data() }));
                         renderSetlists();
                         populateSetlistDropdowns();
+                    }, (error) => {
+                        console.error("Erro no listener de setlists:", error);
+                        showError("Erro ao carregar as setlists.");
                     });
 
                 } else {
@@ -472,20 +562,27 @@
 
             const loadUserSettings = async (uid) => {
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
-                const docSnap = await getDoc(settingsRef);
-                if (docSnap.exists()) {
-                    userSettings = docSnap.data();
-                } else {
-                    userSettings = {};
+                try {
+                    const docSnap = await getDoc(settingsRef);
+                    if (docSnap.exists()) {
+                        userSettings = docSnap.data();
+                    } else {
+                        userSettings = { isManager: false, managedBy: null }; // Default settings
+                        await setDoc(settingsRef, userSettings);
+                    }
+                } catch (error) {
+                    console.error("Erro ao carregar configurações do usuário:", error);
+                    userSettings = {}; // Reset on error
+                } finally {
+                    updateSettingsUI();
                 }
-                updateSettingsUI();
             };
 
-            const updateSettingsUI = () => {
+            const updateSettingsUI = async () => {
                 const managerToggle = document.getElementById('manager-mode-toggle');
                 const managerSettings = document.getElementById('manager-settings');
                 const musicianSettings = document.getElementById('musician-settings');
-                const linkForm = document.getElementById('link-form');
+                const linkFormEl = document.getElementById('link-form');
                 const managedByInfo = document.getElementById('managed-by-info');
 
                 managerToggle.checked = userSettings.isManager || false;
@@ -498,17 +595,25 @@
                 }
 
                 if (userSettings.managedBy) {
-                    linkForm.classList.add('hidden');
+                    linkFormEl.classList.add('hidden');
                     managedByInfo.classList.remove('hidden');
-                    document.getElementById('manager-name-display').textContent = userSettings.managedBy;
+                    
+                    // Busca o nome do gerente para exibir
+                    const managerSettingsRef = doc(db, `artifacts/${appId}/user_settings`, userSettings.managedBy);
+                    const managerSnap = await getDoc(managerSettingsRef);
+                    const managerName = managerSnap.exists() ? managerSnap.data().artistName : 'Gerente não encontrado';
+                    document.getElementById('manager-name-display').textContent = managerName || `Gerente (${userSettings.managedBy.substring(0,6)}...)`;
+
                 } else {
-                    linkForm.classList.remove('hidden');
+                    linkFormEl.classList.remove('hidden');
                     managedByInfo.classList.add('hidden');
                 }
                 
                 const isMusician = !!userSettings.managedBy;
                 openAddModalBtn.classList.toggle('hidden', isMusician);
                 document.getElementById('open-add-setlist-modal-btn').classList.toggle('hidden', isMusician);
+                
+                // Força a atualização da lista de shows para refletir as permissões
                 renderShows(); 
             };
 
@@ -522,7 +627,7 @@
                 if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
                 signInWithEmailAndPassword(auth, email, password)
                     .catch(error => {
-                        if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                        if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
                             showLoginError("E-mail ou senha inválidos.");
                         } else { showLoginError("Ocorreu um erro ao fazer login."); }
                     });
@@ -588,9 +693,10 @@
 
             confirmDeleteBtn.addEventListener('click', async () => {
                 if (!currentUser || !itemToModifyId) return;
+                const ownerId = userSettings.managedBy || currentUser.uid;
                 const collectionName = itemTypeToDelete === 'setlist' ? 'setlists' : 'shows';
                 try {
-                    const docPath = `artifacts/${appId}/users/${currentUser.uid}/${collectionName}/${itemToModifyId}`;
+                    const docPath = `artifacts/${appId}/users/${ownerId}/${collectionName}/${itemToModifyId}`;
                     await deleteDoc(doc(db, docPath));
                     deleteModal.classList.remove('is-open');
                     itemToModifyId = null;
@@ -615,7 +721,8 @@
                     isManaged: userSettings.isManager || false
                 };
                 try {
-                    const showDocPath = `artifacts/${appId}/users/${currentUser.uid}/shows/${itemToModifyId}`;
+                    const ownerId = userSettings.managedBy || currentUser.uid;
+                    const showDocPath = `artifacts/${appId}/users/${ownerId}/shows/${itemToModifyId}`;
                     await updateDoc(doc(db, showDocPath), updatedData);
                     editModal.classList.remove('is-open');
                     itemToModifyId = null;
@@ -629,7 +736,8 @@
             const updatePastShowStatus = async (status) => {
                 if (!currentUser || !itemToModifyId) return;
                 try {
-                    const showDocPath = `artifacts/${appId}/users/${currentUser.uid}/shows/${itemToModifyId}`;
+                    const ownerId = userSettings.managedBy || currentUser.uid;
+                    const showDocPath = `artifacts/${appId}/users/${ownerId}/shows/${itemToModifyId}`;
                     await updateDoc(doc(db, showDocPath), { status: status });
                     confirmStatusModal.classList.remove('is-open');
                     itemToModifyId = null;
@@ -651,6 +759,9 @@
                     tab.classList.add('tab-active');
                     views[index].classList.remove('hidden');
                     lucide.createIcons();
+                    if(views[index].id === 'view-dashboard') {
+                        renderDashboard(); // Re-renderiza os gráficos quando a aba é selecionada
+                    }
                 });
             });
 
@@ -688,7 +799,7 @@
                         showsOnDay.forEach(show => {
                             const statusInfo = statusMap[show.status] || { text: '', color: ''};
                             const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
-                            calendarShowDetails.insertAdjacentHTML('beforeend', `<div class="bg-gray-800 rounded-lg p-4"><div class="flex justify-between items-start"><p class="font-bold text-purple-300">${show.artists}</p>${statusHTML}</div><p class="text-sm text-gray-400 mt-1">${show.location}</p></div>`);
+                            calendarShowDetails.insertAdjacentHTML('beforeend', `<div class="bg-gray-800 rounded-lg p-4 cursor-pointer" onclick="openShowDetailsModal('${show.id}')"><div class="flex justify-between items-start"><p class="font-bold text-purple-300">${show.artists}</p>${statusHTML}</div><p class="text-sm text-gray-400 mt-1">${show.location}</p></div>`);
                         });
                     } else { calendarShowDetails.innerHTML = `<p class="text-center text-gray-500">Nenhum show neste dia.</p>`; }
                 }
@@ -759,19 +870,37 @@
                     setlistElement.className = "bg-gray-800 rounded-lg p-5 shadow-md";
                     setlistElement.dataset.type = 'setlist-card';
                     const songsHTML = (setlist.songs || '').split('\n').map(song => `<li class="text-gray-400">${song}</li>`).join('');
+                    const actionButtons = !userSettings.managedBy ? `
+                        <div class="flex gap-2">
+                            <button data-id="${setlist.id}" class="edit-setlist-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
+                            <button data-id="${setlist.id}" class="delete-setlist-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
+                        </div>
+                    ` : '';
                     setlistElement.innerHTML = `
                         <div class="flex justify-between items-start">
                             <h3 class="text-xl font-bold text-green-300">${setlist.name}</h3>
-                            <div class="flex gap-2">
-                                <button data-id="${setlist.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
-                                <button data-id="${setlist.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
-                            </div>
+                            ${actionButtons}
                         </div>
                         <ul class="list-disc list-inside mt-2">${songsHTML}</ul>`;
                     setlistsList.appendChild(setlistElement);
                 });
                 lucide.createIcons();
             };
+            
+            setlistsList.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-setlist-btn');
+                const deleteBtn = e.target.closest('.delete-setlist-btn');
+                if(editBtn) {
+                    openSetlistModal(editBtn.dataset.id);
+                }
+                if(deleteBtn) {
+                    itemToModifyId = deleteBtn.dataset.id;
+                    itemTypeToDelete = 'setlist';
+                    document.getElementById('delete-confirm-text').textContent = "Tem certeza que deseja excluir esta setlist?";
+                    deleteModal.classList.add('is-open');
+                }
+            });
+
 
             const openSetlistModal = (id = null) => {
                 setlistForm.reset();
@@ -818,6 +947,8 @@
             const populateSetlistDropdowns = () => {
                 const addSelect = document.getElementById('add-setlist');
                 const editSelect = document.getElementById('edit-setlist');
+                const savedAddValue = addSelect.value;
+                const savedEditValue = editSelect.value;
                 addSelect.innerHTML = '<option value="">Nenhuma</option>';
                 editSelect.innerHTML = '<option value="">Nenhuma</option>';
                 allSetlists.forEach(setlist => {
@@ -825,6 +956,8 @@
                     addSelect.insertAdjacentHTML('beforeend', option);
                     editSelect.insertAdjacentHTML('beforeend', option);
                 });
+                addSelect.value = savedAddValue;
+                editSelect.value = savedEditValue;
             };
 
             exportPdfBtn.addEventListener('click', () => {
@@ -858,8 +991,9 @@
                     doc.text(`Local: ${show.location}`, 16, y);
                     y += 5;
                     if (show.observacoes) {
-                        doc.text(`Obs: ${show.observacoes}`, 16, y);
-                        y += 5;
+                        const lines = doc.splitTextToSize(`Obs: ${show.observacoes}`, 180);
+                        doc.text(lines, 16, y);
+                        y += (lines.length * 4);
                     }
                     y += 5;
                 });
@@ -871,8 +1005,9 @@
                 const isManager = e.target.checked;
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
-                    await setDoc(settingsRef, { ...userSettings, isManager }, { merge: true });
-                    await loadUserSettings(currentUser.uid);
+                    await setDoc(settingsRef, { isManager }, { merge: true });
+                    // Recarrega o usuário para aplicar novas regras e UI
+                    await handleUser(currentUser); 
                 } catch (err) {
                     showError("Não foi possível alterar o modo.");
                 }
@@ -882,7 +1017,7 @@
                 const artistName = e.target.value;
                  const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
-                    await setDoc(settingsRef, { ...userSettings, artistName }, { merge: true });
+                    await setDoc(settingsRef, { artistName }, { merge: true });
                     userSettings.artistName = artistName;
                 } catch (err) {
                     showError("Não foi possível salvar o nome do artista.");
@@ -890,7 +1025,16 @@
             });
 
             copyInviteCodeBtn.addEventListener('click', () => {
-                navigator.clipboard.writeText(currentUser.uid);
+                navigator.clipboard.writeText(currentUser.uid).then(() => {
+                    // Feedback visual temporário
+                    const icon = copyInviteCodeBtn.querySelector('i');
+                    icon.dataset.lucide = 'check';
+                    lucide.createIcons();
+                    setTimeout(() => {
+                        icon.dataset.lucide = 'copy';
+                        lucide.createIcons();
+                    }, 2000);
+                });
             });
 
             linkForm.addEventListener('submit', async (e) => {
@@ -900,7 +1044,8 @@
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
                     await setDoc(settingsRef, { managedBy: managerId }, { merge: true });
-                    await loadUserSettings(currentUser.uid);
+                    // Recarrega o usuário para aplicar novas regras e UI
+                    await handleUser(currentUser);
                 } catch (err) {
                     showError("Não foi possível vincular a conta. Verifique o código.");
                 }
@@ -909,16 +1054,27 @@
             unlinkBtn.addEventListener('click', async () => {
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
-                    await setDoc(settingsRef, { managedBy: null }, { merge: true });
-                    await loadUserSettings(currentUser.uid);
+                    // Usamos update para remover o campo
+                    await updateDoc(settingsRef, { managedBy: deleteField() });
+                    // Recarrega o usuário para aplicar novas regras e UI
+                    await handleUser(currentUser); 
                 } catch (err) {
                     showError("Não foi possível desvincular a conta.");
                 }
             });
 
+            // Listener para fechar modais clicando fora
+            [addModal, editModal, deleteModal, confirmStatusModal, setlistModal, showDetailsModal].forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('is-open');
+                    }
+                });
+            });
+
         });
 
-        const manifest = { "name": "Agenda de Shows", "short_name": "Agenda", "start_url": ".", "display": "standalone", "background_color": "#111827", "theme_color": "#111827", "description": "Sua agenda de shows pessoal.", "icons": [{ "src": "https://placehold.co/192x192/8b5cf6/ffffff?text=♫", "sizes": "192x192", "type": "image/png" }, { "src": "https://placehold.co/512x512/8b5cf6/ffffff?text=♫", "sizes": "512x512", "type": "image/png" }] };
+        const manifest = { "name": "Agenda de Shows", "short_name": "Agenda", "start_url": "./", "display": "standalone", "background_color": "#111827", "theme_color": "#111827", "description": "Sua agenda de shows pessoal.", "icons": [{ "src": "https://placehold.co/192x192/8b5cf6/ffffff?text=♫", "sizes": "192x192", "type": "image/png" }, { "src": "https://placehold.co/512x512/8b5cf6/ffffff?text=♫", "sizes": "512x512", "type": "image/png" }] };
         const manifestString = JSON.stringify(manifest);
         const manifestUri = 'data:application/manifest+json,' + encodeURIComponent(manifestString);
         document.getElementById('manifest-link').href = manifestUri;
