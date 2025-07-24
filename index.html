@@ -113,11 +113,22 @@
                          <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
                      </button>
                 </div>
+
+                <div class="flex border-b border-gray-700 mb-4">
+                    <button id="view-agendados-btn" class="flex-1 py-2 text-center font-semibold border-b-2 border-purple-400 text-white">Agendados</button>
+                    <button id="view-historico-btn" class="flex-1 py-2 text-center font-semibold border-b-2 border-transparent text-gray-400 hover:text-white">Histórico</button>
+                </div>
+
                 <div>
-                    <h2 class="text-2xl font-bold mb-4 text-gray-200">Shows Agendados</h2>
-                    <div id="shows-list-agendados" class="space-y-4"></div>
-                    <h2 class="text-2xl font-bold mb-4 mt-10 text-gray-200">Histórico (Realizados/Cancelados)</h2>
-                    <div id="shows-list-realizados" class="space-y-4"></div>
+                    <div id="agendados-content">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-200">Shows Agendados</h2>
+                        <div id="shows-list-agendados" class="space-y-4"></div>
+                    </div>
+                    <div id="historico-content" class="hidden">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-200">Histórico (Realizados/Cancelados)</h2>
+                        <div id="shows-list-realizados" class="space-y-4"></div>
+                    </div>
+                    
                     <div id="loading-state" class="text-center text-gray-400 py-8">Carregando shows...</div>
                     <div id="empty-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
                         <p class="text-gray-400">Nenhum show encontrado.</p>
@@ -279,6 +290,11 @@
             const viewSetlists = document.getElementById('view-setlists');
             const viewDashboard = document.getElementById('view-dashboard');
             const viewConfiguracoes = document.getElementById('view-configuracoes');
+
+            const viewAgendadosBtn = document.getElementById('view-agendados-btn');
+            const viewHistoricoBtn = document.getElementById('view-historico-btn');
+            const agendadosContent = document.getElementById('agendados-content');
+            const historicoContent = document.getElementById('historico-content');
             
             let allShows = [];
             let allSetlists = [];
@@ -1070,14 +1086,16 @@
                 const doc = new jsPDF();
                 const artistFilter = filterArtistInput.value;
                 const locationFilter = filterLocationInput.value;
-                const dateFilter = filterDateInput.value;
+                const monthFilter = document.getElementById('filter-month').value;
                 
-                const agendados = allShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado').filter(show => {
-                    const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter.toLowerCase());
-                    const locationMatch = (show.location || '').toLowerCase().includes(locationFilter.toLowerCase());
-                    const dateMatch = !dateFilter || (show.date === dateFilter);
-                    return artistMatch && locationMatch && dateMatch;
-                }).sort((a, b) => new Date(a.date) - new Date(b.date));
+                const agendados = allShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado')
+                    .filter(show => {
+                        const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter.toLowerCase());
+                        const locationMatch = (show.location || '').toLowerCase().includes(locationFilter.toLowerCase());
+                        const dateMatch = !monthFilter || (show.date && show.date.startsWith(monthFilter));
+                        return artistMatch && locationMatch && dateMatch;
+                    })
+                    .sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
 
                 doc.setFontSize(18);
                 doc.text("Agenda de Shows", 14, 22);
@@ -1090,7 +1108,8 @@
                 agendados.forEach(show => {
                     if (y > 280) { doc.addPage(); y = 20; }
                     doc.setFontSize(12);
-                    doc.text(`${formatDate(show.date)} - ${show.artists}`, 14, y);
+                    const timeText = show.time ? ` às ${show.time}` : '';
+                    doc.text(`${formatDate(show.date)}${timeText} - ${show.artists}`, 14, y);
                     y += 7;
                     doc.setFontSize(10);
                     doc.text(`Local: ${show.location}`, 16, y);
@@ -1170,6 +1189,27 @@
                     }
                 });
             });
+
+            const setupAgendaViewToggle = () => {
+                viewAgendadosBtn.addEventListener('click', () => {
+                    agendadosContent.classList.remove('hidden');
+                    historicoContent.classList.add('hidden');
+                    viewAgendadosBtn.classList.add('border-purple-400', 'text-white');
+                    viewAgendadosBtn.classList.remove('border-transparent', 'text-gray-400');
+                    viewHistoricoBtn.classList.add('border-transparent', 'text-gray-400');
+                    viewHistoricoBtn.classList.remove('border-purple-400', 'text-white');
+                });
+
+                viewHistoricoBtn.addEventListener('click', () => {
+                    historicoContent.classList.remove('hidden');
+                    agendadosContent.classList.add('hidden');
+                    viewHistoricoBtn.classList.add('border-purple-400', 'text-white');
+                    viewHistoricoBtn.classList.remove('border-transparent', 'text-gray-400');
+                    viewAgendadosBtn.classList.add('border-transparent', 'text-gray-400');
+                    viewAgendadosBtn.classList.remove('border-purple-400', 'text-white');
+                });
+            };
+            setupAgendaViewToggle();
 
         });
 
