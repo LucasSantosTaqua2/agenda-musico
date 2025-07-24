@@ -497,7 +497,7 @@
                 }
             };
             
-            const handleUser = async (user) => {
+             const handleUser = async (user) => {
                 loadingAuth.classList.add('hidden');
                 if (user) {
                     currentUser = user;
@@ -511,8 +511,18 @@
                     
                     if (unsubscribeShows) unsubscribeShows();
                     
-                    const qShows = query(collection(db, showsCollectionPath));
-                    
+                    // --- INÍCIO DA CORREÇÃO ---
+                    // Agora, a query é montada de forma condicional
+                    let qShows;
+                    if (userSettings.managedBy) {
+                        // Se for um músico, pede apenas os shows marcados como "managed"
+                        qShows = query(collection(db, showsCollectionPath), where("isManaged", "==", true));
+                    } else {
+                        // Se for o gerente (ou um usuário normal), pede todos os seus shows
+                        qShows = query(collection(db, showsCollectionPath));
+                    }
+                    // --- FIM DA CORREÇÃO ---
+
                     unsubscribeShows = onSnapshot(qShows, (querySnapshot) => {
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
@@ -527,6 +537,35 @@
                         showError("Erro ao carregar os shows. Verifique as permissões do Firestore.");
                     });
 
+                    const setlistOwnerId = userSettings.managedBy || currentUser.uid;
+                    const setlistsCollectionPath = `artifacts/${appId}/users/${setlistOwnerId}/setlists`;
+                    if (unsubscribeSetlists) unsubscribeSetlists();
+
+                    // Para as setlists, a regra não exige filtro, então a query pode ser simples
+                    const qSetlists = query(collection(db, setlistsCollectionPath), orderBy("name", "asc"));
+                    
+                    unsubscribeSetlists = onSnapshot(qSetlists, (querySnapshot) => {
+                        allSetlists = [];
+                        querySnapshot.forEach(doc => allSetlists.push({ id: doc.id, ...doc.data() }));
+                        renderSetlists();
+                        populateSetlistDropdowns();
+                    }, (error) => {
+                        console.error("Erro no listener de setlists:", error);
+                        showError("Erro ao carregar as setlists.");
+                    });
+
+                } else {
+                    currentUser = null;
+                    appContent.style.display = 'none';
+                    loginContainer.classList.remove('hidden');
+                    loginScreen.style.display = 'flex';
+                    if (unsubscribeShows) unsubscribeShows();
+                    if (unsubscribeSetlists) unsubscribeSetlists();
+                    allShows = [];
+                    allSetlists = [];
+                    renderShows();
+                }
+            };
                     const setlistOwnerId = userSettings.managedBy || currentUser.uid;
                     const setlistsCollectionPath = `artifacts/${appId}/users/${setlistOwnerId}/setlists`;
                     if (unsubscribeSetlists) unsubscribeSetlists();
