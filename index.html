@@ -233,6 +233,7 @@
             const db = getFirestore(app);
             const appId = firebaseConfig.appId;
 
+            // Restante do código JavaScript completo...
             const loginScreen = document.getElementById('login-screen');
             const loginContainer = document.getElementById('login-container');
             const loadingAuth = document.getElementById('loading-auth');
@@ -242,7 +243,6 @@
             const registerBtn = document.getElementById('register-btn');
             const logoutBtn = document.getElementById('logout-btn');
             const loginError = document.getElementById('login-error');
-            
             const showsListAgendados = document.getElementById('shows-list-agendados');
             const showsListRealizados = document.getElementById('shows-list-realizados');
             const loadingState = document.getElementById('loading-state');
@@ -251,14 +251,12 @@
             const filterLocationInput = document.getElementById('filter-location');
             const filterDateInput = document.getElementById('filter-date');
             const errorBanner = document.getElementById('error-banner');
-            
             const addModal = document.getElementById('add-modal');
             const openAddModalBtn = document.getElementById('open-add-modal-btn');
             const deleteModal = document.getElementById('confirmation-modal');
             const editModal = document.getElementById('edit-modal');
             const confirmStatusModal = document.getElementById('confirm-status-modal');
             const setlistModal = document.getElementById('setlist-modal');
-
             const tabAgenda = document.getElementById('tab-agenda');
             const tabCalendario = document.getElementById('tab-calendario');
             const tabSetlists = document.getElementById('tab-setlists');
@@ -882,6 +880,56 @@
                 });
 
                 doc.save("agenda-shows.pdf");
+            });
+
+            managerModeToggle.addEventListener('change', async (e) => {
+                const isManager = e.target.checked;
+                const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
+                try {
+                    await setDoc(settingsRef, { ...userSettings, isManager }, { merge: true });
+                    userSettings.isManager = isManager;
+                    updateSettingsUI();
+                } catch (err) {
+                    showError("Não foi possível alterar o modo.");
+                }
+            });
+
+            artistNameInput.addEventListener('blur', async (e) => {
+                const artistName = e.target.value;
+                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
+                try {
+                    await setDoc(settingsRef, { ...userSettings, artistName }, { merge: true });
+                    userSettings.artistName = artistName;
+                } catch (err) {
+                    showError("Não foi possível salvar o nome do artista.");
+                }
+            });
+
+            copyInviteCodeBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(currentUser.uid);
+            });
+
+            linkForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const managerId = document.getElementById('manager-code-input').value.trim();
+                if (!managerId) return;
+                const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
+                try {
+                    await setDoc(settingsRef, { managedBy: managerId }, { merge: true });
+                    await loadUserSettings(currentUser.uid);
+                } catch (err) {
+                    showError("Não foi possível vincular a conta. Verifique o código.");
+                }
+            });
+
+            unlinkBtn.addEventListener('click', async () => {
+                const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
+                try {
+                    await setDoc(settingsRef, { managedBy: null }, { merge: true });
+                    await loadUserSettings(currentUser.uid);
+                } catch (err) {
+                    showError("Não foi possível desvincular a conta.");
+                }
             });
 
         });
