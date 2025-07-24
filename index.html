@@ -584,34 +584,6 @@
                     openShowDetailsModal(showCard.dataset.id);
                     return;
                 }
-
-                const deleteBtn = e.target.closest('.delete-btn');
-                const editBtn = e.target.closest('.edit-btn');
-                if (deleteBtn) {
-                    itemToModifyId = deleteBtn.dataset.id;
-                    itemTypeToDelete = deleteBtn.closest('[data-type="setlist-card"]') ? 'setlist' : 'show';
-                    const text = itemTypeToDelete === 'setlist' ? 'Tem certeza que deseja excluir esta setlist?' : 'Tem certeza que deseja excluir este show?';
-                    document.getElementById('delete-confirm-text').textContent = text;
-                    deleteModal.classList.add('is-open');
-                }
-                if (editBtn) {
-                    itemToModifyId = editBtn.dataset.id;
-                    if (editBtn.closest('[data-type="setlist-card"]')) {
-                        openSetlistModal(itemToModifyId);
-                    } else {
-                        const showData = allShows.find(s => s.id === itemToModifyId);
-                        if (showData) {
-                            populateSetlistDropdowns();
-                            document.getElementById('edit-date').value = showData.date || '';
-                            document.getElementById('edit-artists').value = showData.artists || '';
-                            document.getElementById('edit-location').value = showData.location || '';
-                            document.getElementById('edit-status').value = showData.status || 'confirmado';
-                            document.getElementById('edit-observacoes').value = showData.observacoes || '';
-                            document.getElementById('edit-setlist').value = showData.setlistId || '';
-                            editModal.classList.add('is-open');
-                        }
-                    }
-                }
             });
 
             confirmDeleteBtn.addEventListener('click', async () => {
