@@ -345,7 +345,7 @@
             };
 
             // FUNÇÃO ATUALIZADA
-            const openShowDetailsModal = (showId) => {
+  const openShowDetailsModal = (showId) => {
                 const show = allShows.find(s => s.id === showId);
                 if (!show) return;
 
@@ -371,7 +371,8 @@
                     `;
                 }
                 
-                const actionButtonsHTML = !userSettings.managedBy ? `
+                // NOVO: Os botões de ação só aparecem se o show for pessoal.
+                const actionButtonsHTML = show.isPersonal ? `
                     <div class="flex gap-2 mt-6 border-t border-gray-700 pt-4">
                         <button id="detail-edit-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
                             <i data-lucide="pencil" class="w-5 h-5"></i> Editar
@@ -408,7 +409,8 @@
                     downloadBtn.addEventListener('click', () => downloadSetlistAsPDF(setlist.id));
                 }
 
-                if (!userSettings.managedBy) {
+                // Só adiciona os listeners se os botões existirem
+                if (show.isPersonal) {
                     document.getElementById('detail-edit-btn').addEventListener('click', () => {
                         showDetailsModal.classList.remove('is-open');
                         openEditShowModal(showId);
@@ -506,29 +508,39 @@
                     emptyState.classList.add('hidden');
                 }
 
-                const createShowElement = (show) => {
-                    const showElement = document.createElement('div');
-                    showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4 cursor-pointer hover:bg-gray-700/50";
-                    showElement.dataset.id = show.id;
-                    const statusInfo = statusMap[show.status] || { text: '', color: ''};
-                    const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
-                    const setlist = allSetlists.find(s => s.id === show.setlistId);
-                    const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
-                    const obsSnippet = show.observacoes ? `<p class="text-sm text-gray-400 mt-2 italic">"${show.observacoes.substring(0, 50)}..."</p>` : '';
+             const createShowElement = (show) => {
+                const showElement = document.createElement('div');
+                showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4 cursor-pointer hover:bg-gray-700/50";
+                showElement.dataset.id = show.id;
 
-                    showElement.innerHTML = `
-                        <div class="flex justify-between items-start w-full">
-                            <div>
-                                <p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p>
-                                <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
-                                <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
-                                ${setlistHTML}
-                            </div>
-                            ${statusHTML}
+                const statusInfo = statusMap[show.status] || { text: '', color: ''};
+                const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
+                
+                // NOVO: Adiciona a etiqueta "Pessoal" ou "Gerenciado"
+                const typeTag = show.isPersonal 
+                    ? `<div class="text-xs font-bold py-1 px-2 rounded-full bg-blue-500/20 text-blue-300">Pessoal</div>`
+                    : `<div class="text-xs font-bold py-1 px-2 rounded-full bg-purple-500/20 text-purple-300">Gerenciado</div>`;
+
+                const setlist = allSetlists.find(s => s.id === show.setlistId);
+                const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
+                const obsSnippet = show.observacoes ? `<p class="text-sm text-gray-400 mt-2 italic">"${show.observacoes.substring(0, 50)}..."</p>` : '';
+
+                showElement.innerHTML = `
+                    <div class="flex justify-between items-start w-full">
+                        <div>
+                            <p class="font-bold text-lg text-purple-300 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> ${formatDate(show.date)}</p>
+                            <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
+                            <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
+                            ${setlistHTML}
                         </div>
-                        ${obsSnippet}`;
-                    return showElement;
-                };
+                        <div class="flex flex-col items-end gap-2">
+                            ${statusHTML}
+                            ${typeTag}
+                        </div>
+                    </div>
+                    ${obsSnippet}`;
+                return showElement;
+            };
 
                 filteredAgendados.forEach(show => showsListAgendados.appendChild(createShowElement(show)));
                 filteredHistorico.forEach(show => showsListRealizados.appendChild(createShowElement(show)));
@@ -552,70 +564,89 @@
                 }
             };
             
-            const handleUser = async (user) => {
+           const handleUser = async (user) => {
                 loadingAuth.classList.add('hidden');
+                
+                // Cancela listeners antigos para evitar duplicação
+                if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
+                if (unsubscribeSetlists) unsubscribeSetlists.forEach(unsub => unsub());
+                
+                unsubscribeShows = [];
+                unsubscribeSetlists = [];
+                let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = [];
+
                 if (user) {
                     currentUser = user;
                     await loadUserSettings(user.uid);
                     
                     loginScreen.style.display = 'none';
                     appContent.style.display = 'block';
-                    
-                    const showsOwnerId = userSettings.managedBy || currentUser.uid;
-                    const showsCollectionPath = `artifacts/${appId}/users/${showsOwnerId}/shows`;
-                    
-                    if (unsubscribeShows) unsubscribeShows();
-                    
-                    let qShows;
-                    if (userSettings.managedBy) {
-                        qShows = query(collection(db, showsCollectionPath), where("isManaged", "==", true));
-                    } else {
-                        qShows = query(collection(db, showsCollectionPath));
-                    }
 
-                    unsubscribeShows = onSnapshot(qShows, (querySnapshot) => {
-                        allShows = [];
-                        querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
+                    const combineAndRenderAll = () => {
+                        // Combina shows, marcando a origem de cada um
+                        const allCombinedShows = [
+                            ...personalShows.map(s => ({ ...s, isPersonal: true })),
+                            ...managedShows.map(s => ({ ...s, isPersonal: false }))
+                        ];
+                        allShows = allCombinedShows;
+                        
+                        // Combina setlists
+                        allSetlists = [...personalSetlists, ...managedSetlists];
+
                         renderShows();
                         renderCalendar();
                         renderDashboard();
+                        renderSetlists();
+                        populateSetlistDropdowns();
+                        
                         if (!userSettings.managedBy) {
                             checkPastShows();
                         }
-                    }, (error) => {
-                        console.error("Erro no listener de shows:", error);
-                        showError("Erro ao carregar os shows. Verifique as permissões do Firestore.");
-                    });
+                    };
 
-                    const setlistOwnerId = userSettings.managedBy || currentUser.uid;
-                    const setlistsCollectionPath = `artifacts/${appId}/users/${setlistOwnerId}/setlists`;
-                    if (unsubscribeSetlists) unsubscribeSetlists();
+                    // Listener para os dados PESSOAIS (shows e setlists)
+                    const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
+                    const qPersonalShows = query(collection(db, personalShowsPath));
+                    unsubscribeShows.push(onSnapshot(qPersonalShows, snapshot => {
+                        personalShows = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        combineAndRenderAll();
+                    }));
 
-                    const qSetlists = query(collection(db, setlistsCollectionPath), orderBy("name", "asc"));
+                    const personalSetlistsPath = `artifacts/${appId}/users/${currentUser.uid}/setlists`;
+                    const qPersonalSetlists = query(collection(db, personalSetlistsPath), orderBy("name", "asc"));
+                     unsubscribeSetlists.push(onSnapshot(qPersonalSetlists, snapshot => {
+                        personalSetlists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        combineAndRenderAll();
+                    }));
                     
-                    unsubscribeSetlists = onSnapshot(qSetlists, (querySnapshot) => {
-                        allSetlists = [];
-                        querySnapshot.forEach(doc => allSetlists.push({ id: doc.id, ...doc.data() }));
-                        renderSetlists();
-                        populateSetlistDropdowns();
-                    }, (error) => {
-                        console.error("Erro no listener de setlists:", error);
-                        showError("Erro ao carregar as setlists.");
-                    });
+                    // Se estiver vinculado, cria listeners para os dados do GERENTE
+                    if (userSettings.managedBy) {
+                        const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
+                        const qManagedShows = query(collection(db, managedShowsPath), where("isManaged", "==", true));
+                        unsubscribeShows.push(onSnapshot(qManagedShows, snapshot => {
+                            managedShows = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            combineAndRenderAll();
+                        }));
 
-                } else {
+                        const managedSetlistsPath = `artifacts/${appId}/users/${userSettings.managedBy}/setlists`;
+                        const qManagedSetlists = query(collection(db, managedSetlistsPath), orderBy("name", "asc"));
+                        unsubscribeSetlists.push(onSnapshot(qManagedSetlists, snapshot => {
+                            managedSetlists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            combineAndRenderAll();
+                        }));
+                    }
+                    
+                } else { // Se não há usuário logado
                     currentUser = null;
                     appContent.style.display = 'none';
                     loginContainer.classList.remove('hidden');
                     loginScreen.style.display = 'flex';
-                    if (unsubscribeShows) unsubscribeShows();
-                    if (unsubscribeSetlists) unsubscribeSetlists();
                     allShows = [];
                     allSetlists = [];
                     renderShows();
                 }
             };
-
+            
             const loadUserSettings = async (uid) => {
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
                 try {
@@ -634,7 +665,7 @@
                 }
             };
 
-            const updateSettingsUI = async () => {
+      const updateSettingsUI = async () => {
                 const managerToggle = document.getElementById('manager-mode-toggle');
                 const managerSettings = document.getElementById('manager-settings');
                 const musicianSettings = document.getElementById('musician-settings');
@@ -658,19 +689,13 @@
                     const managerSnap = await getDoc(managerSettingsRef);
                     const managerName = managerSnap.exists() ? managerSnap.data().artistName : 'Gerente não encontrado';
                     document.getElementById('manager-name-display').textContent = managerName || `Gerente (${userSettings.managedBy.substring(0,6)}...)`;
-
                 } else {
                     linkFormEl.classList.remove('hidden');
                     managedByInfo.classList.add('hidden');
                 }
                 
-                const isMusician = !!userSettings.managedBy;
-                openAddModalBtn.classList.toggle('hidden', isMusician);
-                document.getElementById('open-add-setlist-modal-btn').classList.toggle('hidden', isMusician);
-                
-                renderShows(); 
+                // REMOVIDO: a lógica que escondia os botões. Agora eles sempre aparecem.
             };
-
             onAuthStateChanged(auth, handleUser);
 
             loginForm.addEventListener('submit', (e) => e.preventDefault());
