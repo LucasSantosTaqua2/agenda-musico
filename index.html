@@ -291,7 +291,7 @@
                 deleteModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl"><i data-lucide="alert-triangle" class="mx-auto text-yellow-400 w-12 h-12 mb-4"></i><p id="delete-confirm-text" class="text-lg text-gray-200 mb-6"></p><div class="flex justify-center gap-4"><button id="cancel-delete-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button><button id="confirm-delete-btn" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg">Confirmar</button></div></div>`;
                 confirmStatusModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl"><i data-lucide="help-circle" class="mx-auto text-blue-400 w-12 h-12 mb-4"></i><h2 class="text-xl font-semibold mb-2">Confirmar Show Passado</h2><p id="confirm-status-text" class="text-gray-300 mb-6"></p><div class="flex flex-col gap-3"><button id="confirm-realizado-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg">Sim, foi Realizado</button><button id="confirm-cancelado-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg">Não, foi Cancelado</button></div></div>`;
                 setlistModal.innerHTML = `<div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"><h2 id="setlist-modal-title" class="text-xl font-semibold mb-4 flex items-center gap-2"></h2><form id="setlist-form" class="space-y-4"><input type="hidden" id="setlist-id"><div class="md:col-span-2"><label for="setlist-name" class="text-sm font-medium text-gray-400 mb-1">Nome da Setlist</label><input id="setlist-name" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div><div class="md:col-span-2"><label for="setlist-songs" class="text-sm font-medium text-gray-400 mb-1">Músicas (uma por linha)</label><textarea id="setlist-songs" rows="8" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></textarea></div><div class="md:col-span-2 flex justify-end gap-4 mt-4"><button type="button" id="cancel-setlist-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button><button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg">Salvar Setlist</button></div></form></div>`;
-                showDetailsModal.innerHTML = `<div id="show-details-content" class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl"></div>`;
+                showDetailsModal.innerHTML = `<div id="show-details-content" class="bg-gray-800 rounded-xl p-6 w-full max-w-lg text-left shadow-2xl max-h-[90vh] overflow-y-auto"></div>`;
                 
                 const showModalFieldsHTML = (prefix) => `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -872,8 +872,7 @@
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
                     await setDoc(settingsRef, { ...userSettings, isManager }, { merge: true });
-                    userSettings.isManager = isManager;
-                    updateSettingsUI();
+                    await loadUserSettings(currentUser.uid);
                 } catch (err) {
                     showError("Não foi possível alterar o modo.");
                 }
