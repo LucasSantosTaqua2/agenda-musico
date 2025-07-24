@@ -604,27 +604,227 @@
             };
 
             const renderShows = () => {
-                // ... (código existente, sem alterações)
+                showsListAgendados.innerHTML = '';
+                showsListRealizados.innerHTML = '';
+                loadingState.classList.add('hidden');
+                
+                const artistFilter = filterArtistInput.value.toLowerCase();
+                const locationFilter = filterLocationInput.value.toLowerCase();
+                const monthFilter = document.getElementById('filter-month').value;
+
+                const agendados = allShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado');
+                const historico = allShows.filter(s => s.status === 'realizado' || s.status === 'cancelado');
+
+                const applyFilters = (show) => {
+                    const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter);
+                    const locationMatch = (show.location || '').toLowerCase().includes(locationFilter);
+                    const dateMatch = !monthFilter || (show.date && show.date.startsWith(monthFilter));
+                    return artistMatch && locationMatch && dateMatch;
+                };
+
+                const filteredAgendados = agendados.filter(applyFilters).sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
+                const filteredHistorico = historico.filter(applyFilters).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                if (allShows.length > 0 && filteredAgendados.length === 0 && filteredHistorico.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    emptyState.querySelector('p').textContent = 'Nenhum show encontrado para os filtros aplicados.';
+                } else if (allShows.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    emptyState.querySelector('p').textContent = 'Nenhum show encontrado.';
+                } else {
+                    emptyState.classList.add('hidden');
+                }
+
+                filteredAgendados.forEach(show => showsListAgendados.appendChild(createShowElement(show)));
+                filteredHistorico.forEach(show => showsListRealizados.appendChild(createShowElement(show)));
+                
+                lucide.createIcons();
             };
             
             const createShowElement = (show) => {
-                // ... (código existente, sem alterações)
+                const showElement = document.createElement('div');
+                showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4 cursor-pointer hover:bg-gray-700/50";
+                showElement.dataset.id = show.id;
+
+                const statusInfo = statusMap[show.status] || { text: '', color: ''};
+                const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
+                
+                const typeTag = show.isPersonal 
+                    ? `<div class="text-xs font-bold py-1 px-2 rounded-full bg-blue-500/20 text-blue-300">Pessoal</div>`
+                    : `<div class="text-xs font-bold py-1 px-2 rounded-full bg-purple-500/20 text-purple-300">Gerenciado</div>`;
+
+                const setlist = allSetlists.find(s => s.id === show.setlistId);
+                const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
+                const obsSnippet = show.observacoes ? `<p class="text-sm text-gray-400 mt-2 italic">"${show.observacoes.substring(0, 50)}..."</p>` : '';
+
+                const timeHTML = show.time ? `<span class="ml-2 text-gray-400 text-base">às ${show.time}</span>` : '';
+
+                showElement.innerHTML = `
+                    <div class="flex justify-between items-start w-full">
+                        <div>
+                            <p class="font-bold text-lg text-purple-300 flex items-center gap-2">
+                                <i data-lucide="calendar" class="w-5 h-5"></i> 
+                                ${formatDate(show.date)}
+                                ${timeHTML}
+                            </p>
+                            <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
+                            <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
+                            ${setlistHTML}
+                        </div>
+                        <div class="flex flex-col items-end gap-2">
+                            ${statusHTML}
+                            ${typeTag}
+                        </div>
+                    </div>
+                    ${obsSnippet}`;
+                return showElement;
             };
             
             const checkPastShows = () => {
-                // ... (código existente, sem alterações)
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); 
+                const pendingPastShows = allShows.filter(show => {
+                    const showDate = new Date(show.date + 'T00:00:00');
+                    return showDate < today && (show.status === 'confirmado' || show.status === 'aguardando') && show.isPersonal;
+                });
+
+                if (pendingPastShows.length > 0) {
+                    const showToConfirm = pendingPastShows[0];
+                    itemToModifyId = showToConfirm.id;
+                    document.getElementById('confirm-status-text').textContent = `O show de ${showToConfirm.artists} em ${showToConfirm.location} (${formatDate(showToConfirm.date)}) foi realizado?`;
+                    confirmStatusModal.classList.add('is-open');
+                }
             };
             
             const handleUser = async (user) => {
-                // ... (código existente, sem alterações)
+                loadingAuth.classList.add('hidden');
+                
+                if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
+                if (unsubscribeSetlists) unsubscribeSetlists.forEach(unsub => unsub());
+                if (unsubscribeNotifications) unsubscribeNotifications();
+                
+                unsubscribeShows = [];
+                unsubscribeSetlists = [];
+                let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = [];
+
+                if (user) {
+                    currentUser = user;
+                    await loadUserSettings(user.uid);
+                    
+                    loginScreen.style.display = 'none';
+                    appContent.style.display = 'block';
+
+                    const combineAndRenderAll = () => {
+                        const allCombinedShows = [
+                            ...personalShows.map(s => ({ ...s, isPersonal: true })),
+                            ...managedShows.map(s => ({ ...s, isPersonal: false }))
+                        ];
+                        allShows = allCombinedShows;
+                        
+                        allSetlists = [...new Map([...personalSetlists, ...managedSetlists].map(item => [item.id, item])).values()];
+
+                        renderShows();
+                        renderCalendar();
+                        renderDashboard();
+                        renderSetlists();
+                        populateSetlistDropdowns();
+                        
+                        if (!userSettings.managedBy) {
+                            checkPastShows();
+                        }
+                    };
+
+                    const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
+                    unsubscribeShows.push(onSnapshot(query(collection(db, personalShowsPath)), s => {
+                        personalShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        combineAndRenderAll();
+                    }));
+
+                    const personalSetlistsPath = `artifacts/${appId}/users/${currentUser.uid}/setlists`;
+                     unsubscribeSetlists.push(onSnapshot(query(collection(db, personalSetlistsPath), orderBy("name", "asc")), s => {
+                        personalSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        combineAndRenderAll();
+                    }));
+                    
+                    if (userSettings.managedBy) {
+                        const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
+                        unsubscribeShows.push(onSnapshot(query(collection(db, managedShowsPath), where("isManaged", "==", true)), s => {
+                            managedShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            combineAndRenderAll();
+                        }));
+
+                        const managedSetlistsPath = `artifacts/${appId}/users/${userSettings.managedBy}/setlists`;
+                        unsubscribeSetlists.push(onSnapshot(query(collection(db, managedSetlistsPath), orderBy("name", "asc")), s => {
+                            managedSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            combineAndRenderAll();
+                        }));
+                    }
+                    
+                    const notificationsPath = `artifacts/${appId}/users/${currentUser.uid}/notifications`;
+                    unsubscribeNotifications = onSnapshot(query(collection(db, notificationsPath), orderBy("timestamp", "desc")), (snapshot) => {
+                        allNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderNotifications();
+                    });
+
+                } else {
+                    currentUser = null;
+                    appContent.style.display = 'none';
+                    loginContainer.classList.remove('hidden');
+                    loginScreen.style.display = 'flex';
+                    allShows = [];
+                    allSetlists = [];
+                    allNotifications = [];
+                    renderShows();
+                    renderNotifications();
+                }
             };
             
             const loadUserSettings = async (uid) => {
-                // ... (código existente, sem alterações)
+                const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
+                try {
+                    const docSnap = await getDoc(settingsRef);
+                    if (docSnap.exists()) {
+                        userSettings = docSnap.data();
+                    } else {
+                        userSettings = { isManager: false, managedBy: null };
+                        await setDoc(settingsRef, userSettings);
+                    }
+                } catch (error) {
+                    console.error("Erro ao carregar configurações do usuário:", error);
+                    userSettings = {};
+                } finally {
+                    updateSettingsUI();
+                }
             };
 
             const updateSettingsUI = async () => {
-                // ... (código existente, sem alterações)
+                const managerToggle = document.getElementById('manager-mode-toggle');
+                const managerSettings = document.getElementById('manager-settings');
+                const musicianSettings = document.getElementById('musician-settings');
+                const linkFormEl = document.getElementById('link-form');
+                const managedByInfo = document.getElementById('managed-by-info');
+
+                managerToggle.checked = userSettings.isManager || false;
+                managerSettings.classList.toggle('hidden', !userSettings.isManager);
+                musicianSettings.classList.toggle('hidden', userSettings.isManager);
+                
+                if (userSettings.isManager) {
+                    document.getElementById('artist-name-input').value = userSettings.artistName || '';
+                    document.getElementById('invite-code').textContent = currentUser.uid;
+                }
+
+                if (userSettings.managedBy) {
+                    linkFormEl.classList.add('hidden');
+                    managedByInfo.classList.remove('hidden');
+                    
+                    const managerSettingsRef = doc(db, `artifacts/${appId}/user_settings`, userSettings.managedBy);
+                    const managerSnap = await getDoc(managerSettingsRef);
+                    const managerName = managerSnap.exists() ? managerSnap.data().artistName : 'Gerente não encontrado';
+                    document.getElementById('manager-name-display').textContent = managerName || `Gerente (${userSettings.managedBy.substring(0,6)}...)`;
+                } else {
+                    linkFormEl.classList.remove('hidden');
+                    managedByInfo.classList.add('hidden');
+                }
             };
 
             onAuthStateChanged(auth, handleUser);
@@ -632,11 +832,29 @@
             loginForm.addEventListener('submit', (e) => e.preventDefault());
 
             loginBtn.addEventListener('click', () => {
-                // ... (código existente, sem alterações)
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
+                signInWithEmailAndPassword(auth, email, password)
+                    .catch(error => {
+                        if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                            showLoginError("E-mail ou senha inválidos.");
+                        } else { showLoginError("Ocorreu um erro ao fazer login."); }
+                    });
             });
 
             registerBtn.addEventListener('click', () => {
-                // ... (código existente, sem alterações)
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
+                createUserWithEmailAndPassword(auth, email, password)
+                    .catch(error => {
+                        if (error.code === 'auth/email-already-in-use') {
+                            showLoginError("Este e-mail já está em uso.");
+                        } else if (error.code === 'auth/weak-password') {
+                            showLoginError("A senha deve ter pelo menos 6 caracteres.");
+                        } else { showLoginError("Ocorreu um erro ao registrar."); }
+                    });
             });
 
             logoutBtn.addEventListener('click', () => signOut(auth));
@@ -744,7 +962,17 @@
             cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); itemToModifyId = null; });
             
             const updatePastShowStatus = async (status) => {
-                // ... (código existente, sem alterações)
+                if (!currentUser || !itemToModifyId) return;
+                try {
+                    const ownerId = currentUser.uid;
+                    const showDocPath = `artifacts/${appId}/users/${ownerId}/shows/${itemToModifyId}`;
+                    await updateDoc(doc(db, showDocPath), { status: status });
+                    confirmStatusModal.classList.remove('is-open');
+                    itemToModifyId = null;
+                    checkPastShows();
+                } catch (err) {
+                    showError("Não foi possível atualizar o status do show.");
+                }
             };
 
             confirmRealizadoBtn.addEventListener('click', () => updatePastShowStatus('realizado'));
@@ -753,7 +981,16 @@
             const tabs = [tabAgenda, tabCalendario, tabSetlists, tabDashboard, tabConfiguracoes];
             const views = [viewAgenda, viewCalendario, viewSetlists, viewDashboard, viewConfiguracoes];
             tabs.forEach((tab, index) => {
-                // ... (código existente, sem alterações)
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('tab-active'));
+                    views.forEach(v => v.classList.add('hidden'));
+                    tab.classList.add('tab-active');
+                    views[index].classList.remove('hidden');
+                    lucide.createIcons();
+                    if(views[index].id === 'view-dashboard') {
+                        renderDashboard();
+                    }
+                });
             });
 
             const calendarGrid = document.getElementById('calendar-grid');
@@ -764,16 +1001,19 @@
                 // ... (código existente, sem alterações)
             };
             
-            document.getElementById('prev-month-btn').addEventListener('click', () => { /* ... */ });
-            document.getElementById('next-month-btn').addEventListener('click', () => { /* ... */ });
+            document.getElementById('prev-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1); renderCalendar(); });
+            document.getElementById('next-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1); renderCalendar(); });
 
             calendarGrid.addEventListener('click', (e) => {
                 // ... (código existente, sem alterações)
             });
 
             const renderDashboard = () => {
-                // ... (código existente, sem alterações)
+                renderShowsPerMonth();
+                renderTopLocations();
+                renderTopSetlists();
             };
+
             const renderShowsPerMonth = () => { /* ... */ };
             const renderTopLocations = () => { /* ... */ };
             const renderTopSetlists = () => { /* ... */ };
