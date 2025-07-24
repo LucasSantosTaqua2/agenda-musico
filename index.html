@@ -15,11 +15,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
 
         window.firebaseApp = { initializeApp };
         window.firebaseAuth = { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
-        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy };
+        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc };
     </script>
     
     <style>
@@ -30,6 +30,12 @@
         .tab-active { border-color: #8b5cf6; color: #c4b5fd; }
         .calendar-day.has-event { background-color: #8b5cf6; color: white; border-radius: 50%; font-weight: bold; }
         .calendar-day.selected { background-color: #c4b5fd; color: #111827; }
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4b5563; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #8b5cf6; }
+        input:checked + .slider:before { transform: translateX(26px); }
     </style>
 </head>
 <body class="text-white font-sans">
@@ -81,6 +87,7 @@
                     <button id="tab-calendario" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Calendário</button>
                     <button id="tab-setlists" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Setlists</button>
                     <button id="tab-dashboard" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Dashboard</button>
+                    <button id="tab-configuracoes" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Configurações</button>
                 </nav>
             </div>
 
@@ -148,6 +155,50 @@
                     <canvas id="top-setlists-chart"></canvas>
                 </div>
             </div>
+
+            <div id="view-configuracoes" class="hidden space-y-8">
+                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Modo Gerente</h3>
+                    <div class="flex items-center justify-between">
+                        <p class="text-gray-300">Ativar para gerenciar a agenda de outros músicos.</p>
+                        <label class="switch">
+                            <input type="checkbox" id="manager-mode-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="manager-settings" class="hidden space-y-8">
+                     <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">Configurações de Gerente</h3>
+                        <div>
+                            <label for="artist-name-input" class="text-sm font-medium text-gray-400">Nome do Artista Principal</label>
+                            <input id="artist-name-input" type="text" placeholder="Ex: Zé Lucas" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        </div>
+                        <div class="mt-4">
+                             <p class="text-sm font-medium text-gray-400">Seu Código de Convite</p>
+                             <div class="mt-1 flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
+                                <span id="invite-code" class="text-gray-300 font-mono text-sm"></span>
+                                <button id="copy-invite-code-btn"><i data-lucide="copy" class="w-4 h-4 text-gray-400"></i></button>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="musician-settings" class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Vincular a um Gerente</h3>
+                    <div id="managed-by-info" class="hidden">
+                        <p class="text-gray-300">Você está vinculado à agenda de:</p>
+                        <p id="manager-name-display" class="font-bold text-lg text-purple-300"></p>
+                        <button id="unlink-btn" class="mt-4 text-sm text-red-400 hover:underline">Desvincular</button>
+                    </div>
+                    <form id="link-form" class="">
+                        <label for="manager-code-input" class="text-sm font-medium text-gray-400">Código de Convite do Gerente</label>
+                        <input id="manager-code-input" type="text" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        <button type="submit" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Vincular Conta</button>
+                    </form>
+                </div>
+            </div>
         </div>
         <button id="open-add-modal-btn" class="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110">
             <i data-lucide="plus" class="w-8 h-8"></i>
@@ -163,7 +214,7 @@
     <script type="module">
         const { initializeApp } = window.firebaseApp;
         const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
-        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy } = window.firebaseFirestore;
+        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc } = window.firebaseFirestore;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -212,14 +263,17 @@
             const tabCalendario = document.getElementById('tab-calendario');
             const tabSetlists = document.getElementById('tab-setlists');
             const tabDashboard = document.getElementById('tab-dashboard');
+            const tabConfiguracoes = document.getElementById('tab-configuracoes');
             const viewAgenda = document.getElementById('view-agenda');
             const viewCalendario = document.getElementById('view-calendario');
             const viewSetlists = document.getElementById('view-setlists');
             const viewDashboard = document.getElementById('view-dashboard');
+            const viewConfiguracoes = document.getElementById('view-configuracoes');
             
             let allShows = [];
             let allSetlists = [];
             let currentUser = null;
+            let userSettings = {};
             let itemToModifyId = null;
             let itemTypeToDelete = '';
             let unsubscribeShows = null;
@@ -316,6 +370,7 @@
                     const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
                     const setlist = allSetlists.find(s => s.id === show.setlistId);
                     const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
+                    const isMusician = !!userSettings.managedBy;
 
                     showElement.innerHTML = `
                         <div class="flex justify-between items-start w-full">
@@ -329,7 +384,7 @@
                         </div>
                         ${show.observacoes ? `<div class="w-full mt-2 pt-2 border-t border-gray-700 text-sm text-gray-400"><p class="font-semibold text-gray-300">Observações:</p><p>${show.observacoes.replace(/\n/g, '<br>')}</p></div>` : ''}
                         <div class="flex justify-end items-center w-full mt-2">
-                            <div class="flex gap-2">
+                            <div class="flex gap-2 ${isMusician ? 'hidden' : ''}">
                                 <button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
                                 <button data-id="${show.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
                             </div>
@@ -359,14 +414,17 @@
                 }
             };
             
-            const handleUser = (user) => {
+            const handleUser = async (user) => {
                 loadingAuth.classList.add('hidden');
                 if (user) {
                     currentUser = user;
+                    await loadUserSettings(user.uid);
+                    
                     loginScreen.style.display = 'none';
                     appContent.style.display = 'block';
                     
-                    const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
+                    const showsCollectionPath = `artifacts/${appId}/users/${userSettings.managedBy || currentUser.uid}/shows`;
+                    
                     if (unsubscribeShows) unsubscribeShows();
                     const qShows = query(collection(db, showsCollectionPath));
                     unsubscribeShows = onSnapshot(qShows, (querySnapshot) => {
@@ -375,13 +433,13 @@
                         renderShows();
                         renderCalendar();
                         renderDashboard();
-                        checkPastShows();
-                    }, err => {
-                        console.error("Erro ao buscar shows:", err);
-                        showError("Não foi possível carregar os shows.");
+                        if (!userSettings.managedBy) {
+                            checkPastShows();
+                        }
                     });
 
-                    const setlistsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/setlists`;
+                    const setlistOwnerId = userSettings.managedBy || currentUser.uid;
+                    const setlistsCollectionPath = `artifacts/${appId}/users/${setlistOwnerId}/setlists`;
                     if (unsubscribeSetlists) unsubscribeSetlists();
                     const qSetlists = query(collection(db, setlistsCollectionPath), orderBy("name", "asc"));
                     unsubscribeSetlists = onSnapshot(qSetlists, (querySnapshot) => {
@@ -460,7 +518,12 @@
             filterLocationInput.addEventListener('input', renderShows);
             filterDateInput.addEventListener('input', renderShows);
 
-            openAddModalBtn.addEventListener('click', () => addModal.classList.add('is-open'));
+            openAddModalBtn.addEventListener('click', () => {
+                if(userSettings.isManager && userSettings.artistName) {
+                    document.getElementById('add-artists').value = userSettings.artistName;
+                }
+                addModal.classList.add('is-open');
+            });
             cancelAddBtn.addEventListener('click', () => addModal.classList.remove('is-open'));
 
             const allListsContainer = document.getElementById('app-content');
@@ -549,8 +612,8 @@
             confirmRealizadoBtn.addEventListener('click', () => updatePastShowStatus('realizado'));
             confirmCanceladoBtn.addEventListener('click', () => updatePastShowStatus('cancelado'));
 
-            const tabs = [tabAgenda, tabCalendario, tabSetlists, tabDashboard];
-            const views = [viewAgenda, viewCalendario, viewSetlists, viewDashboard];
+            const tabs = [tabAgenda, tabCalendario, tabSetlists, tabDashboard, tabConfiguracoes];
+            const views = [viewAgenda, viewCalendario, viewSetlists, viewDashboard, viewConfiguracoes];
             tabs.forEach((tab, index) => {
                 tab.addEventListener('click', () => {
                     tabs.forEach(t => t.classList.remove('tab-active'));
@@ -655,7 +718,6 @@
                 topSetlistsChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#6d28d9', '#5b21b6'] }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } } } });
             };
 
-            // Lógica de Setlists
             const setlistsList = document.getElementById('setlists-list');
             const emptySetlistState = document.getElementById('empty-setlist-state');
 
