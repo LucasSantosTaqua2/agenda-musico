@@ -210,6 +210,7 @@
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="confirm-status-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="setlist-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
+    <div id="show-details-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50 p-4"></div>
 
     <script type="module">
         const { initializeApp } = window.firebaseApp;
@@ -258,6 +259,7 @@
             const editModal = document.getElementById('edit-modal');
             const confirmStatusModal = document.getElementById('confirm-status-modal');
             const setlistModal = document.getElementById('setlist-modal');
+            const showDetailsModal = document.getElementById('show-details-modal');
 
             const tabAgenda = document.getElementById('tab-agenda');
             const tabCalendario = document.getElementById('tab-calendario');
@@ -370,12 +372,13 @@
 
                 const createShowElement = (show) => {
                     const showElement = document.createElement('div');
-                    showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4";
+                    showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4 cursor-pointer hover:bg-gray-700/50";
+                    showElement.dataset.id = show.id;
                     const statusInfo = statusMap[show.status] || { text: '', color: ''};
                     const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
                     const setlist = allSetlists.find(s => s.id === show.setlistId);
                     const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
-                    const isMusician = !!userSettings.managedBy;
+                    const obsSnippet = show.observacoes ? `<p class="text-sm text-gray-400 mt-2 italic">"${show.observacoes.substring(0, 50)}..."</p>` : '';
 
                     showElement.innerHTML = `
                         <div class="flex justify-between items-start w-full">
@@ -387,13 +390,7 @@
                             </div>
                             ${statusHTML}
                         </div>
-                        ${show.observacoes ? `<div class="w-full mt-2 pt-2 border-t border-gray-700 text-sm text-gray-400"><p class="font-semibold text-gray-300">Observações:</p><p>${show.observacoes.replace(/\n/g, '<br>')}</p></div>` : ''}
-                        <div class="flex justify-end items-center w-full mt-2">
-                            <div class="flex gap-2 ${isMusician ? 'hidden' : ''}">
-                                <button data-id="${show.id}" class="edit-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
-                                <button data-id="${show.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
-                            </div>
-                        </div>`;
+                        ${obsSnippet}`;
                     return showElement;
                 };
 
@@ -431,14 +428,12 @@
                     const showsCollectionPath = `artifacts/${appId}/users/${userSettings.managedBy || currentUser.uid}/shows`;
                     
                     if (unsubscribeShows) unsubscribeShows();
-
                     let qShows;
                     if (userSettings.managedBy) {
                         qShows = query(collection(db, showsCollectionPath), where("isManaged", "==", true));
                     } else {
                         qShows = query(collection(db, showsCollectionPath));
                     }
-
                     unsubscribeShows = onSnapshot(qShows, (querySnapshot) => {
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
