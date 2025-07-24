@@ -92,7 +92,12 @@
                     </div>
                 </div>
                 <div>
-                    <div id="shows-list" class="space-y-4"></div>
+                    <h2 class="text-2xl font-bold mb-4 text-gray-200">Shows Agendados</h2>
+                    <div id="shows-list-agendados" class="space-y-4"></div>
+                    
+                    <h2 class="text-2xl font-bold mb-4 mt-10 text-gray-200">Histórico (Realizados/Cancelados)</h2>
+                    <div id="shows-list-realizados" class="space-y-4"></div>
+
                     <div id="loading-state" class="text-center text-gray-400 py-8">Carregando shows...</div>
                     <div id="empty-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
                         <p class="text-gray-400">Nenhum show encontrado.</p>
@@ -169,7 +174,8 @@
             const logoutBtn = document.getElementById('logout-btn');
             const loginError = document.getElementById('login-error');
             
-            const showsList = document.getElementById('shows-list');
+            const showsListAgendados = document.getElementById('shows-list-agendados');
+            const showsListRealizados = document.getElementById('shows-list-realizados');
             const loadingState = document.getElementById('loading-state');
             const emptyState = document.getElementById('empty-state');
             const filterArtistInput = document.getElementById('filter-artist');
@@ -239,19 +245,42 @@
             };
 
             const renderShows = () => {
-                showsList.innerHTML = '';
+                showsListAgendados.innerHTML = '';
+                showsListRealizados.innerHTML = '';
                 loadingState.classList.add('hidden');
+                
                 const artistFilter = filterArtistInput.value.toLowerCase();
                 const locationFilter = filterLocationInput.value.toLowerCase();
                 const dateFilter = filterDateInput.value;
-                const filteredShows = allShows.filter(show => {
+
+                const agendados = allShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado');
+                const historico = allShows.filter(s => s.status === 'realizado' || s.status === 'cancelado');
+
+                const filteredAgendados = agendados.filter(show => {
                     const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter);
                     const locationMatch = (show.location || '').toLowerCase().includes(locationFilter);
                     const dateMatch = !dateFilter || (show.date === dateFilter);
                     return artistMatch && locationMatch && dateMatch;
-                });
-                if (allShows.length > 0 && filteredShows.length === 0) { emptyState.classList.remove('hidden'); emptyState.querySelector('p').textContent = 'Nenhum show encontrado para os filtros aplicados.'; } else if (allShows.length === 0) { emptyState.classList.remove('hidden'); emptyState.querySelector('p').textContent = 'Nenhum show encontrado.'; } else { emptyState.classList.add('hidden'); }
-                filteredShows.forEach(show => {
+                }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                const filteredHistorico = historico.filter(show => {
+                    const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter);
+                    const locationMatch = (show.location || '').toLowerCase().includes(locationFilter);
+                    const dateMatch = !dateFilter || (show.date === dateFilter);
+                    return artistMatch && locationMatch && dateMatch;
+                }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                if (allShows.length > 0 && filteredAgendados.length === 0 && filteredHistorico.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    emptyState.querySelector('p').textContent = 'Nenhum show encontrado para os filtros aplicados.';
+                } else if (allShows.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    emptyState.querySelector('p').textContent = 'Nenhum show encontrado.';
+                } else {
+                    emptyState.classList.add('hidden');
+                }
+
+                const createShowElement = (show) => {
                     const showElement = document.createElement('div');
                     showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4";
                     const statusInfo = statusMap[show.status] || { text: '', color: ''};
@@ -272,8 +301,12 @@
                                 <button data-id="${show.id}" class="delete-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
                             </div>
                         </div>`;
-                    showsList.appendChild(showElement);
-                });
+                    return showElement;
+                };
+
+                filteredAgendados.forEach(show => showsListAgendados.appendChild(createShowElement(show)));
+                filteredHistorico.forEach(show => showsListRealizados.appendChild(createShowElement(show)));
+                
                 lucide.createIcons();
             };
             
@@ -301,7 +334,7 @@
                     appContent.style.display = 'block';
                     const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
                     if (unsubscribeShows) unsubscribeShows();
-                    const q = query(collection(db, showsCollectionPath), orderBy("date", "asc"));
+                    const q = query(collection(db, showsCollectionPath));
                     unsubscribeShows = onSnapshot(q, (querySnapshot) => {
                         allShows = [];
                         querySnapshot.forEach(doc => allShows.push({ id: doc.id, ...doc.data() }));
@@ -382,7 +415,8 @@
             openAddModalBtn.addEventListener('click', () => addModal.classList.add('is-open'));
             cancelAddBtn.addEventListener('click', () => addModal.classList.remove('is-open'));
 
-            showsList.addEventListener('click', (e) => {
+            const allLists = document.getElementById('app-content');
+            allLists.addEventListener('click', (e) => {
                 const deleteBtn = e.target.closest('.delete-btn');
                 const editBtn = e.target.closest('.edit-btn');
                 if (deleteBtn) { showIdToModify = deleteBtn.dataset.id; deleteModal.classList.add('is-open'); }
