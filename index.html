@@ -73,9 +73,40 @@
                     <label for="password" class="text-sm font-medium text-gray-400">Senha</label>
                     <input id="password" type="password" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
                 </div>
-                <div class="mt-6 flex flex-col sm:flex-row gap-4">
-                    <button type="submit" id="login-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">Entrar</button>
-                    <button type="button" id="register-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">Registrar</button>
+                <div class="mt-6">
+    <button type="submit" id="login-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">Entrar</button>
+</div>
+<div class="text-center mt-4">
+    <p class="text-sm text-gray-400">Não tem uma conta? 
+        <button type="button" id="show-register-form-btn" class="font-semibold text-purple-400 hover:underline">Registre-se</button>
+    </p>
+</div>
+            </form>
+        </div>
+         <div id="register-container" class="w-full max-w-sm text-center hidden">
+            <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/logo1080.png" alt="Banda Sync Logo" style="height: 10rem;" class="mx-auto mb-8 block">
+            <h2 class="text-2xl font-bold mb-4 text-gray-200">Criar Nova Conta</h2>
+            <form id="register-form" class="text-left">
+                <div id="register-error" class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm hidden"></div>
+                <div>
+                    <label for="register-name" class="text-sm font-medium text-gray-400">Nome</label>
+                    <input id="register-name" type="text" placeholder="Seu nome" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                </div>
+                <div class="mt-4">
+                    <label for="register-instrument" class="text-sm font-medium text-gray-400">Instrumento Principal</label>
+                    <input id="register-instrument" type="text" placeholder="Ex: Guitarra" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                </div>
+                <div class="mt-4">
+                    <label for="register-email" class="text-sm font-medium text-gray-400">E-mail</label>
+                    <input id="register-email" type="email" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                </div>
+                <div class="mt-4">
+                    <label for="register-password" class="text-sm font-medium text-gray-400">Senha</label>
+                    <input id="register-password" type="password" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                </div>
+                <div class="mt-6 flex flex-col gap-4">
+                    <button type="submit" id="create-account-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">Criar Conta</button>
+                    <button type="button" id="back-to-login-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">Voltar para o Login</button>
                 </div>
             </form>
         </div>
@@ -220,6 +251,24 @@
             </div>
 
             <div id="view-configuracoes" class="hidden space-y-8">
+                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Perfil do Músico</h3>
+                    <form id="profile-form" class="space-y-4">
+                    <div id="profile-success" class="bg-green-500/20 text-green-300 p-3 rounded-lg text-sm hidden">Perfil atualizado com sucesso!</div>
+                <div>
+                <label for="profile-name" class="text-sm font-medium text-gray-400">Seu Nome</label>
+                <input id="profile-name" type="text" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+            </div>
+            <div>
+                <label for="profile-instrument" class="text-sm font-medium text-gray-400">Seu Instrumento Principal</label>
+                <input id="profile-instrument" type="text" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+                
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Modo Gerente</h3>
                     <div class="flex items-center justify-between">
@@ -367,6 +416,14 @@
             const notificationBadge = document.getElementById('notification-badge');
             const notificationsPanel = document.getElementById('notifications-panel');
             const notificationsList = document.getElementById('notifications-list');
+
+            const registerContainer = document.getElementById('register-container');
+const showRegisterFormBtn = document.getElementById('show-register-form-btn');
+const backToLoginBtn = document.getElementById('back-to-login-btn');
+const registerForm = document.getElementById('register-form');
+const createAccountBtn = document.getElementById('create-account-btn');
+const registerError = document.getElementById('register-error');
+const profileForm = document.getElementById('profile-form');
 
             // --- Variáveis de Estado Global ---
             let allShows = [];
@@ -832,23 +889,28 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                 }
             };
             
-            const loadUserSettings = async (uid) => {
-                const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
-                try {
-                    const docSnap = await getDoc(settingsRef);
-                    if (docSnap.exists()) {
-                        userSettings = docSnap.data();
-                    } else {
-                        userSettings = { isManager: false, managedBy: null };
-                        await setDoc(settingsRef, userSettings);
-                    }
-                } catch (error) {
-                    console.error("Erro ao carregar configurações do usuário:", error);
-                    userSettings = {};
-                } finally {
-                    updateSettingsUI();
-                }
-            };
+   const loadUserSettings = async (uid) => {
+    const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
+    try {
+        const docSnap = await getDoc(settingsRef);
+        if (docSnap.exists()) {
+            userSettings = docSnap.data();
+        } else {
+            // Se o usuário foi criado antes da adição dos novos campos
+            const defaultSettings = { isManager: false, managedBy: null, artistName: 'Músico', instrument: 'Não definido' };
+            await setDoc(settingsRef, defaultSettings);
+            userSettings = defaultSettings;
+        }
+    } catch (error) {
+        console.error("Erro ao carregar configurações do usuário:", error);
+        userSettings = {};
+    } finally {
+        updateSettingsUI();
+        // ADICIONAR LINHAS ABAIXO
+        document.getElementById('profile-name').value = userSettings.artistName || '';
+        document.getElementById('profile-instrument').value = userSettings.instrument || '';
+    }
+};
 
             const updateSettingsUI = async () => {
                  const managerToggle = document.getElementById('manager-mode-toggle');
@@ -896,20 +958,79 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                     });
             });
 
-            registerBtn.addEventListener('click', () => {
-                 const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
-                createUserWithEmailAndPassword(auth, email, password)
-                    .catch(error => {
-                        if (error.code === 'auth/email-already-in-use') {
-                            showLoginError("Este e-mail já está em uso.");
-                        } else if (error.code === 'auth/weak-password') {
-                            showLoginError("A senha deve ter pelo menos 6 caracteres.");
-                        } else { showLoginError("Ocorreu um erro ao registrar."); }
-                    });
-            });
+            const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
+const showRegisterError = (message) => { registerError.textContent = message; registerError.classList.remove('hidden'); };
 
+profileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    const newName = document.getElementById('profile-name').value;
+    const newInstrument = document.getElementById('profile-instrument').value;
+    const profileSuccess = document.getElementById('profile-success');
+
+    const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
+    try {
+        await updateDoc(settingsRef, {
+            artistName: newName,
+            instrument: newInstrument
+        });
+        profileSuccess.classList.remove('hidden');
+        setTimeout(() => profileSuccess.classList.add('hidden'), 3000); // Esconde a mensagem após 3s
+    } catch (err) {
+        showError("Não foi possível atualizar o perfil.");
+        console.error("Erro ao salvar perfil:", err);
+    }
+});
+
+showRegisterFormBtn.addEventListener('click', () => {
+    loginContainer.classList.add('hidden');
+    registerContainer.classList.remove('hidden');
+    loginError.classList.add('hidden');
+});
+
+backToLoginBtn.addEventListener('click', () => {
+    registerContainer.classList.add('hidden');
+    loginContainer.classList.remove('hidden');
+    registerError.classList.add('hidden');
+});
+
+registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('register-name').value;
+    const instrument = document.getElementById('register-instrument').value;
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+
+    if (!email || !password || !name || !instrument) {
+        showRegisterError("Por favor, preencha todos os campos.");
+        return;
+    }
+
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Salva as informações adicionais do perfil
+        const settingsRef = doc(db, `artifacts/${appId}/user_settings`, user.uid);
+        await setDoc(settingsRef, {
+            artistName: name,
+            instrument: instrument,
+            isManager: false,
+            managedBy: null
+        });
+
+    } catch (error) {
+        if (error.code === 'auth/email-already-in-use') {
+            showRegisterError("Este e-mail já está em uso.");
+        } else if (error.code === 'auth/weak-password') {
+            showRegisterError("A senha deve ter pelo menos 6 caracteres.");
+        } else {
+            showRegisterError("Ocorreu um erro ao registrar.");
+            console.error(error);
+        }
+    }
+});
             logoutBtn.addEventListener('click', () => signOut(auth));
             
             addShowForm.addEventListener('submit', async (e) => {
