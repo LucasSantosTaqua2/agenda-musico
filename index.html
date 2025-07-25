@@ -860,19 +860,6 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                 allTeamMembers = []; // Caso não seja gerente nem gerenciado
                 combineAndRenderAll();
             }
-
-                        const managedSetlistsPath = `artifacts/${appId}/users/${userSettings.managedBy}/setlists`;
-                        unsubscribeSetlists.push(onSnapshot(query(collection(db, managedSetlistsPath), orderBy("name", "asc")), s => {
-                            managedSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            combineAndRenderAll();
-                        }));
-
-                        const managedTeamPath = `artifacts/${appId}/users/${userSettings.managedBy}/team`;
-                        unsubscribeTeam.push(onSnapshot(query(collection(db, managedTeamPath), orderBy("name", "asc")), s => {
-                            managedTeam = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            combineAndRenderAll();
-                        }));
-                    }
                     
                     const notificationsPath = `artifacts/${appId}/users/${currentUser.uid}/notifications`;
                     unsubscribeNotifications = onSnapshot(query(collection(db, notificationsPath), orderBy("timestamp", "desc")), (snapshot) => {
