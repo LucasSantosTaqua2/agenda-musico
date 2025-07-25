@@ -787,7 +787,7 @@ const setupModalHTML = () => {
                 });
             };
             
-            const createShowElement = (show) => {
+  const createShowElement = (show) => {
                 const showElement = document.createElement('div');
                 showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4 cursor-pointer hover:bg-gray-700/50";
                 showElement.dataset.id = show.id;
@@ -795,9 +795,19 @@ const setupModalHTML = () => {
                 const statusInfo = statusMap[show.status] || { text: '', color: ''};
                 const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
                 
-                const typeTag = show.isPersonal 
-                    ? `<div class="text-xs font-bold py-1 px-2 rounded-full bg-blue-500/20 text-blue-300">Pessoal</div>`
-                    : `<div class="text-xs font-bold py-1 px-2 rounded-full bg-purple-500/20 text-purple-300">Gerenciado</div>`;
+                let typeTag = '';
+                if (show.isPersonal) {
+                    if (show.isManaged) {
+                        // Show criado pelo usuário no modo Gerente
+                        typeTag = `<div class="text-xs font-bold py-1 px-2 rounded-full bg-orange-500/20 text-orange-300">Gerenciador</div>`;
+                    } else {
+                        // Show pessoal do usuário
+                        typeTag = `<div class="text-xs font-bold py-1 px-2 rounded-full bg-blue-500/20 text-blue-300">Pessoal</div>`;
+                    }
+                } else {
+                    // Show gerenciado por outra pessoa
+                    typeTag = `<div class="text-xs font-bold py-1 px-2 rounded-full bg-purple-500/20 text-purple-300">Gerenciado</div>`;
+                }
 
                 const setlist = allSetlists.find(s => s.id === show.setlistId);
                 const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
