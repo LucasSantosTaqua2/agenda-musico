@@ -773,7 +773,7 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                 unsubscribeShows = [];
                 unsubscribeSetlists = [];
                 unsubscribeTeam = []; // ADICIONAR
-                let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = [], personalTeam = []; // ADICIONAR team
+                let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = []; // ADICIONAR team
                 if (user) {
                     currentUser = user;
                     await loadUserSettings(user.uid);
@@ -790,11 +790,11 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                         
                         allSetlists = [...new Map([...personalSetlists, ...managedSetlists].map(item => [item.id, item])).values()];
 
-                           const allCombinedTeam = [
-                            ...personalTeam.map(m => ({ ...m, isPersonal: true })),
-                            ...managedTeam.map(m => ({ ...m, isPersonal: false }))
-                            ];
-                            allTeamMembers = allCombinedTeam;
+                           // const allCombinedTeam = [
+                           //  ...personalTeam.map(m => ({ ...m, isPersonal: true })),
+                           //  ...managedTeam.map(m => ({ ...m, isPersonal: false }))
+                           //  ];
+                           //  allTeamMembers = allCombinedTeam;
 
                         renderShows();
                         renderCalendar();
