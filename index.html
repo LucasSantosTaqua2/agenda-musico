@@ -61,16 +61,15 @@
 
     <div id="login-screen" class="min-h-screen flex flex-col justify-center items-center p-4">
         <div id="login-container" class="w-full max-w-sm text-center hidden">
-            <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/logo1080.png" alt="Banda Sync Logo" style="height: 10rem;" class="mx-auto mb-8 block">    
+            <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/logo1080.png" alt="Banda Sync Logo" style="height: 10rem;" class="mx-auto mb-8 block">   
             <p class="text-gray-400 mb-8">Crie uma conta ou faça login para continuar.</p>
-                <form id="login-form" class="text-left">
+            <form id="login-form" class="text-left">
                 <div id="login-error" class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm hidden"></div>
-                
-                <div id="name-field" class="hidden">
+                <div id="name-field" class="hidden mb-4">
                     <label for="name" class="text-sm font-medium text-gray-400">Nome</label>
                     <input id="name" type="text" placeholder="Seu nome completo" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
                 </div>
-                <div class="mt-4">
+                <div>
                     <label for="email" class="text-sm font-medium text-gray-400">E-mail</label>
                     <input id="email" type="email" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
                 </div>
@@ -110,7 +109,7 @@
                 </div>
             </header>
 
-            <div id="notifications-panel" class="hidden absolute top-20 right-8 w-80 max-w-sm bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50">
+            <div id="notifications-panel" class="hidden absolute top-24 right-8 w-80 max-w-sm bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50">
                 <div class="p-4 border-b border-gray-700">
                     <h3 class="font-semibold text-white">Notificações</h3>
                 </div>
@@ -126,6 +125,7 @@
                     <button id="tab-calendario" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Calendário</button>
                     <button id="tab-setlists" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Setlists</button>
                     <button id="tab-dashboard" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Dashboard</button>
+                    <button id="tab-equipe" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Equipe</button>
                     <button id="tab-configuracoes" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Configurações</button>
                 </nav>
             </div>
@@ -212,6 +212,15 @@
                 </div>
             </div>
 
+            <div id="view-equipe" class="hidden">
+                <div class="flex items-center gap-3 mb-6">
+                    <i data-lucide="users" class="text-purple-400 w-8 h-8"></i>
+                    <h2 class="text-3xl font-bold text-gray-100">Membros da Equipe</h2>
+                </div>
+                <div id="crew-list" class="space-y-4">
+                </div>
+            </div>
+
             <div id="view-configuracoes" class="hidden space-y-8">
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Modo Gerente</h3>
@@ -276,7 +285,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             
-            const firebaseConfig = {
+          const firebaseConfig = {
               apiKey: "AIzaSyBIPPMg_OUyC2AKmJpy36ljJCjdvZVUxuE",
               authDomain: "minha-agenda-de-shows.firebaseapp.com",
               projectId: "minha-agenda-de-shows",
@@ -284,6 +293,7 @@
               messagingSenderId: "676045633970",
               appId: "1:676045633970:web:d9c4916ffa716e96290cab"
             };
+            
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
             const db = getFirestore(app);
@@ -358,7 +368,8 @@
             let topLocationsChart = null;
             let topSetlistsChart = null;
 
-            // --- Funções Auxiliares ---
+            // --- Funções Auxiliares e de UI (Ordem corrigida) ---
+
             const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
             const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
             const formatDate = (dateString) => {
@@ -369,7 +380,6 @@
                 return `${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}, ${formattedDate}`;
             };
             
-            // --- Funções de Notificação ---
             const notifyLinkedMusicians = async (message, showDate, showTime) => {
                 if (!currentUser || !userSettings.isManager) return;
                 try {
@@ -390,8 +400,9 @@
                     console.error("Erro ao tentar notificar músicos:", error);
                 }
             };
+
             const renderNotifications = () => {
-                          notificationsList.innerHTML = '';
+                notificationsList.innerHTML = '';
                 const unreadCount = allNotifications.filter(n => !n.read).length;
 
                 if (unreadCount > 0) {
@@ -410,17 +421,8 @@
                     const notifElement = document.createElement('div');
                     const isUnread = !notif.read ? 'bg-purple-500/10' : '';
                     notifElement.className = `p-3 border-b border-gray-700 ${isUnread}`;
-                    
-                    // Lógica para exibir a data e hora do show, se existirem
-                    const dateInfo = notif.showDate 
-                        ? `<p class="text-xs text-gray-400 mt-1">${formatDate(notif.showDate)}${notif.showTime ? ` às ${notif.showTime}` : ''}</p>` 
-                        : '';
-
-                    notifElement.innerHTML = `
-                        <p class="text-sm text-gray-200">${notif.message}</p>
-                        ${dateInfo}
-                    `;
-                    
+                    const dateInfo = notif.showDate ? `<p class="text-xs text-gray-400 mt-1">${formatDate(notif.showDate)}${notif.showTime ? ` às ${notif.showTime}` : ''}</p>` : '';
+                    notifElement.innerHTML = `<p class="text-sm text-gray-200">${notif.message}</p>${dateInfo}`;
                     notificationsList.appendChild(notifElement);
                 });
             };
@@ -434,31 +436,20 @@
                 });
             };
 
-           const renderCrewPage = async () => {
+            const renderCrewPage = async () => {
                 crewList.innerHTML = '<p class="text-gray-400">Carregando equipe...</p>';
-                
                 const managerId = userSettings.isManager ? currentUser.uid : userSettings.managedBy;
-
                 if (!managerId) {
                     crewList.innerHTML = '<p class="text-gray-400">Vincule-se a um gerente para ver a equipe.</p>';
                     return;
                 }
-
                 try {
                     const followersPath = `artifacts/${appId}/users/${managerId}/followers`;
                     const q = query(collection(db, followersPath), orderBy("joinedAt", "asc"));
                     const querySnapshot = await getDocs(q);
-
                     crewList.innerHTML = ''; 
-
-                    if (querySnapshot.empty) {
-                        crewList.innerHTML = '<p class="text-gray-400">Nenhum músico vinculado a esta agenda ainda.</p>';
-                        return;
-                    }
-
                     const managerSettingsRef = doc(db, `artifacts/${appId}/user_settings`, managerId);
                     const managerSnap = await getDoc(managerSettingsRef);
-                    
                     if (managerSnap.exists()) {
                         const managerData = managerSnap.data();
                         const managerCard = document.createElement('div');
@@ -467,27 +458,32 @@
                             <div><i data-lucide="user-cog" class="w-8 h-8 text-purple-400"></i></div>
                             <div>
                                 <p class="font-bold text-white">${managerData.artistName || managerData.name || 'Gerente'}</p>
-                                <p class="text-sm text-gray-400">${managerData.email || auth.currentUser.email}</p>
+                                <p class="text-sm text-gray-400">${auth.currentUser.email}</p>
                             </div>
                         `;
                         crewList.appendChild(managerCard);
                     }
-
-                    querySnapshot.forEach(doc => {
-                        const member = doc.data();
-                        const memberCard = document.createElement('div');
-                        memberCard.className = "bg-gray-800 rounded-lg p-4 flex items-center gap-4";
-                        memberCard.innerHTML = `
-                            <div><i data-lucide="user" class="w-8 h-8 text-gray-400"></i></div>
-                            <div>
-                                <p class="font-bold text-white">${member.name}</p>
-                                <p class="text-sm text-gray-400">${member.email}</p>
-                            </div>
-                        `;
-                        crewList.appendChild(memberCard);
-                    });
+                    if (querySnapshot.empty && managerSnap.exists()) {
+                         const noMusicians = document.createElement('p');
+                         noMusicians.className = "text-gray-400";
+                         noMusicians.textContent = "Nenhum músico vinculado a esta agenda ainda.";
+                         crewList.appendChild(noMusicians);
+                    } else {
+                        querySnapshot.forEach(doc => {
+                            const member = doc.data();
+                            const memberCard = document.createElement('div');
+                            memberCard.className = "bg-gray-800 rounded-lg p-4 flex items-center gap-4";
+                            memberCard.innerHTML = `
+                                <div><i data-lucide="user" class="w-8 h-8 text-gray-400"></i></div>
+                                <div>
+                                    <p class="font-bold text-white">${member.name}</p>
+                                    <p class="text-sm text-gray-400">${member.email}</p>
+                                </div>
+                            `;
+                            crewList.appendChild(memberCard);
+                        });
+                    }
                     lucide.createIcons();
-
                 } catch (error) {
                     console.error("Erro ao buscar a equipe:", error);
                     crewList.innerHTML = '<p class="text-red-400">Não foi possível carregar a equipe.</p>';
@@ -759,7 +755,7 @@
                 }
             };
             
-            const handleUser = async (user) => {
+             const handleUser = async (user) => {
                 loadingAuth.classList.add('hidden');
                 
                 if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
@@ -841,61 +837,15 @@
                     renderNotifications();
                 }
             };
-            
-            const loadUserSettings = async (uid) => {
-                const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
-                try {
-                    const docSnap = await getDoc(settingsRef);
-                    if (docSnap.exists()) {
-                        userSettings = docSnap.data();
-                    } else {
-                        userSettings = { isManager: false, managedBy: null };
-                        await setDoc(settingsRef, userSettings);
-                    }
-                } catch (error) {
-                    console.error("Erro ao carregar configurações do usuário:", error);
-                    userSettings = {};
-                } finally {
-                    updateSettingsUI();
-                }
-            };
 
-            const updateSettingsUI = async () => {
-                 const managerToggle = document.getElementById('manager-mode-toggle');
-                const managerSettings = document.getElementById('manager-settings');
-                const musicianSettings = document.getElementById('musician-settings');
-                const linkFormEl = document.getElementById('link-form');
-                const managedByInfo = document.getElementById('managed-by-info');
-
-                managerToggle.checked = userSettings.isManager || false;
-                managerSettings.classList.toggle('hidden', !userSettings.isManager);
-                musicianSettings.classList.toggle('hidden', userSettings.isManager);
-                
-                if (userSettings.isManager) {
-                    document.getElementById('artist-name-input').value = userSettings.artistName || '';
-                    document.getElementById('invite-code').textContent = currentUser.uid;
-                }
-
-                if (userSettings.managedBy) {
-                    linkFormEl.classList.add('hidden');
-                    managedByInfo.classList.remove('hidden');
-                    
-                    const managerSettingsRef = doc(db, `artifacts/${appId}/user_settings`, userSettings.managedBy);
-                    const managerSnap = await getDoc(managerSettingsRef);
-                    const managerName = managerSnap.exists() ? managerSnap.data().artistName : 'Gerente não encontrado';
-                    document.getElementById('manager-name-display').textContent = managerName || `Gerente (${userSettings.managedBy.substring(0,6)}...)`;
-                } else {
-                    linkFormEl.classList.remove('hidden');
-                    managedByInfo.classList.add('hidden');
-                }
-            };
-
+            // --- Inicialização e Event Listeners ---
+            setupModalHTML();
             onAuthStateChanged(auth, handleUser);
 
             loginForm.addEventListener('submit', (e) => e.preventDefault());
 
             loginBtn.addEventListener('click', () => {
-                 const email = document.getElementById('email').value;
+                const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
                 signInWithEmailAndPassword(auth, email, password)
@@ -906,16 +856,14 @@
                     });
             });
 
-
             registerBtn.addEventListener('click', async () => {
                 if (nameField.classList.contains('hidden')) {
                     nameField.classList.remove('hidden');
                     registerBtn.textContent = 'Confirmar Registro';
-                    loginBtn.classList.add('hidden'); 
+                    loginBtn.classList.add('hidden');
                     return;
                 }
 
-                // Se o campo já está visível, prossegue com o registro.
                 const name = nameInput.value;
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
@@ -928,8 +876,6 @@
                 try {
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     const user = userCredential.user;
-
-                    // Salva o nome e outras infos iniciais no Firestore
                     const settingsRef = doc(db, `artifacts/${appId}/user_settings`, user.uid);
                     await setDoc(settingsRef, {
                         name: name,
@@ -937,7 +883,6 @@
                         isManager: false,
                         managedBy: null
                     });
-
                 } catch (error) {
                     if (error.code === 'auth/email-already-in-use') {
                         showLoginError("Este e-mail já está em uso.");
@@ -946,7 +891,6 @@
                     } else {
                         showLoginError("Ocorreu um erro ao registrar.");
                     }
-                    // Reseta a UI de registro em caso de erro
                     nameField.classList.add('hidden');
                     registerBtn.textContent = 'Registrar';
                     loginBtn.classList.remove('hidden');
@@ -980,6 +924,7 @@
 
             filterArtistInput.addEventListener('input', renderShows);
             filterLocationInput.addEventListener('input', renderShows);
+            document.getElementById('filter-month').addEventListener('input', renderShows);
             
             const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
             const filtersContainer = document.getElementById('filters-container');
@@ -1076,7 +1021,6 @@
 
             const tabs = [tabAgenda, tabCalendario, tabSetlists, tabDashboard, tabEquipe, tabConfiguracoes];
             const views = [viewAgenda, viewCalendario, viewSetlists, viewDashboard, viewEquipe, viewConfiguracoes];
-            
             tabs.forEach((tab, index) => {
                 tab.addEventListener('click', () => {
                     tabs.forEach(t => t.classList.remove('tab-active'));
@@ -1115,8 +1059,8 @@
                 }
             };
             
-            document.getElementById('prev-month-btn').addEventListener('click', () => { /* ... */ });
-            document.getElementById('next-month-btn').addEventListener('click', () => { /* ... */ });
+            document.getElementById('prev-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1); renderCalendar(); });
+            document.getElementById('next-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1); renderCalendar(); });
 
             calendarGrid.addEventListener('click', (e) => {
                 if (e.target.classList.contains('calendar-day') && e.target.dataset.date) {
@@ -1233,6 +1177,7 @@
                     deleteModal.classList.add('is-open');
                 }
             });
+
 
             const openSetlistModal = (id = null) => {
                  setlistForm.reset();
@@ -1391,7 +1336,7 @@ linkForm.addEventListener('submit', async (e) => {
                     showError("Não foi possível vincular a conta. Verifique o código.");
                 }
             });
-unlinkBtn.addEventListener('click', async () => {
+        unlinkBtn.addEventListener('click', async () => {
                 if (!currentUser || !userSettings.managedBy) return;
 
                 // --- INÍCIO DA CORREÇÃO ---
@@ -1420,6 +1365,14 @@ unlinkBtn.addEventListener('click', async () => {
                 }
             });
 
+            [addModal, editModal, deleteModal, confirmStatusModal, setlistModal, showDetailsModal].forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('is-open');
+                    }
+                });
+            });
+
             const setupAgendaViewToggle = () => {
                 viewAgendadosBtn.addEventListener('click', () => {
                     agendadosContent.classList.remove('hidden');
@@ -1441,7 +1394,7 @@ unlinkBtn.addEventListener('click', async () => {
             };
             setupAgendaViewToggle();
 
-            notificationsBellContainer.addEventListener('click', (e) => {
+          notificationsBellContainer.addEventListener('click', (e) => {
                 e.stopPropagation();
                 notificationsPanel.classList.toggle('hidden');
                 if (!notificationsPanel.classList.contains('hidden')) {
