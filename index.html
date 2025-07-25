@@ -225,9 +225,6 @@
             </div>
 
             <div id="view-equipe" class="hidden">
-                <button id="open-add-musico-modal-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8 hidden">
-                    <i data-lucide="plus" class="w-5 h-5"></i> Adicionar Músico
-                </button>
                 <div id="equipe-list" class="space-y-4"></div>
                 <div id="empty-equipe-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
                 <p class="text-gray-400">Nenhum músico encontrado.</p>
@@ -323,26 +320,7 @@
     <div id="confirm-status-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="setlist-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="show-details-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50 p-4"></div>
-    <div id="equipe-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
-    <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-lg text-left shadow-2xl">
-        <h2 id="equipe-modal-title" class="text-xl font-semibold mb-4 flex items-center gap-2"></h2>
-        <form id="equipe-form" class="space-y-4">
-            <input type="hidden" id="musico-id">
-            <div>
-                <label for="musico-name" class="text-sm font-medium text-gray-400 mb-1">Nome do Músico</label>
-                <input id="musico-name" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
-            </div>
-            <div>
-                <label for="musico-instrumento" class="text-sm font-medium text-gray-400 mb-1">Instrumento</label>
-                <input id="musico-instrumento" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
-            </div>
-            <div class="flex justify-end gap-4 mt-4">
-                <button type="button" id="cancel-equipe-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button>
-                <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">Salvar</button>
-            </div>
-        </form>
-    </div>
-</div>
+    <div id="equipe-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
 
     <script type="module">
         const { initializeApp } = window.firebaseApp;
@@ -795,7 +773,7 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                 unsubscribeShows = [];
                 unsubscribeSetlists = [];
                 unsubscribeTeam = []; // ADICIONAR
-                let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = [], personalTeam = [], managedTeam = []; // ADICIONAR team
+                let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = [], personalTeam = []; // ADICIONAR team
                 if (user) {
                     currentUser = user;
                     await loadUserSettings(user.uid);
@@ -842,18 +820,46 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                         combineAndRenderAll();
                     }));
 
-                    const personalTeamPath = `artifacts/${appId}/users/${currentUser.uid}/team`;
-                     unsubscribeTeam.push(onSnapshot(query(collection(db, personalTeamPath), orderBy("name", "asc")), s => {
-                        personalTeam = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        combineAndRenderAll();
-                    }));
+            // --- NOVA LÓGICA DA EQUIPE BASEADA EM SEGUIDORES ---
+            const managerIdForTeam = userSettings.isManager ? currentUser.uid : userSettings.managedBy;
+
+            if (managerIdForTeam) {
+                const followersPath = `artifacts/${appId}/users/${managerIdForTeam}/followers`;
+                unsubscribeTeam.push(onSnapshot(collection(db, followersPath), async (snapshot) => {
+                    const followerIds = snapshot.docs.map(doc => doc.id);
                     
-                    if (userSettings.managedBy) {
-                        const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
-                        unsubscribeShows.push(onSnapshot(query(collection(db, managedShowsPath), where("isManaged", "==", true)), s => {
-                            managedShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            combineAndRenderAll();
-                        }));
+                    if (followerIds.length === 0) {
+                        allTeamMembers = [];
+                        combineAndRenderAll(); // Chama para atualizar a UI mesmo se a equipe estiver vazia
+                        return;
+                    }
+
+                    // Busca os detalhes de cada músico na coleção user_settings
+                    const memberPromises = followerIds.map(id => getDoc(doc(db, `artifacts/${appId}/user_settings`, id)));
+                    
+                    try {
+                        const memberDocs = await Promise.all(memberPromises);
+                        const teamMembers = memberDocs
+                            .filter(docSnap => docSnap.exists())
+                            .map(docSnap => ({
+                                id: docSnap.id,
+                                name: docSnap.data().userName, // Usamos o nome de usuário do músico
+                                instrumento: docSnap.data().instrument
+                            }));
+                        
+                        // Ordena a equipe por nome
+                        allTeamMembers = teamMembers.sort((a, b) => a.name.localeCompare(b.name));
+                        combineAndRenderAll(); // Atualiza a UI com os membros da equipe
+                    } catch (error) {
+                        console.error("Erro ao buscar detalhes dos membros da equipe:", error);
+                        allTeamMembers = [];
+                        combineAndRenderAll();
+                    }
+                }));
+            } else {
+                allTeamMembers = []; // Caso não seja gerente nem gerenciado
+                combineAndRenderAll();
+            }
 
                         const managedSetlistsPath = `artifacts/${appId}/users/${userSettings.managedBy}/setlists`;
                         unsubscribeSetlists.push(onSnapshot(query(collection(db, managedSetlistsPath), orderBy("name", "asc")), s => {
@@ -1288,108 +1294,98 @@ registerForm.addEventListener('submit', async (e) => {
             // --- Funções da Equipe ---
 
 const renderTeam = () => {
-    const equipeList = document.getElementById('equipe-list');
-    const emptyState = document.getElementById('empty-equipe-state');
-    const openAddBtn = document.getElementById('open-add-musico-modal-btn');
-    const emptySubtext = document.getElementById('empty-equipe-subtext');
+                const equipeList = document.getElementById('equipe-list');
+                const emptyState = document.getElementById('empty-equipe-state');
+                const emptySubtext = document.getElementById('empty-equipe-subtext');
 
-    equipeList.innerHTML = '';
+                equipeList.innerHTML = '';
+                
+                if (userSettings.isManager) {
+                    emptySubtext.textContent = "Sua equipe é formada pelos músicos que se vinculam a você usando seu código de convite.";
+                } else if (userSettings.managedBy) {
+                    emptySubtext.textContent = "Esta é a equipe do seu gerente.";
+                } else {
+                     emptySubtext.textContent = "Vincule-se a um gerente para ver uma equipe.";
+                }
+                
+                emptyState.classList.toggle('hidden', allTeamMembers.length > 0);
+
+                allTeamMembers.forEach(musico => {
+                    const musicoElement = document.createElement('div');
+                    musicoElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex justify-between items-center";
+                    
+                    musicoElement.innerHTML = `
+                        <div>
+                            <h3 class="text-xl font-bold text-blue-300">${musico.name}</h3>
+                            <p class="text-gray-400">${musico.instrumento || 'Instrumento não definido'}</p>
+                        </div>`;
+                    equipeList.appendChild(musicoElement);
+                });
+                lucide.createIcons();
+            };
+
+// const openEquipeModal = (id = null) => {
+//     const form = document.getElementById('equipe-form');
+//     form.reset();
+//     document.getElementById('musico-id').value = id || '';
+//     const title = document.getElementById('equipe-modal-title');
+//     if (id) {
+//         title.innerHTML = '<i data-lucide="pencil" class="text-yellow-400"></i> Editar Músico';
+//         const musicoData = allTeamMembers.find(m => m.id === id);
+//         if (musicoData) {
+//             document.getElementById('musico-name').value = musicoData.name;
+//             document.getElementById('musico-instrumento').value = musicoData.instrumento;
+//         }
+//     } else {
+//         title.innerHTML = '<i data-lucide="plus-circle" class="text-blue-400"></i> Novo Músico';
+//     }
+//     lucide.createIcons();
+//     equipeModal.classList.add('is-open');
+// };
+
+// // --- Event Listeners da Equipe ---
+
+// document.getElementById('open-add-musico-modal-btn').addEventListener('click', () => openEquipeModal());
+// document.getElementById('cancel-equipe-btn').addEventListener('click', () => equipeModal.classList.remove('is-open'));
+
+// document.getElementById('equipe-form').addEventListener('submit', async (e) => {
+//     e.preventDefault();
+//     if (!currentUser || !userSettings.isManager) return;
     
-    // Controla a visibilidade do botão de adicionar
-    if (userSettings.isManager) {
-        openAddBtn.classList.remove('hidden');
-        emptySubtext.textContent = "Clique no botão '+' para adicionar um músico.";
-    } else {
-        openAddBtn.classList.add('hidden');
-        emptySubtext.textContent = "Apenas o gerente da banda pode adicionar novos músicos.";
-    }
+//     const id = document.getElementById('musico-id').value;
+//     const data = {
+//         name: document.getElementById('musico-name').value,
+//         instrumento: document.getElementById('musico-instrumento').value
+//     };
     
-    emptyState.classList.toggle('hidden', allTeamMembers.length > 0);
+//     const collectionPath = `artifacts/${appId}/users/${currentUser.uid}/team`;
+//     try {
+//         if (id) {
+//             await updateDoc(doc(db, collectionPath, id), data);
+//         } else {
+//             await addDoc(collection(db, collectionPath), { ...data, createdAt: serverTimestamp() });
+//         }
+//         equipeModal.classList.remove('is-open');
+//     } catch (err) {
+//         showError("Não foi possível salvar os dados do músico.");
+//         console.error("Erro ao salvar músico:", err);
+//     }
+// });
 
-    allTeamMembers.forEach(musico => {
-        const musicoElement = document.createElement('div');
-        musicoElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex justify-between items-center";
-        
-        const actionButtons = userSettings.isManager ? `
-            <div class="flex gap-2">
-                <button data-id="${musico.id}" class="edit-musico-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
-                <button data-id="${musico.id}" class="delete-musico-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
-            </div>
-        ` : '';
-
-        musicoElement.innerHTML = `
-            <div>
-                <h3 class="text-xl font-bold text-blue-300">${musico.name}</h3>
-                <p class="text-gray-400">${musico.instrumento}</p>
-            </div>
-            ${actionButtons}`;
-        equipeList.appendChild(musicoElement);
-    });
-    lucide.createIcons();
-};
-
-const openEquipeModal = (id = null) => {
-    const form = document.getElementById('equipe-form');
-    form.reset();
-    document.getElementById('musico-id').value = id || '';
-    const title = document.getElementById('equipe-modal-title');
-    if (id) {
-        title.innerHTML = '<i data-lucide="pencil" class="text-yellow-400"></i> Editar Músico';
-        const musicoData = allTeamMembers.find(m => m.id === id);
-        if (musicoData) {
-            document.getElementById('musico-name').value = musicoData.name;
-            document.getElementById('musico-instrumento').value = musicoData.instrumento;
-        }
-    } else {
-        title.innerHTML = '<i data-lucide="plus-circle" class="text-blue-400"></i> Novo Músico';
-    }
-    lucide.createIcons();
-    equipeModal.classList.add('is-open');
-};
-
-// --- Event Listeners da Equipe ---
-
-document.getElementById('open-add-musico-modal-btn').addEventListener('click', () => openEquipeModal());
-document.getElementById('cancel-equipe-btn').addEventListener('click', () => equipeModal.classList.remove('is-open'));
-
-document.getElementById('equipe-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentUser || !userSettings.isManager) return;
-    
-    const id = document.getElementById('musico-id').value;
-    const data = {
-        name: document.getElementById('musico-name').value,
-        instrumento: document.getElementById('musico-instrumento').value
-    };
-    
-    const collectionPath = `artifacts/${appId}/users/${currentUser.uid}/team`;
-    try {
-        if (id) {
-            await updateDoc(doc(db, collectionPath, id), data);
-        } else {
-            await addDoc(collection(db, collectionPath), { ...data, createdAt: serverTimestamp() });
-        }
-        equipeModal.classList.remove('is-open');
-    } catch (err) {
-        showError("Não foi possível salvar os dados do músico.");
-        console.error("Erro ao salvar músico:", err);
-    }
-});
-
-document.getElementById('equipe-list').addEventListener('click', (e) => {
-    const editBtn = e.target.closest('.edit-musico-btn');
-    const deleteBtn = e.target.closest('.delete-musico-btn');
-    if (editBtn) {
-        openEquipeModal(editBtn.dataset.id);
-    }
-    if (deleteBtn) {
-        itemToModifyId = deleteBtn.dataset.id;
-        itemTypeToDelete = 'musico';
-        const musico = allTeamMembers.find(m => m.id === itemToModifyId);
-        document.getElementById('delete-confirm-text').textContent = `Tem certeza que deseja excluir "${musico.name}" da equipe?`;
-        deleteModal.classList.add('is-open');
-    }
-});
+// document.getElementById('equipe-list').addEventListener('click', (e) => {
+//     const editBtn = e.target.closest('.edit-musico-btn');
+//     const deleteBtn = e.target.closest('.delete-musico-btn');
+//     if (editBtn) {
+//         openEquipeModal(editBtn.dataset.id);
+//     }
+//     if (deleteBtn) {
+//         itemToModifyId = deleteBtn.dataset.id;
+//         itemTypeToDelete = 'musico';
+//         const musico = allTeamMembers.find(m => m.id === itemToModifyId);
+//         document.getElementById('delete-confirm-text').textContent = `Tem certeza que deseja excluir "${musico.name}" da equipe?`;
+//         deleteModal.classList.add('is-open');
+//     }
+// });
             
             const renderSetlists = () => {
                  setlistsList.innerHTML = '';
