@@ -770,6 +770,8 @@
             };
             
             const renderCalendar = () => {
+                const calendarGrid = document.getElementById('calendar-grid');
+                const monthYearTitle = document.getElementById('month-year-title');
                 calendarGrid.innerHTML = '';
                 const month = currentCalendarDate.getMonth();
                 const year = currentCalendarDate.getFullYear();
@@ -899,7 +901,7 @@
                 addSelect.value = savedAddValue;
                 editSelect.value = savedEditValue;
             };
-
+            
             // --- Função Principal de Controle ---
             const handleUser = async (user) => {
                 loadingAuth.classList.add('hidden');
@@ -1182,6 +1184,7 @@
                     e.target.classList.add('selected');
                     const dateStr = e.target.dataset.date;
                     const showsOnDay = allShows.filter(s => s.date === dateStr);
+                    const calendarShowDetails = document.getElementById('calendar-show-details');
                     calendarShowDetails.innerHTML = '';
                     if (showsOnDay.length > 0) {
                         showsOnDay.forEach(show => {
@@ -1196,6 +1199,9 @@
                     } else { calendarShowDetails.innerHTML = `<p class="text-center text-gray-500">Nenhum show neste dia.</p>`; }
                 }
             });
+            
+            const setlistsList = document.getElementById('setlists-list');
+            const setlistForm = document.getElementById('setlist-form');
 
             openAddSetlistModalBtn.addEventListener('click', () => openSetlistModal());
             cancelSetlistBtn.addEventListener('click', () => setlistModal.classList.remove('is-open'));
@@ -1215,6 +1221,20 @@
                     setlistModal.classList.remove('is-open');
                 } catch (err) {
                     showError("Não foi possível salvar a setlist.");
+                }
+            });
+
+            setlistsList.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-setlist-btn');
+                const deleteBtn = e.target.closest('.delete-setlist-btn');
+                if(editBtn) {
+                    openSetlistModal(editBtn.dataset.id);
+                }
+                if(deleteBtn) {
+                    itemToModifyId = deleteBtn.dataset.id;
+                    itemTypeToDelete = 'setlist';
+                    document.getElementById('delete-confirm-text').textContent = "Tem certeza que deseja excluir esta setlist?";
+                    deleteModal.classList.add('is-open');
                 }
             });
 
