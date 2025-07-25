@@ -924,55 +924,8 @@ const notifyLinkedMusicians = async (musicianIds, message, showDate, showTime) =
 
 }
 
-                    const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
-                    unsubscribeShows.push(onSnapshot(query(collection(db, personalShowsPath)), s => {
-                        personalShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        combineAndRenderAll();
-                    }));
 
-                    const personalSetlistsPath = `artifacts/${appId}/users/${currentUser.uid}/setlists`;
-                     unsubscribeSetlists.push(onSnapshot(query(collection(db, personalSetlistsPath), orderBy("name", "asc")), s => {
-                        personalSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        combineAndRenderAll();
-                    }));
-
-            // --- NOVA LÓGICA DA EQUIPE BASEADA EM SEGUIDORES ---
-            const managerIdForTeam = userSettings.isManager ? currentUser.uid : userSettings.managedBy;
-
-            if (managerIdForTeam) {
-                const followersPath = `artifacts/${appId}/users/${managerIdForTeam}/followers`;
-                unsubscribeTeam.push(onSnapshot(collection(db, followersPath), async (snapshot) => {
-                    const followerIds = snapshot.docs.map(doc => doc.id);
-                    
-                    if (followerIds.length === 0) {
-                        allTeamMembers = [];
-                        combineAndRenderAll(); // Chama para atualizar a UI mesmo se a equipe estiver vazia
-                        return;
-                    }
-
-                    // Busca os detalhes de cada músico na coleção user_settings
-                    const memberPromises = followerIds.map(id => getDoc(doc(db, `artifacts/${appId}/user_settings`, id)));
-                    
-                    try {
-                        const memberDocs = await Promise.all(memberPromises);
-                        const teamMembers = memberDocs
-                            .filter(docSnap => docSnap.exists())
-                            .map(docSnap => ({
-                                id: docSnap.id,
-                                name: docSnap.data().userName, // Usamos o nome de usuário do músico
-                                instrumento: docSnap.data().instrument
-                            }));
-                        
-                        // Ordena a equipe por nome
-                        allTeamMembers = teamMembers.sort((a, b) => a.name.localeCompare(b.name));
-                        combineAndRenderAll(); // Atualiza a UI com os membros da equipe
-                    } catch (error) {
-                        console.error("Erro ao buscar detalhes dos membros da equipe:", error);
-                        allTeamMembers = [];
-                        combineAndRenderAll();
-                    }
-                }));
-            } else {
+                    else {
                 allTeamMembers = []; // Caso não seja gerente nem gerenciado
                 combineAndRenderAll();
             }
@@ -982,8 +935,6 @@ const notifyLinkedMusicians = async (musicianIds, message, showDate, showTime) =
                         allNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         renderNotifications();
                     });
-
-                    }    
 
                 } else {
                     currentUser = null;
