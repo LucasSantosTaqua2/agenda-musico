@@ -277,14 +277,13 @@
             lucide.createIcons();
             
             const firebaseConfig = {
-                apiKey: "SUA_API_KEY",
-                authDomain: "SEU_AUTH_DOMAIN",
-                projectId: "SEU_PROJECT_ID",
-                storageBucket: "SEU_STORAGE_BUCKET",
-                messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-                appId: "SEU_APP_ID"
+              apiKey: "AIzaSyBIPPMg_OUyC2AKmJpy36ljJCjdvZVUxuE",
+              authDomain: "minha-agenda-de-shows.firebaseapp.com",
+              projectId: "minha-agenda-de-shows",
+              storageBucket: "minha-agenda-de-shows.firebasestorage.app",
+              messagingSenderId: "676045633970",
+              appId: "1:676045633970:web:d9c4916ffa716e96290cab"
             };
-            
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
             const db = getFirestore(app);
@@ -1380,10 +1379,9 @@ linkForm.addEventListener('submit', async (e) => {
 
                 try {
                     await setDoc(musicianSettingsRef, { managedBy: managerId }, { merge: true });
-                    // ATUALIZADO: Salva o nome e o e-mail do músico
                     await setDoc(followerRef, { 
                         joinedAt: serverTimestamp(),
-                        name: userSettings.name, // Pega o nome das configurações do usuário
+                        name: userSettings.name,
                         email: currentUser.email 
                     });
                     
@@ -1393,7 +1391,6 @@ linkForm.addEventListener('submit', async (e) => {
                     showError("Não foi possível vincular a conta. Verifique o código.");
                 }
             });
-
 unlinkBtn.addEventListener('click', async () => {
                 if (!currentUser || !userSettings.managedBy) return;
 
