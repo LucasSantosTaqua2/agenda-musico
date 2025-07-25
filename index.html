@@ -280,18 +280,18 @@
     <script type="module">
         const { initializeApp } = window.firebaseApp;
         const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
-        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } = window.firebaseFirestore;
+        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } from window.firebaseFirestore;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             
-          const firebaseConfig = {
-              apiKey: "AIzaSyBIPPMg_OUyC2AKmJpy36ljJCjdvZVUxuE",
-              authDomain: "minha-agenda-de-shows.firebaseapp.com",
-              projectId: "minha-agenda-de-shows",
-              storageBucket: "minha-agenda-de-shows.firebasestorage.app",
-              messagingSenderId: "676045633970",
-              appId: "1:676045633970:web:d9c4916ffa716e96290cab"
+            const firebaseConfig = {
+                apiKey: "AIzaSyBIPPMg_OUyC2AKmJpy36ljJCjdvZVUxuE",
+                authDomain: "minha-agenda-de-shows.firebaseapp.com",
+                projectId: "minha-agenda-de-shows",
+                storageBucket: "minha-agenda-de-shows.firebasestorage.app",
+                messagingSenderId: "676045633970",
+                appId: "1:676045633970:web:d9c4916ffa716e96290cab"
             };
             
             const app = initializeApp(firebaseConfig);
@@ -367,9 +367,8 @@
             let showsPerMonthChart = null;
             let topLocationsChart = null;
             let topSetlistsChart = null;
-
-            // --- Funções Auxiliares e de UI (Ordem corrigida) ---
-
+            
+            // --- Funções de Notificação e UI ---
             const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
             const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
             const formatDate = (dateString) => {
@@ -426,7 +425,7 @@
                     notificationsList.appendChild(notifElement);
                 });
             };
-
+            
             const markNotificationsAsRead = () => {
                 allNotifications.forEach(notif => {
                     if (!notif.read) {
@@ -435,7 +434,7 @@
                     }
                 });
             };
-
+            
             const renderCrewPage = async () => {
                 crewList.innerHTML = '<p class="text-gray-400">Carregando equipe...</p>';
                 const managerId = userSettings.isManager ? currentUser.uid : userSettings.managedBy;
@@ -458,7 +457,7 @@
                             <div><i data-lucide="user-cog" class="w-8 h-8 text-purple-400"></i></div>
                             <div>
                                 <p class="font-bold text-white">${managerData.artistName || managerData.name || 'Gerente'}</p>
-                                <p class="text-sm text-gray-400">${auth.currentUser.email}</p>
+                                <p class="text-sm text-gray-400">${managerData.email || auth.currentUser.email}</p>
                             </div>
                         `;
                         crewList.appendChild(managerCard);
@@ -489,8 +488,7 @@
                     crewList.innerHTML = '<p class="text-red-400">Não foi possível carregar a equipe.</p>';
                 }
             };
-
-            // --- Funções de Modais e UI ---
+            
             const openEditShowModal = (showId) => {
                 itemToModifyId = showId;
                 const show = allShows.find(s => s.id === showId);
@@ -635,33 +633,6 @@
                 lucide.createIcons();
             };
             
-            setupModalHTML();
-            
-            const addShowForm = document.getElementById('add-show-form');
-            const cancelAddBtn = document.getElementById('cancel-add-btn');
-            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-            const editShowForm = document.getElementById('edit-show-form');
-            const cancelEditBtn = document.getElementById('cancel-edit-btn');
-            const confirmRealizadoBtn = document.getElementById('confirm-realizado-btn');
-            const confirmCanceladoBtn = document.getElementById('confirm-cancelado-btn');
-            const openAddSetlistModalBtn = document.getElementById('open-add-setlist-modal-btn');
-            const setlistForm = document.getElementById('setlist-form');
-            const cancelSetlistBtn = document.getElementById('cancel-setlist-btn');
-            const exportPdfBtn = document.getElementById('export-pdf-btn');
-            const managerModeToggle = document.getElementById('manager-mode-toggle');
-            const artistNameInput = document.getElementById('artist-name-input');
-            const copyInviteCodeBtn = document.getElementById('copy-invite-code-btn');
-            const linkForm = document.getElementById('link-form');
-            const unlinkBtn = document.getElementById('unlink-btn');
-
-            const statusMap = {
-                confirmado: { text: 'Confirmado', color: 'bg-green-500/20 text-green-300' },
-                aguardando: { text: 'Aguardando', color: 'bg-yellow-500/20 text-yellow-300' },
-                cancelado: { text: 'Cancelado', color: 'bg-red-500/20 text-red-300' },
-                realizado: { text: 'Realizado', color: 'bg-blue-500/20 text-blue-300' }
-            };
-
             const renderShows = () => {
                 showsListAgendados.innerHTML = '';
                 showsListRealizados.innerHTML = '';
@@ -704,20 +675,13 @@
                 const showElement = document.createElement('div');
                 showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4 cursor-pointer hover:bg-gray-700/50";
                 showElement.dataset.id = show.id;
-
                 const statusInfo = statusMap[show.status] || { text: '', color: ''};
                 const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
-                
-                const typeTag = show.isPersonal 
-                    ? `<div class="text-xs font-bold py-1 px-2 rounded-full bg-blue-500/20 text-blue-300">Pessoal</div>`
-                    : `<div class="text-xs font-bold py-1 px-2 rounded-full bg-purple-500/20 text-purple-300">Gerenciado</div>`;
-
+                const typeTag = show.isPersonal ? `<div class="text-xs font-bold py-1 px-2 rounded-full bg-blue-500/20 text-blue-300">Pessoal</div>` : `<div class="text-xs font-bold py-1 px-2 rounded-full bg-purple-500/20 text-purple-300">Gerenciado</div>`;
                 const setlist = allSetlists.find(s => s.id === show.setlistId);
                 const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
                 const obsSnippet = show.observacoes ? `<p class="text-sm text-gray-400 mt-2 italic">"${show.observacoes.substring(0, 50)}..."</p>` : '';
-
                 const timeHTML = show.time ? `<span class="ml-2 text-gray-400 text-base">às ${show.time}</span>` : '';
-
                 showElement.innerHTML = `
                     <div class="flex justify-between items-start w-full">
                         <div>
@@ -740,13 +704,12 @@
             };
             
             const checkPastShows = () => {
-                 const today = new Date();
+                const today = new Date();
                 today.setHours(0, 0, 0, 0); 
                 const pendingPastShows = allShows.filter(show => {
                     const showDate = new Date(show.date + 'T00:00:00');
                     return showDate < today && (show.status === 'confirmado' || show.status === 'aguardando') && show.isPersonal;
                 });
-
                 if (pendingPastShows.length > 0) {
                     const showToConfirm = pendingPastShows[0];
                     itemToModifyId = showToConfirm.id;
@@ -755,294 +718,50 @@
                 }
             };
             
-             const handleUser = async (user) => {
-                loadingAuth.classList.add('hidden');
-                
-                if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
-                if (unsubscribeSetlists) unsubscribeSetlists.forEach(unsub => unsub());
-                if (unsubscribeNotifications) unsubscribeNotifications();
-                
-                unsubscribeShows = [];
-                unsubscribeSetlists = [];
-                let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = [];
-
-                if (user) {
-                    currentUser = user;
-                    await loadUserSettings(user.uid);
-                    
-                    loginScreen.style.display = 'none';
-                    appContent.style.display = 'block';
-
-                    const combineAndRenderAll = () => {
-                        const allCombinedShows = [
-                            ...personalShows.map(s => ({ ...s, isPersonal: true })),
-                            ...managedShows.map(s => ({ ...s, isPersonal: false }))
-                        ];
-                        allShows = allCombinedShows;
-                        
-                        allSetlists = [...new Map([...personalSetlists, ...managedSetlists].map(item => [item.id, item])).values()];
-
-                        renderShows();
-                        renderCalendar();
-                        renderDashboard();
-                        renderSetlists();
-                        populateSetlistDropdowns();
-                        
-                        if (!userSettings.managedBy) {
-                            checkPastShows();
-                        }
-                    };
-
-                    const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
-                    unsubscribeShows.push(onSnapshot(query(collection(db, personalShowsPath)), s => {
-                        personalShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        combineAndRenderAll();
-                    }));
-
-                    const personalSetlistsPath = `artifacts/${appId}/users/${currentUser.uid}/setlists`;
-                     unsubscribeSetlists.push(onSnapshot(query(collection(db, personalSetlistsPath), orderBy("name", "asc")), s => {
-                        personalSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        combineAndRenderAll();
-                    }));
-                    
-                    if (userSettings.managedBy) {
-                        const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
-                        unsubscribeShows.push(onSnapshot(query(collection(db, managedShowsPath), where("isManaged", "==", true)), s => {
-                            managedShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            combineAndRenderAll();
-                        }));
-
-                        const managedSetlistsPath = `artifacts/${appId}/users/${userSettings.managedBy}/setlists`;
-                        unsubscribeSetlists.push(onSnapshot(query(collection(db, managedSetlistsPath), orderBy("name", "asc")), s => {
-                            managedSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            combineAndRenderAll();
-                        }));
-                    }
-                    
-                    const notificationsPath = `artifacts/${appId}/users/${currentUser.uid}/notifications`;
-                    unsubscribeNotifications = onSnapshot(query(collection(db, notificationsPath), orderBy("timestamp", "desc")), (snapshot) => {
-                        allNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        renderNotifications();
-                    });
-
-                } else {
-                    currentUser = null;
-                    appContent.style.display = 'none';
-                    loginContainer.classList.remove('hidden');
-                    loginScreen.style.display = 'flex';
-                    allShows = [];
-                    allSetlists = [];
-                    allNotifications = [];
-                    renderShows();
-                    renderNotifications();
-                }
-            };
-
-            // --- Inicialização e Event Listeners ---
-            setupModalHTML();
-            onAuthStateChanged(auth, handleUser);
-
-            loginForm.addEventListener('submit', (e) => e.preventDefault());
-
-            loginBtn.addEventListener('click', () => {
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
-                signInWithEmailAndPassword(auth, email, password)
-                    .catch(error => {
-                        if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-                            showLoginError("E-mail ou senha inválidos.");
-                        } else { showLoginError("Ocorreu um erro ao fazer login."); }
-                    });
-            });
-
-            registerBtn.addEventListener('click', async () => {
-                if (nameField.classList.contains('hidden')) {
-                    nameField.classList.remove('hidden');
-                    registerBtn.textContent = 'Confirmar Registro';
-                    loginBtn.classList.add('hidden');
-                    return;
-                }
-
-                const name = nameInput.value;
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-
-                if (!email || !password || !name) {
-                    showLoginError("Por favor, preencha nome, e-mail e senha.");
-                    return;
-                }
-
+            const loadUserSettings = async (uid) => {
+                const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
                 try {
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    const user = userCredential.user;
-                    const settingsRef = doc(db, `artifacts/${appId}/user_settings`, user.uid);
-                    await setDoc(settingsRef, {
-                        name: name,
-                        email: email,
-                        isManager: false,
-                        managedBy: null
-                    });
-                } catch (error) {
-                    if (error.code === 'auth/email-already-in-use') {
-                        showLoginError("Este e-mail já está em uso.");
-                    } else if (error.code === 'auth/weak-password') {
-                        showLoginError("A senha deve ter pelo menos 6 caracteres.");
+                    const docSnap = await getDoc(settingsRef);
+                    if (docSnap.exists()) {
+                        userSettings = docSnap.data();
                     } else {
-                        showLoginError("Ocorreu um erro ao registrar.");
+                        userSettings = { isManager: false, managedBy: null };
+                        await setDoc(settingsRef, userSettings);
                     }
-                    nameField.classList.add('hidden');
-                    registerBtn.textContent = 'Registrar';
-                    loginBtn.classList.remove('hidden');
-                }
-            });
-
-            logoutBtn.addEventListener('click', () => signOut(auth));
-            
-            addShowForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                if (!currentUser) return;
-                const date = document.getElementById('add-date').value;
-                const time = document.getElementById('add-time').value;
-                const artists = document.getElementById('add-artists').value;
-                const location = document.getElementById('add-location').value;
-                const status = document.getElementById('add-status').value;
-                const observacoes = document.getElementById('add-observacoes').value;
-                const setlistId = document.getElementById('add-setlist').value;
-                const isManaged = userSettings.isManager || false;
-                try {
-                    const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
-                    await addDoc(collection(db, showsCollectionPath), { date, time, artists, location, status, observacoes, setlistId, isManaged, createdAt: serverTimestamp() });
-                    addShowForm.reset();
-                    addModal.classList.remove('is-open');
-                    notifyLinkedMusicians(`Novo show adicionado: ${artists} em ${location}`, date, time);
-                } catch (err) {
-                    console.error("Erro ao adicionar show:", err);
-                    showError("Ocorreu um erro ao salvar o show.");
-                }
-            });
-
-            filterArtistInput.addEventListener('input', renderShows);
-            filterLocationInput.addEventListener('input', renderShows);
-            document.getElementById('filter-month').addEventListener('input', renderShows);
-            
-            const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
-            const filtersContainer = document.getElementById('filters-container');
-            toggleFiltersBtn.addEventListener('click', () => {
-                const isHidden = filtersContainer.classList.toggle('hidden');
-                document.getElementById('toggle-filters-text').textContent = isHidden ? 'Exibir Filtros' : 'Ocultar Filtros';
-            });
-
-            document.getElementById('filter-month').addEventListener('input', renderShows);
-
-            openAddModalBtn.addEventListener('click', () => {
-                if(userSettings.isManager && userSettings.artistName) {
-                    document.getElementById('add-artists').value = userSettings.artistName;
-                }
-                addModal.classList.add('is-open');
-            });
-            cancelAddBtn.addEventListener('click', () => addModal.classList.remove('is-open'));
-
-            const allListsContainer = document.getElementById('app-content');
-            allListsContainer.addEventListener('click', (e) => {
-                const showCard = e.target.closest('[data-id]');
-                if (showCard && (showCard.parentElement.id === 'shows-list-agendados' || showCard.parentElement.id === 'shows-list-realizados')) {
-                    openShowDetailsModal(showCard.dataset.id);
-                    return;
-                }
-            });
-
-            confirmDeleteBtn.addEventListener('click', async () => {
-                if (!currentUser || !itemToModifyId) return;
-                
-                const showToDelete = allShows.find(s => s.id === itemToModifyId && s.isPersonal);
-                const collectionName = itemTypeToDelete === 'setlist' ? 'setlists' : 'shows';
-                
-                try {
-                    const docPath = `artifacts/${appId}/users/${currentUser.uid}/${collectionName}/${itemToModifyId}`;
-                    await deleteDoc(doc(db, docPath));
-                    deleteModal.classList.remove('is-open');
-
-                    if (showToDelete && collectionName === 'shows') {
-                       notifyLinkedMusicians(`Show cancelado/removido: ${showToDelete.artists} em ${showToDelete.location}`, showToDelete.date, showToDelete.time);
-                    }
-                    itemToModifyId = null;
-                } catch (err) {
-                    showError(`Não foi possível excluir o item.`);
-                    deleteModal.classList.remove('is-open');
-                }
-            });
-
-            cancelDeleteBtn.addEventListener('click', () => { deleteModal.classList.remove('is-open'); itemToModifyId = null; });
-
-            editShowForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                if (!currentUser || !itemToModifyId) return;
-                const updatedData = {
-                    date: document.getElementById('edit-date').value,
-                    time: document.getElementById('edit-time').value,
-                    artists: document.getElementById('edit-artists').value,
-                    location: document.getElementById('edit-location').value,
-                    status: document.getElementById('edit-status').value,
-                    observacoes: document.getElementById('edit-observacoes').value,
-                    setlistId: document.getElementById('edit-setlist').value,
-                    isManaged: userSettings.isManager || false
-                };
-                try {
-                    const ownerId = currentUser.uid;
-                    const showDocPath = `artifacts/${appId}/users/${ownerId}/shows/${itemToModifyId}`;
-                    await updateDoc(doc(db, showDocPath), updatedData);
-                    editModal.classList.remove('is-open');
-                    itemToModifyId = null;
-                    notifyLinkedMusicians(`Show atualizado: ${updatedData.artists} em ${updatedData.location}`, updatedData.date, updatedData.time);
-                } catch (err) {
-                    showError("Não foi possível salvar as alterações.");
-                }
-            });
-
-            cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); itemToModifyId = null; });
-            
-            const updatePastShowStatus = async (status) => {
-                if (!currentUser || !itemToModifyId) return;
-                try {
-                    const ownerId = currentUser.uid;
-                    const showDocPath = `artifacts/${appId}/users/${ownerId}/shows/${itemToModifyId}`;
-                    await updateDoc(doc(db, showDocPath), { status: status });
-                    confirmStatusModal.classList.remove('is-open');
-                    itemToModifyId = null;
-                    checkPastShows();
-                } catch (err) {
-                    showError("Não foi possível atualizar o status do show.");
+                } catch (error) {
+                    console.error("Erro ao carregar configurações do usuário:", error);
+                    userSettings = {};
+                } finally {
+                    updateSettingsUI();
                 }
             };
 
-            confirmRealizadoBtn.addEventListener('click', () => updatePastShowStatus('realizado'));
-            confirmCanceladoBtn.addEventListener('click', () => updatePastShowStatus('cancelado'));
-
-            const tabs = [tabAgenda, tabCalendario, tabSetlists, tabDashboard, tabEquipe, tabConfiguracoes];
-            const views = [viewAgenda, viewCalendario, viewSetlists, viewDashboard, viewEquipe, viewConfiguracoes];
-            tabs.forEach((tab, index) => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('tab-active'));
-                    views.forEach(v => v.classList.add('hidden'));
-                    tab.classList.add('tab-active');
-                    views[index].classList.remove('hidden');
-                    lucide.createIcons();
-                    
-                    if (views[index].id === 'view-dashboard') {
-                        renderDashboard();
-                    }
-                    // ADICIONADO: Chama a função quando a aba Equipe for clicada
-                    if (views[index].id === 'view-equipe') {
-                        renderCrewPage();
-                    }
-                });
-            });
+            const updateSettingsUI = async () => {
+                const managerToggle = document.getElementById('manager-mode-toggle');
+                const managerSettings = document.getElementById('manager-settings');
+                const musicianSettings = document.getElementById('musician-settings');
+                const linkFormEl = document.getElementById('link-form');
+                const managedByInfo = document.getElementById('managed-by-info');
+                managerToggle.checked = userSettings.isManager || false;
+                managerSettings.classList.toggle('hidden', !userSettings.isManager);
+                musicianSettings.classList.toggle('hidden', userSettings.isManager);
+                if (userSettings.isManager) {
+                    document.getElementById('artist-name-input').value = userSettings.artistName || '';
+                    document.getElementById('invite-code').textContent = currentUser.uid;
+                }
+                if (userSettings.managedBy) {
+                    linkFormEl.classList.add('hidden');
+                    managedByInfo.classList.remove('hidden');
+                    const managerSettingsRef = doc(db, `artifacts/${appId}/user_settings`, userSettings.managedBy);
+                    const managerSnap = await getDoc(managerSettingsRef);
+                    const managerName = managerSnap.exists() ? managerSnap.data().artistName : 'Gerente não encontrado';
+                    document.getElementById('manager-name-display').textContent = managerName || `Gerente (${userSettings.managedBy.substring(0,6)}...)`;
+                } else {
+                    linkFormEl.classList.remove('hidden');
+                    managedByInfo.classList.add('hidden');
+                }
+            };
             
-            const calendarGrid = document.getElementById('calendar-grid');
-            const monthYearTitle = document.getElementById('month-year-title');
-            const calendarShowDetails = document.getElementById('calendar-show-details');
-
             const renderCalendar = () => {
                 calendarGrid.innerHTML = '';
                 const month = currentCalendarDate.getMonth();
@@ -1058,37 +777,13 @@
                     calendarGrid.insertAdjacentHTML('beforeend', `<div data-date="${dateStr}" class="calendar-day p-2 cursor-pointer hover:bg-gray-700 rounded-full ${dayClass}">${day}</div>`);
                 }
             };
-            
-            document.getElementById('prev-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1); renderCalendar(); });
-            document.getElementById('next-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1); renderCalendar(); });
-
-            calendarGrid.addEventListener('click', (e) => {
-                if (e.target.classList.contains('calendar-day') && e.target.dataset.date) {
-                    document.querySelectorAll('.calendar-day.selected').forEach(el => el.classList.remove('selected'));
-                    e.target.classList.add('selected');
-                    const dateStr = e.target.dataset.date;
-                    const showsOnDay = allShows.filter(s => s.date === dateStr);
-                    calendarShowDetails.innerHTML = '';
-                    if (showsOnDay.length > 0) {
-                        showsOnDay.forEach(show => {
-                            const statusInfo = statusMap[show.status] || { text: '', color: ''};
-                            const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
-                            const showCard = document.createElement('div');
-                            showCard.className = "bg-gray-800 rounded-lg p-4 cursor-pointer";
-                            showCard.innerHTML = `<div class="flex justify-between items-start"><p class="font-bold text-purple-300 pointer-events-none">${show.artists}</p>${statusHTML}</div><p class="text-sm text-gray-400 mt-1 pointer-events-none">${show.location}</p>`;
-                            showCard.addEventListener('click', () => openShowDetailsModal(show.id));
-                            calendarShowDetails.appendChild(showCard);
-                        });
-                    } else { calendarShowDetails.innerHTML = `<p class="text-center text-gray-500">Nenhum show neste dia.</p>`; }
-                }
-            });
 
             const renderDashboard = () => {
                 renderShowsPerMonth();
                 renderTopLocations();
                 renderTopSetlists();
             };
- const renderShowsPerMonth = () => {
+            const renderShowsPerMonth = () => {
                 const ctx = document.getElementById('shows-per-month-chart').getContext('2d');
                 const labels = [];
                 const data = [];
@@ -1136,9 +831,6 @@
                 topSetlistsChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#6d28d9', '#5b21b6'] }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } } } });
             };
 
-            const setlistsList = document.getElementById('setlists-list');
-            const emptySetlistState = document.getElementById('empty-setlist-state');
-
             const renderSetlists = () => {
                  setlistsList.innerHTML = '';
                 emptySetlistState.classList.toggle('hidden', allSetlists.length > 0);
@@ -1164,21 +856,6 @@
                 lucide.createIcons();
             };
             
-            setlistsList.addEventListener('click', (e) => {
-                const editBtn = e.target.closest('.edit-setlist-btn');
-                const deleteBtn = e.target.closest('.delete-setlist-btn');
-                if(editBtn) {
-                    openSetlistModal(editBtn.dataset.id);
-                }
-                if(deleteBtn) {
-                    itemToModifyId = deleteBtn.dataset.id;
-                    itemTypeToDelete = 'setlist';
-                    document.getElementById('delete-confirm-text').textContent = "Tem certeza que deseja excluir esta setlist?";
-                    deleteModal.classList.add('is-open');
-                }
-            });
-
-
             const openSetlistModal = (id = null) => {
                  setlistForm.reset();
                 document.getElementById('setlist-id').value = id || '';
@@ -1197,10 +874,226 @@
                 setlistModal.classList.add('is-open');
             };
 
+            const populateSetlistDropdowns = () => {
+                const addSelect = document.getElementById('add-setlist');
+                const editSelect = document.getElementById('edit-setlist');
+                const savedAddValue = addSelect.value;
+                const savedEditValue = editSelect.value;
+                addSelect.innerHTML = '<option value="">Nenhuma</option>';
+                editSelect.innerHTML = '<option value="">Nenhuma</option>';
+                allSetlists.forEach(setlist => {
+                    const option = `<option value="${setlist.id}">${setlist.name}</option>`;
+                    addSelect.insertAdjacentHTML('beforeend', option);
+                    editSelect.insertAdjacentHTML('beforeend', option);
+                });
+                addSelect.value = savedAddValue;
+                editSelect.value = savedEditValue;
+            };
+
+            // --- Função Principal de Controle ---
+            onAuthStateChanged(auth, handleUser);
+
+            // --- Event Listeners ---
+            loginForm.addEventListener('submit', (e) => e.preventDefault());
+            loginBtn.addEventListener('click', () => { 
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
+                signInWithEmailAndPassword(auth, email, password)
+                    .catch(error => {
+                        if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                            showLoginError("E-mail ou senha inválidos.");
+                        } else { showLoginError("Ocorreu um erro ao fazer login."); }
+                    });
+            });
+            
+            registerBtn.addEventListener('click', async () => {
+                 if (nameField.classList.contains('hidden')) {
+                    nameField.classList.remove('hidden');
+                    registerBtn.textContent = 'Confirmar Registro';
+                    loginBtn.classList.add('hidden');
+                    return;
+                }
+
+                const name = nameInput.value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                if (!email || !password || !name) {
+                    showLoginError("Por favor, preencha nome, e-mail e senha.");
+                    return;
+                }
+
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    const settingsRef = doc(db, `artifacts/${appId}/user_settings`, user.uid);
+                    await setDoc(settingsRef, {
+                        name: name,
+                        email: email,
+                        isManager: false,
+                        managedBy: null
+                    });
+                } catch (error) {
+                    if (error.code === 'auth/email-already-in-use') {
+                        showLoginError("Este e-mail já está em uso.");
+                    } else if (error.code === 'auth/weak-password') {
+                        showLoginError("A senha deve ter pelo menos 6 caracteres.");
+                    } else {
+                        showLoginError("Ocorreu um erro ao registrar.");
+                    }
+                    nameField.classList.add('hidden');
+                    registerBtn.textContent = 'Registrar';
+                    loginBtn.classList.remove('hidden');
+                }
+            });
+            
+            logoutBtn.addEventListener('click', () => signOut(auth));
+            
+            addShowForm.addEventListener('submit', async (e) => { 
+                 e.preventDefault();
+                if (!currentUser) return;
+                const date = document.getElementById('add-date').value;
+                const time = document.getElementById('add-time').value;
+                const artists = document.getElementById('add-artists').value;
+                const location = document.getElementById('add-location').value;
+                const status = document.getElementById('add-status').value;
+                const observacoes = document.getElementById('add-observacoes').value;
+                const setlistId = document.getElementById('add-setlist').value;
+                const isManaged = userSettings.isManager || false;
+                try {
+                    const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
+                    await addDoc(collection(db, showsCollectionPath), { date, time, artists, location, status, observacoes, setlistId, isManaged, createdAt: serverTimestamp() });
+                    addShowForm.reset();
+                    addModal.classList.remove('is-open');
+                    notifyLinkedMusicians(`Novo show adicionado: ${artists} em ${location}`, date, time);
+                } catch (err) {
+                    console.error("Erro ao adicionar show:", err);
+                    showError("Ocorreu um erro ao salvar o show.");
+                }
+            });
+            
+            filterArtistInput.addEventListener('input', renderShows);
+            filterLocationInput.addEventListener('input', renderShows);
+            document.getElementById('filter-month').addEventListener('input', renderShows);
+            toggleFiltersBtn.addEventListener('click', () => { 
+                const isHidden = filtersContainer.classList.toggle('hidden');
+                document.getElementById('toggle-filters-text').textContent = isHidden ? 'Exibir Filtros' : 'Ocultar Filtros';
+            });
+            
+            openAddModalBtn.addEventListener('click', () => { 
+                 if(userSettings.isManager && userSettings.artistName) {
+                    document.getElementById('add-artists').value = userSettings.artistName;
+                }
+                addModal.classList.add('is-open');
+            });
+            
+            cancelAddBtn.addEventListener('click', () => addModal.classList.remove('is-open'));
+            allListsContainer.addEventListener('click', (e) => { 
+                const showCard = e.target.closest('[data-id]');
+                if (showCard && (showCard.parentElement.id === 'shows-list-agendados' || showCard.parentElement.id === 'shows-list-realizados')) {
+                    openShowDetailsModal(showCard.dataset.id);
+                    return;
+                }
+            });
+
+            confirmDeleteBtn.addEventListener('click', async () => { 
+                 if (!currentUser || !itemToModifyId) return;
+                
+                const showToDelete = allShows.find(s => s.id === itemToModifyId && s.isPersonal);
+                const collectionName = itemTypeToDelete === 'setlist' ? 'setlists' : 'shows';
+                
+                try {
+                    const docPath = `artifacts/${appId}/users/${currentUser.uid}/${collectionName}/${itemToModifyId}`;
+                    await deleteDoc(doc(db, docPath));
+                    deleteModal.classList.remove('is-open');
+
+                    if (showToDelete && collectionName === 'shows') {
+                       notifyLinkedMusicians(`Show cancelado/removido: ${showToDelete.artists} em ${showToDelete.location}`, showToDelete.date, showToDelete.time);
+                    }
+                    itemToModifyId = null;
+                } catch (err) {
+                    showError(`Não foi possível excluir o item.`);
+                    deleteModal.classList.remove('is-open');
+                }
+            });
+            
+            cancelDeleteBtn.addEventListener('click', () => { deleteModal.classList.remove('is-open'); itemToModifyId = null; });
+            
+            editShowForm.addEventListener('submit', async (e) => { 
+                e.preventDefault();
+                if (!currentUser || !itemToModifyId) return;
+                const updatedData = {
+                    date: document.getElementById('edit-date').value,
+                    time: document.getElementById('edit-time').value,
+                    artists: document.getElementById('edit-artists').value,
+                    location: document.getElementById('edit-location').value,
+                    status: document.getElementById('edit-status').value,
+                    observacoes: document.getElementById('edit-observacoes').value,
+                    setlistId: document.getElementById('edit-setlist').value,
+                    isManaged: userSettings.isManager || false
+                };
+                try {
+                    const ownerId = currentUser.uid;
+                    const showDocPath = `artifacts/${appId}/users/${ownerId}/shows/${itemToModifyId}`;
+                    await updateDoc(doc(db, showDocPath), updatedData);
+                    editModal.classList.remove('is-open');
+                    itemToModifyId = null;
+                    notifyLinkedMusicians(`Show atualizado: ${updatedData.artists} em ${updatedData.location}`, updatedData.date, updatedData.time);
+                } catch (err) {
+                    showError("Não foi possível salvar as alterações.");
+                }
+            });
+            
+            cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); itemToModifyId = null; });
+            
+            confirmRealizadoBtn.addEventListener('click', () => updatePastShowStatus('realizado'));
+            
+            confirmCanceladoBtn.addEventListener('click', () => updatePastShowStatus('cancelado'));
+            
+            const tabs = [tabAgenda, tabCalendario, tabSetlists, tabDashboard, tabEquipe, tabConfiguracoes];
+            const views = [viewAgenda, viewCalendario, viewSetlists, viewDashboard, viewEquipe, viewConfiguracoes];
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('tab-active'));
+                    views.forEach(v => v.classList.add('hidden'));
+                    tab.classList.add('tab-active');
+                    views[index].classList.remove('hidden');
+                    lucide.createIcons();
+                    
+                    if (views[index].id === 'view-dashboard') renderDashboard();
+                    if (views[index].id === 'view-equipe') renderCrewPage();
+                });
+            });
+            
+            document.getElementById('prev-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1); renderCalendar(); });
+            document.getElementById('next-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1); renderCalendar(); });
+            calendarGrid.addEventListener('click', (e) => { 
+                 if (e.target.classList.contains('calendar-day') && e.target.dataset.date) {
+                    document.querySelectorAll('.calendar-day.selected').forEach(el => el.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    const dateStr = e.target.dataset.date;
+                    const showsOnDay = allShows.filter(s => s.date === dateStr);
+                    calendarShowDetails.innerHTML = '';
+                    if (showsOnDay.length > 0) {
+                        showsOnDay.forEach(show => {
+                            const statusInfo = statusMap[show.status] || { text: '', color: ''};
+                            const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
+                            const showCard = document.createElement('div');
+                            showCard.className = "bg-gray-800 rounded-lg p-4 cursor-pointer";
+                            showCard.innerHTML = `<div class="flex justify-between items-start"><p class="font-bold text-purple-300 pointer-events-none">${show.artists}</p>${statusHTML}</div><p class="text-sm text-gray-400 mt-1 pointer-events-none">${show.location}</p>`;
+                            showCard.addEventListener('click', () => openShowDetailsModal(show.id));
+                            calendarShowDetails.appendChild(showCard);
+                        });
+                    } else { calendarShowDetails.innerHTML = `<p class="text-center text-gray-500">Nenhum show neste dia.</p>`; }
+                }
+            });
+
             openAddSetlistModalBtn.addEventListener('click', () => openSetlistModal());
             cancelSetlistBtn.addEventListener('click', () => setlistModal.classList.remove('is-open'));
-setlistForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
+            
+            setlistForm.addEventListener('submit', async (e) => { 
+                 e.preventDefault();
                 if (!currentUser) return;
                 const id = document.getElementById('setlist-id').value;
                 const data = {
@@ -1220,23 +1113,7 @@ setlistForm.addEventListener('submit', async (e) => {
                 }
             });
 
-            const populateSetlistDropdowns = () => {
-                const addSelect = document.getElementById('add-setlist');
-                const editSelect = document.getElementById('edit-setlist');
-                const savedAddValue = addSelect.value;
-                const savedEditValue = editSelect.value;
-                addSelect.innerHTML = '<option value="">Nenhuma</option>';
-                editSelect.innerHTML = '<option value="">Nenhuma</option>';
-                allSetlists.forEach(setlist => {
-                    const option = `<option value="${setlist.id}">${setlist.name}</option>`;
-                    addSelect.insertAdjacentHTML('beforeend', option);
-                    editSelect.insertAdjacentHTML('beforeend', option);
-                });
-                addSelect.value = savedAddValue;
-                editSelect.value = savedEditValue;
-            };
-
-            exportPdfBtn.addEventListener('click', () => {
+            exportPdfBtn.addEventListener('click', () => { 
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 const artistFilter = filterArtistInput.value;
@@ -1280,7 +1157,7 @@ setlistForm.addEventListener('submit', async (e) => {
                 doc.save("agenda-shows.pdf");
             });
 
-            managerModeToggle.addEventListener('change', async (e) => {
+            managerModeToggle.addEventListener('change', async (e) => { 
                 const isManager = e.target.checked;
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
@@ -1290,8 +1167,8 @@ setlistForm.addEventListener('submit', async (e) => {
                     showError("Não foi possível alterar o modo.");
                 }
             });
-
-            artistNameInput.addEventListener('blur', async (e) => {
+            
+            artistNameInput.addEventListener('blur', async (e) => { 
                 const artistName = e.target.value;
                  const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
@@ -1301,8 +1178,8 @@ setlistForm.addEventListener('submit', async (e) => {
                     showError("Não foi possível salvar o nome do artista.");
                 }
             });
-
-            copyInviteCodeBtn.addEventListener('click', () => {
+            
+            copyInviteCodeBtn.addEventListener('click', () => { 
                 navigator.clipboard.writeText(currentUser.uid).then(() => {
                     const icon = copyInviteCodeBtn.querySelector('i');
                     icon.dataset.lucide = 'check';
@@ -1313,9 +1190,9 @@ setlistForm.addEventListener('submit', async (e) => {
                     }, 2000);
                 });
             });
-
-linkForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
+            
+            linkForm.addEventListener('submit', async (e) => { 
+                 e.preventDefault();
                 const managerId = document.getElementById('manager-code-input').value.trim();
                 if (!managerId || !currentUser) return;
                 
@@ -1336,7 +1213,7 @@ linkForm.addEventListener('submit', async (e) => {
                     showError("Não foi possível vincular a conta. Verifique o código.");
                 }
             });
-        unlinkBtn.addEventListener('click', async () => {
+            unlinkBtn.addEventListener('click', async () => { 
                 if (!currentUser || !userSettings.managedBy) return;
 
                 // --- INÍCIO DA CORREÇÃO ---
@@ -1364,12 +1241,10 @@ linkForm.addEventListener('submit', async (e) => {
                     showError("Não foi possível desvincular a conta.");
                 }
             });
-
+            
             [addModal, editModal, deleteModal, confirmStatusModal, setlistModal, showDetailsModal].forEach(modal => {
                 modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.classList.remove('is-open');
-                    }
+                    if (e.target === modal) modal.classList.remove('is-open');
                 });
             });
 
@@ -1382,7 +1257,6 @@ linkForm.addEventListener('submit', async (e) => {
                     viewHistoricoBtn.classList.add('border-transparent', 'text-gray-400');
                     viewHistoricoBtn.classList.remove('border-purple-400', 'text-white');
                 });
-
                 viewHistoricoBtn.addEventListener('click', () => {
                     historicoContent.classList.remove('hidden');
                     agendadosContent.classList.add('hidden');
@@ -1394,7 +1268,7 @@ linkForm.addEventListener('submit', async (e) => {
             };
             setupAgendaViewToggle();
 
-          notificationsBellContainer.addEventListener('click', (e) => {
+            notificationsBellContainer.addEventListener('click', (e) => {
                 e.stopPropagation();
                 notificationsPanel.classList.toggle('hidden');
                 if (!notificationsPanel.classList.contains('hidden')) {
