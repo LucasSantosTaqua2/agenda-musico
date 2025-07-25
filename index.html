@@ -630,16 +630,30 @@ const notifyLinkedMusicians = async (musicianIds, message, showDate, showTime) =
                 
                 const showModalFieldsHTML = (prefix) => `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label for="${prefix}-date" class="text-sm font-medium text-gray-400 mb-1">Data</label><input id="${prefix}-date" type="date" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                        <div><label for="${prefix}-time" class="text-sm font-medium text-gray-400 mb-1">Horário</label><input id="${prefix}-time" type="time" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></div>
-                        <div class="md:col-span-2"><label for="${prefix}-artists" class="text-sm font-medium text-gray-400 mb-1">Artistas</label><input id="${prefix}-artists" type="text" placeholder="Ex: João Silva" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                        <div class="md:col-span-2"><label for="${prefix}-location" class="text-sm font-medium text-gray-400 mb-1">Local</label><input id="${prefix}-location" type="text" placeholder="Ex: Virada Cultural, SP" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                        <div><label for="${prefix}-status" class="text-sm font-medium text-gray-400 mb-1">Status</label><select id="${prefix}-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option><option value="cancelado">Cancelado</option><option value="realizado">Realizado</option></select></div>
-                        <div><label for="${prefix}-setlist" class="text-sm font-medium text-gray-400 mb-1">Setlist</label><select id="${prefix}-setlist" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="">Nenhuma</option></select></div>
-                    </div>
-                    <div><label for="${prefix}-observacoes" class="text-sm font-medium text-gray-400 mb-1">Observações</label><textarea id="${prefix}-observacoes" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></textarea></div>
-                    <div class="flex justify-end gap-4 mt-4"><button type="button" id="cancel-${prefix}-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button><button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">${prefix === 'add' ? 'Adicionar' : 'Salvar'}</button></div>`;
+        <div><label for="${prefix}-date" class="text-sm font-medium text-gray-400 mb-1">Data</label><input id="${prefix}-date" type="date" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
+        <div><label for="${prefix}-time" class="text-sm font-medium text-gray-400 mb-1">Horário</label><input id="${prefix}-time" type="time" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></div>
+        <div class="md:col-span-2"><label for="${prefix}-artists" class="text-sm font-medium text-gray-400 mb-1">Artista(s) / Evento</label><input id="${prefix}-artists" type="text" placeholder="Ex: João Silva" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
+        <div class="md:col-span-2"><label for="${prefix}-location" class="text-sm font-medium text-gray-400 mb-1">Local</label><input id="${prefix}-location" type="text" placeholder="Ex: Virada Cultural, SP" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
+        <div><label for="${prefix}-status" class="text-sm font-medium text-gray-400 mb-1">Status</label><select id="${prefix}-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option><option value="cancelado">Cancelado</option><option value="realizado">Realizado</option></select></div>
+        <div><label for="${prefix}-setlist" class="text-sm font-medium text-gray-400 mb-1">Setlist</label><select id="${prefix}-setlist" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="">Nenhuma</option></select></div>
+    </div>
+    <div><label for="${prefix}-observacoes" class="text-sm font-medium text-gray-400 mb-1">Observações</label><textarea id="${prefix}-observacoes" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></textarea></div>
+    
+    <div id="${prefix}-manager-options" class="hidden space-y-4 pt-4 border-t border-gray-700">
+        <div>
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="${prefix}-private-event" class="w-5 h-5 bg-gray-900 border-gray-600 text-purple-500 focus:ring-purple-600">
+                <span class="text-gray-300">Marcar como Evento Particular</span>
+            </label>
+        </div>
+        <div id="${prefix}-musicians-container">
+            <label class="text-sm font-medium text-gray-400 mb-2 block">Vincular Músicos ao Show:</label>
+            <div id="${prefix}-musicians-list" class="space-y-2 max-h-40 overflow-y-auto bg-gray-900/50 p-3 rounded-lg">
+                </div>
+        </div>
+    </div>
 
+    <div class="flex justify-end gap-4 mt-4"><button type="button" id="cancel-${prefix}-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button><button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">${prefix === 'add' ? 'Adicionar' : 'Salvar'}</button></div>`;
                 document.getElementById('add-show-form').innerHTML = showModalFieldsHTML('add');
                 document.getElementById('edit-show-form').innerHTML = showModalFieldsHTML('edit');
                 lucide.createIcons();
