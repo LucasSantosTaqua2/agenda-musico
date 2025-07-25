@@ -277,12 +277,12 @@
             lucide.createIcons();
             
             const firebaseConfig = {
-                apiKey: "AIzaSyBIPPMg_OUyC2AKmJpy36ljJCjdvZVUxuE",
-                authDomain: "minha-agenda-de-shows.firebaseapp.com",
-                projectId: "minha-agenda-de-shows",
-                storageBucket: "minha-agenda-de-shows.firebasestorage.app",
-                messagingSenderId: "676045633970",
-                appId: "1:676045633970:web:d9c4916ffa716e96290cab"
+                apiKey: "SUA_API_KEY",
+                authDomain: "SEU_AUTH_DOMAIN",
+                projectId: "SEU_PROJECT_ID",
+                storageBucket: "SEU_STORAGE_BUCKET",
+                messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+                appId: "SEU_APP_ID"
             };
             
             const app = initializeApp(firebaseConfig);
@@ -298,11 +298,11 @@
             const loginForm = document.getElementById('login-form');
             const loginBtn = document.getElementById('login-btn');
             const registerBtn = document.getElementById('register-btn');
-            const nameField = document.getElementById('name-field');
-            const nameInput = document.getElementById('name');
             const logoutBtn = document.getElementById('logout-btn');
             const loginError = document.getElementById('login-error');
             const errorBanner = document.getElementById('error-banner');
+            const nameField = document.getElementById('name-field');
+            const nameInput = document.getElementById('name');
             
             const showsListAgendados = document.getElementById('shows-list-agendados');
             const showsListRealizados = document.getElementById('shows-list-realizados');
@@ -323,22 +323,20 @@
             const tabCalendario = document.getElementById('tab-calendario');
             const tabSetlists = document.getElementById('tab-setlists');
             const tabDashboard = document.getElementById('tab-dashboard');
+            const tabEquipe = document.getElementById('tab-equipe');
             const tabConfiguracoes = document.getElementById('tab-configuracoes');
             const viewAgenda = document.getElementById('view-agenda');
             const viewCalendario = document.getElementById('view-calendario');
             const viewSetlists = document.getElementById('view-setlists');
             const viewDashboard = document.getElementById('view-dashboard');
+            const viewEquipe = document.getElementById('view-equipe');
             const viewConfiguracoes = document.getElementById('view-configuracoes');
+            const crewList = document.getElementById('crew-list');
 
             const viewAgendadosBtn = document.getElementById('view-agendados-btn');
             const viewHistoricoBtn = document.getElementById('view-historico-btn');
             const agendadosContent = document.getElementById('agendados-content');
             const historicoContent = document.getElementById('historico-content');
-
-            const tabEquipe = document.getElementById('tab-equipe');
-            const viewEquipe = document.getElementById('view-equipe');
-            const crewList = document.getElementById('crew-list');
-            const notificationsBellContainer = document.getElementById('notifications-bell-container');
             
             const notificationsBellContainer = document.getElementById('notifications-bell-container');
             const notificationBadge = document.getElementById('notification-badge');
@@ -371,13 +369,13 @@
                 const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 return `${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}, ${formattedDate}`;
             };
+            
             // --- Funções de Notificação ---
-const notifyLinkedMusicians = async (message, showDate, showTime) => {
+            const notifyLinkedMusicians = async (message, showDate, showTime) => {
                 if (!currentUser || !userSettings.isManager) return;
                 try {
                     const followersPath = `artifacts/${appId}/users/${currentUser.uid}/followers`;
                     const querySnapshot = await getDocs(collection(db, followersPath));
-
                     querySnapshot.forEach((musicianDoc) => {
                         const musicianId = musicianDoc.id;
                         const notification = {
@@ -1482,7 +1480,7 @@ unlinkBtn.addEventListener('click', async () => {
                 }
             ] 
         };
-        const manifestString = JSON.stringify(manifest);
+       const manifestString = JSON.stringify(manifest);
         const manifestUri = 'data:application/manifest+json,' + encodeURIComponent(manifestString);
         document.getElementById('manifest-link').href = manifestUri;
     </script>
