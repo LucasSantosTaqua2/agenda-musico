@@ -280,7 +280,7 @@
     <script type="module">
         const { initializeApp } = window.firebaseApp;
         const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
-        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } from window.firebaseFirestore;
+        const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } = window.firebaseFirestore;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -368,7 +368,14 @@
             let topLocationsChart = null;
             let topSetlistsChart = null;
             
-            // --- Funções de Notificação e UI ---
+            const statusMap = {
+                confirmado: { text: 'Confirmado', color: 'bg-green-500/20 text-green-300' },
+                aguardando: { text: 'Aguardando', color: 'bg-yellow-500/20 text-yellow-300' },
+                cancelado: { text: 'Cancelado', color: 'bg-red-500/20 text-red-300' },
+                realizado: { text: 'Realizado', color: 'bg-blue-500/20 text-blue-300' }
+            };
+
+            // --- Funções Auxiliares e de UI ---
             const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
             const showLoginError = (message) => { loginError.textContent = message; loginError.classList.remove('hidden'); };
             const formatDate = (dateString) => {
@@ -457,7 +464,7 @@
                             <div><i data-lucide="user-cog" class="w-8 h-8 text-purple-400"></i></div>
                             <div>
                                 <p class="font-bold text-white">${managerData.artistName || managerData.name || 'Gerente'}</p>
-                                <p class="text-sm text-gray-400">${managerData.email || auth.currentUser.email}</p>
+                                <p class="text-sm text-gray-400">${managerData.email}</p>
                             </div>
                         `;
                         crewList.appendChild(managerCard);
@@ -832,7 +839,9 @@
             };
 
             const renderSetlists = () => {
-                 setlistsList.innerHTML = '';
+                const setlistsList = document.getElementById('setlists-list');
+                const emptySetlistState = document.getElementById('empty-setlist-state');
+                setlistsList.innerHTML = '';
                 emptySetlistState.classList.toggle('hidden', allSetlists.length > 0);
                 allSetlists.forEach(setlist => {
                     const setlistElement = document.createElement('div');
@@ -857,7 +866,8 @@
             };
             
             const openSetlistModal = (id = null) => {
-                 setlistForm.reset();
+                const setlistForm = document.getElementById('setlist-form');
+                setlistForm.reset();
                 document.getElementById('setlist-id').value = id || '';
                 const title = document.getElementById('setlist-modal-title');
                 if (id) {
@@ -891,11 +901,95 @@
             };
 
             // --- Função Principal de Controle ---
+            const handleUser = async (user) => {
+                loadingAuth.classList.add('hidden');
+                
+                if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
+                if (unsubscribeSetlists) unsubscribeSetlists.forEach(unsub => unsub());
+                if (unsubscribeNotifications) unsubscribeNotifications();
+                
+                unsubscribeShows = [];
+                unsubscribeSetlists = [];
+                let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = [];
+
+                if (user) {
+                    currentUser = user;
+                    await loadUserSettings(user.uid);
+                    
+                    loginScreen.style.display = 'none';
+                    appContent.style.display = 'block';
+
+                    const combineAndRenderAll = () => {
+                        const allCombinedShows = [
+                            ...personalShows.map(s => ({ ...s, isPersonal: true })),
+                            ...managedShows.map(s => ({ ...s, isPersonal: false }))
+                        ];
+                        allShows = allCombinedShows;
+                        
+                        allSetlists = [...new Map([...personalSetlists, ...managedSetlists].map(item => [item.id, item])).values()];
+
+                        renderShows();
+                        renderCalendar();
+                        renderDashboard();
+                        renderSetlists();
+                        populateSetlistDropdowns();
+                        
+                        if (!userSettings.managedBy) {
+                            checkPastShows();
+                        }
+                    };
+
+                    const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
+                    unsubscribeShows.push(onSnapshot(query(collection(db, personalShowsPath)), s => {
+                        personalShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        combineAndRenderAll();
+                    }));
+
+                    const personalSetlistsPath = `artifacts/${appId}/users/${currentUser.uid}/setlists`;
+                     unsubscribeSetlists.push(onSnapshot(query(collection(db, personalSetlistsPath), orderBy("name", "asc")), s => {
+                        personalSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        combineAndRenderAll();
+                    }));
+                    
+                    if (userSettings.managedBy) {
+                        const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
+                        unsubscribeShows.push(onSnapshot(query(collection(db, managedShowsPath), where("isManaged", "==", true)), s => {
+                            managedShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            combineAndRenderAll();
+                        }));
+
+                        const managedSetlistsPath = `artifacts/${appId}/users/${userSettings.managedBy}/setlists`;
+                        unsubscribeSetlists.push(onSnapshot(query(collection(db, managedSetlistsPath), orderBy("name", "asc")), s => {
+                            managedSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            combineAndRenderAll();
+                        }));
+                    }
+                    
+                    const notificationsPath = `artifacts/${appId}/users/${currentUser.uid}/notifications`;
+                    unsubscribeNotifications = onSnapshot(query(collection(db, notificationsPath), orderBy("timestamp", "desc")), (snapshot) => {
+                        allNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderNotifications();
+                    });
+
+                } else {
+                    currentUser = null;
+                    appContent.style.display = 'none';
+                    loginContainer.classList.remove('hidden');
+                    loginScreen.style.display = 'flex';
+                    allShows = [];
+                    allSetlists = [];
+                    allNotifications = [];
+                    renderShows();
+                    renderNotifications();
+                }
+            };
+            
+            // --- Inicialização e Event Listeners ---
+            setupModalHTML();
             onAuthStateChanged(auth, handleUser);
 
-            // --- Event Listeners ---
             loginForm.addEventListener('submit', (e) => e.preventDefault());
-            loginBtn.addEventListener('click', () => { 
+            loginBtn.addEventListener('click', () => {
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 if (!email || !password) { showLoginError("Por favor, preencha e-mail e senha."); return; }
@@ -906,24 +1000,21 @@
                         } else { showLoginError("Ocorreu um erro ao fazer login."); }
                     });
             });
-            
+
             registerBtn.addEventListener('click', async () => {
-                 if (nameField.classList.contains('hidden')) {
+                if (nameField.classList.contains('hidden')) {
                     nameField.classList.remove('hidden');
                     registerBtn.textContent = 'Confirmar Registro';
                     loginBtn.classList.add('hidden');
                     return;
                 }
-
                 const name = nameInput.value;
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
-
                 if (!email || !password || !name) {
                     showLoginError("Por favor, preencha nome, e-mail e senha.");
                     return;
                 }
-
                 try {
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     const user = userCredential.user;
@@ -947,11 +1038,11 @@
                     loginBtn.classList.remove('hidden');
                 }
             });
-            
+
             logoutBtn.addEventListener('click', () => signOut(auth));
             
-            addShowForm.addEventListener('submit', async (e) => { 
-                 e.preventDefault();
+            addShowForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
                 if (!currentUser) return;
                 const date = document.getElementById('add-date').value;
                 const time = document.getElementById('add-time').value;
@@ -972,24 +1063,25 @@
                     showError("Ocorreu um erro ao salvar o show.");
                 }
             });
-            
+
             filterArtistInput.addEventListener('input', renderShows);
             filterLocationInput.addEventListener('input', renderShows);
             document.getElementById('filter-month').addEventListener('input', renderShows);
-            toggleFiltersBtn.addEventListener('click', () => { 
+            
+            toggleFiltersBtn.addEventListener('click', () => {
                 const isHidden = filtersContainer.classList.toggle('hidden');
                 document.getElementById('toggle-filters-text').textContent = isHidden ? 'Exibir Filtros' : 'Ocultar Filtros';
             });
-            
-            openAddModalBtn.addEventListener('click', () => { 
-                 if(userSettings.isManager && userSettings.artistName) {
+
+            openAddModalBtn.addEventListener('click', () => {
+                if(userSettings.isManager && userSettings.artistName) {
                     document.getElementById('add-artists').value = userSettings.artistName;
                 }
                 addModal.classList.add('is-open');
             });
-            
             cancelAddBtn.addEventListener('click', () => addModal.classList.remove('is-open'));
-            allListsContainer.addEventListener('click', (e) => { 
+
+            allListsContainer.addEventListener('click', (e) => {
                 const showCard = e.target.closest('[data-id]');
                 if (showCard && (showCard.parentElement.id === 'shows-list-agendados' || showCard.parentElement.id === 'shows-list-realizados')) {
                     openShowDetailsModal(showCard.dataset.id);
@@ -997,8 +1089,8 @@
                 }
             });
 
-            confirmDeleteBtn.addEventListener('click', async () => { 
-                 if (!currentUser || !itemToModifyId) return;
+            confirmDeleteBtn.addEventListener('click', async () => {
+                if (!currentUser || !itemToModifyId) return;
                 
                 const showToDelete = allShows.find(s => s.id === itemToModifyId && s.isPersonal);
                 const collectionName = itemTypeToDelete === 'setlist' ? 'setlists' : 'shows';
@@ -1017,10 +1109,10 @@
                     deleteModal.classList.remove('is-open');
                 }
             });
-            
+
             cancelDeleteBtn.addEventListener('click', () => { deleteModal.classList.remove('is-open'); itemToModifyId = null; });
-            
-            editShowForm.addEventListener('submit', async (e) => { 
+
+            editShowForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser || !itemToModifyId) return;
                 const updatedData = {
@@ -1044,32 +1136,48 @@
                     showError("Não foi possível salvar as alterações.");
                 }
             });
-            
+
             cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); itemToModifyId = null; });
             
+            const updatePastShowStatus = async (status) => {
+                if (!currentUser || !itemToModifyId) return;
+                try {
+                    const ownerId = currentUser.uid;
+                    const showDocPath = `artifacts/${appId}/users/${ownerId}/shows/${itemToModifyId}`;
+                    await updateDoc(doc(db, showDocPath), { status: status });
+                    confirmStatusModal.classList.remove('is-open');
+                    itemToModifyId = null;
+                    checkPastShows();
+                } catch (err) {
+                    showError("Não foi possível atualizar o status do show.");
+                }
+            };
+            
             confirmRealizadoBtn.addEventListener('click', () => updatePastShowStatus('realizado'));
-            
             confirmCanceladoBtn.addEventListener('click', () => updatePastShowStatus('cancelado'));
-            
+
             const tabs = [tabAgenda, tabCalendario, tabSetlists, tabDashboard, tabEquipe, tabConfiguracoes];
             const views = [viewAgenda, viewCalendario, viewSetlists, viewDashboard, viewEquipe, viewConfiguracoes];
             tabs.forEach((tab, index) => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('tab-active'));
-                    views.forEach(v => v.classList.add('hidden'));
-                    tab.classList.add('tab-active');
-                    views[index].classList.remove('hidden');
-                    lucide.createIcons();
-                    
-                    if (views[index].id === 'view-dashboard') renderDashboard();
-                    if (views[index].id === 'view-equipe') renderCrewPage();
-                });
+                if(tab) {
+                    tab.addEventListener('click', () => {
+                        tabs.forEach(t => t?.classList.remove('tab-active'));
+                        views.forEach(v => v?.classList.add('hidden'));
+                        tab.classList.add('tab-active');
+                        if(views[index]) views[index].classList.remove('hidden');
+                        lucide.createIcons();
+                        
+                        if (views[index]?.id === 'view-dashboard') renderDashboard();
+                        if (views[index]?.id === 'view-equipe') renderCrewPage();
+                    });
+                }
             });
             
             document.getElementById('prev-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1); renderCalendar(); });
             document.getElementById('next-month-btn').addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1); renderCalendar(); });
-            calendarGrid.addEventListener('click', (e) => { 
-                 if (e.target.classList.contains('calendar-day') && e.target.dataset.date) {
+            
+            calendarGrid.addEventListener('click', (e) => {
+                if (e.target.classList.contains('calendar-day') && e.target.dataset.date) {
                     document.querySelectorAll('.calendar-day.selected').forEach(el => el.classList.remove('selected'));
                     e.target.classList.add('selected');
                     const dateStr = e.target.dataset.date;
@@ -1092,14 +1200,11 @@
             openAddSetlistModalBtn.addEventListener('click', () => openSetlistModal());
             cancelSetlistBtn.addEventListener('click', () => setlistModal.classList.remove('is-open'));
             
-            setlistForm.addEventListener('submit', async (e) => { 
-                 e.preventDefault();
+            setlistForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
                 if (!currentUser) return;
                 const id = document.getElementById('setlist-id').value;
-                const data = {
-                    name: document.getElementById('setlist-name').value,
-                    songs: document.getElementById('setlist-songs').value
-                };
+                const data = { name: document.getElementById('setlist-name').value, songs: document.getElementById('setlist-songs').value };
                 const collectionPath = `artifacts/${appId}/users/${currentUser.uid}/setlists`;
                 try {
                     if (id) {
@@ -1113,7 +1218,7 @@
                 }
             });
 
-            exportPdfBtn.addEventListener('click', () => { 
+            exportPdfBtn.addEventListener('click', () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 const artistFilter = filterArtistInput.value;
@@ -1157,7 +1262,7 @@
                 doc.save("agenda-shows.pdf");
             });
 
-            managerModeToggle.addEventListener('change', async (e) => { 
+            managerModeToggle.addEventListener('change', async (e) => {
                 const isManager = e.target.checked;
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
@@ -1167,8 +1272,7 @@
                     showError("Não foi possível alterar o modo.");
                 }
             });
-            
-            artistNameInput.addEventListener('blur', async (e) => { 
+            artistNameInput.addEventListener('blur', async (e) => {
                 const artistName = e.target.value;
                  const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 try {
@@ -1178,8 +1282,7 @@
                     showError("Não foi possível salvar o nome do artista.");
                 }
             });
-            
-            copyInviteCodeBtn.addEventListener('click', () => { 
+            copyInviteCodeBtn.addEventListener('click', () => {
                 navigator.clipboard.writeText(currentUser.uid).then(() => {
                     const icon = copyInviteCodeBtn.querySelector('i');
                     icon.dataset.lucide = 'check';
@@ -1190,9 +1293,8 @@
                     }, 2000);
                 });
             });
-            
-            linkForm.addEventListener('submit', async (e) => { 
-                 e.preventDefault();
+            linkForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
                 const managerId = document.getElementById('manager-code-input').value.trim();
                 if (!managerId || !currentUser) return;
                 
@@ -1213,28 +1315,20 @@
                     showError("Não foi possível vincular a conta. Verifique o código.");
                 }
             });
-            unlinkBtn.addEventListener('click', async () => { 
+            unlinkBtn.addEventListener('click', async () => {
                 if (!currentUser || !userSettings.managedBy) return;
-
-                // --- INÍCIO DA CORREÇÃO ---
-                // Passo 1: Para de ouvir TODOS os listeners de dados existentes.
-                // Isso evita o erro de permissão, pois o app não estará mais escutando
-                // a agenda do gerente quando a permissão for revogada.
+                
                 if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
                 if (unsubscribeSetlists) unsubscribeSetlists.forEach(unsub => unsub());
                 unsubscribeShows = [];
                 unsubscribeSetlists = [];
-                // --- FIM DA CORREÇÃO ---
-
+                
                 const musicianSettingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
                 const followerRef = doc(db, `artifacts/${appId}/users/${userSettings.managedBy}/followers`, currentUser.uid);
 
                 try {
-                    // Passo 2: Agora, atualiza o banco de dados com segurança.
                     await updateDoc(musicianSettingsRef, { managedBy: deleteField() });
                     await deleteDoc(followerRef);
-                    
-                    // Passo 3: Recarrega o estado do usuário para reativar os listeners corretos (apenas os pessoais).
                     await handleUser(currentUser); 
                 } catch (err) {
                     console.error("Erro ao desvincular:", err);
