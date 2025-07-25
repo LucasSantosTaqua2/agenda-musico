@@ -814,43 +814,114 @@ const notifyLinkedMusicians = async (musicianIds, message, showDate, showTime) =
                 unsubscribeTeam = []; // ADICIONAR
                 let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = []; // ADICIONAR team
                 if (user) {
-                    currentUser = user;
-                    await loadUserSettings(user.uid);
-                    
-                    loginScreen.style.display = 'none';
-                    appContent.style.display = 'block';
+                        currentUser = user;
+    await loadUserSettings(user.uid);
 
-                    const combineAndRenderAll = () => {
-                        const allCombinedShows = [
-                            ...personalShows.map(s => ({ ...s, isPersonal: true })),
-                            ...managedShows.map(s => ({ ...s, isPersonal: false }))
-                        ];
-                        allShows = allCombinedShows;
-                        
-                        allSetlists = [...new Map([...personalSetlists, ...managedSetlists].map(item => [item.id, item])).values()];
+    loginScreen.style.display = 'none';
+    appContent.style.display = 'block';
 
-                           // const allCombinedTeam = [
-                           //  ...personalTeam.map(m => ({ ...m, isPersonal: true })),
-                           //  ...managedTeam.map(m => ({ ...m, isPersonal: false }))
-                           //  ];
-                           //  allTeamMembers = allCombinedTeam;
+    // --- LÓGICA DE BUSCA DE DADOS CENTRALIZADA ---
 
-                        renderShows();
-                        renderCalendar();
-                        renderDashboard();
-                        renderSetlists();
-                        renderTeam(); // ADICIONAR
-                        populateSetlistDropdowns();
-    
-                      if (userSettings.managedBy) {
-    const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
-    // A MÁGICA ACONTECE AQUI: busca shows onde o array 'linkedMusicians' contém o ID do músico atual
-    const q = query(collection(db, managedShowsPath), where("linkedMusicians", "array-contains", currentUser.uid));
+    let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = [];
 
-    unsubscribeShows.push(onSnapshot(q, s => {
-        managedShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Função que será chamada para redesenhar tudo quando qualquer dado mudar
+    const combineAndRenderAll = () => {
+        // Combina shows pessoais e gerenciados
+        allShows = [
+            ...personalShows.map(s => ({ ...s, isPersonal: true })),
+            ...managedShows.map(s => ({ ...s, isPersonal: false }))
+        ];
+
+        // Combina setlists, removendo duplicatas e priorizando as pessoais
+        allSetlists = [...new Map([...managedSetlists, ...personalSetlists].map(item => [item.id, item])).values()];
+        
+        // Renderiza todas as seções da UI com os dados completos
+        renderShows();
+        renderCalendar();
+        renderDashboard();
+        renderSetlists();
+        renderTeam();
+        populateSetlistDropdowns();
+
+        // Só checa shows passados se não for um músico gerenciado
+        if (!userSettings.managedBy) {
+            checkPastShows();
+        }
+    };
+
+    // 1. Busca os shows PESSOAIS
+    const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
+    unsubscribeShows.push(onSnapshot(query(collection(db, personalShowsPath)), s => {
+        personalShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         combineAndRenderAll();
     }));
+
+    // 2. Busca as setlists PESSOAIS
+    const personalSetlistsPath = `artifacts/${appId}/users/${currentUser.uid}/setlists`;
+    unsubscribeSetlists.push(onSnapshot(query(collection(db, personalSetlistsPath), orderBy("name", "asc")), s => {
+        personalSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data(), isPersonal: true }));
+        combineAndRenderAll();
+    }));
+
+    // 3. Se for um músico vinculado, busca os dados do GERENTE
+    if (userSettings.managedBy) {
+        // Busca shows do gerente onde o músico está vinculado
+        const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
+        const qShows = query(collection(db, managedShowsPath), where("linkedMusicians", "array-contains", currentUser.uid));
+        unsubscribeShows.push(onSnapshot(qShows, s => {
+            managedShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            combineAndRenderAll();
+        }));
+
+        // Busca as setlists do gerente
+        const managedSetlistsPath = `artifacts/${appId}/users/${userSettings.managedBy}/setlists`;
+        unsubscribeSetlists.push(onSnapshot(query(collection(db, managedSetlistsPath), orderBy("name", "asc")), s => {
+            managedSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data(), isPersonal: false }));
+            combineAndRenderAll();
+        }));
+    }
+
+    // 4. Busca a EQUIPE (lógica permanece a mesma)
+    const managerIdForTeam = userSettings.isManager ? currentUser.uid : userSettings.managedBy;
+    if (managerIdForTeam) {
+        const followersPath = `artifacts/${appId}/users/${managerIdForTeam}/followers`;
+        unsubscribeTeam.push(onSnapshot(collection(db, followersPath), async (snapshot) => {
+            const followerIds = snapshot.docs.map(doc => doc.id);
+            if (followerIds.length === 0) {
+                allTeamMembers = [];
+                combineAndRenderAll();
+                return;
+            }
+            const memberPromises = followerIds.map(id => getDoc(doc(db, `artifacts/${appId}/user_settings`, id)));
+            try {
+                const memberDocs = await Promise.all(memberPromises);
+                allTeamMembers = memberDocs
+                    .filter(docSnap => docSnap.exists())
+                    .map(docSnap => ({
+                        id: docSnap.id,
+                        name: docSnap.data().userName,
+                        instrumento: docSnap.data().instrument
+                    })).sort((a, b) => a.name.localeCompare(b.name));
+            } catch (error) {
+                console.error("Erro ao buscar detalhes dos membros da equipe:", error);
+                allTeamMembers = [];
+            } finally {
+                combineAndRenderAll();
+            }
+        }));
+    } else {
+        allTeamMembers = [];
+        combineAndRenderAll();
+    }
+    
+    // 5. Busca as NOTIFICAÇÕES (lógica permanece a mesma)
+    const notificationsPath = `artifacts/${appId}/users/${currentUser.uid}/notifications`;
+    unsubscribeNotifications = onSnapshot(query(collection(db, notificationsPath), orderBy("timestamp", "desc")), (snapshot) => {
+        allNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderNotifications();
+    });
+
+
 }
 
                     const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
