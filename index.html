@@ -252,7 +252,7 @@
 
             <div id="view-configuracoes" class="hidden space-y-8">
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Perfil do Músico</h3>
+                    <h3 class="text-xl font-semibold mb-4">Seu Perfil</h3>
                     <form id="profile-form" class="space-y-4">
                     <div id="profile-success" class="bg-green-500/20 text-green-300 p-3 rounded-lg text-sm hidden">Perfil atualizado com sucesso!</div>
                 <div>
@@ -907,7 +907,8 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
     } finally {
         updateSettingsUI();
         // ADICIONAR LINHAS ABAIXO
-        document.getElementById('profile-name').value = userSettings.artistName || '';
+// Popula os campos de perfil do usuário
+        document.getElementById('profile-name').value = userSettings.userName || ''; // <-- MUDANÇA AQUI
         document.getElementById('profile-instrument').value = userSettings.instrument || '';
     }
 };
@@ -940,6 +941,9 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                     linkFormEl.classList.remove('hidden');
                     managedByInfo.classList.add('hidden');
                 }
+
+                const instrumentField = document.getElementById('profile-instrument').parentElement;
+                instrumentField.classList.toggle('hidden', userSettings.isManager);
             };
 
             onAuthStateChanged(auth, handleUser);
@@ -971,8 +975,8 @@ profileForm.addEventListener('submit', async (e) => {
 
     const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
     try {
-        await updateDoc(settingsRef, {
-            artistName: newName,
+     await updateDoc(settingsRef, {
+            userName: newName, // <-- MUDANÇA AQUI
             instrument: newInstrument
         });
         profileSuccess.classList.remove('hidden');
@@ -1012,9 +1016,11 @@ registerForm.addEventListener('submit', async (e) => {
         const user = userCredential.user;
 
         // Salva as informações adicionais do perfil
+  // Salva as informações adicionais do perfil
         const settingsRef = doc(db, `artifacts/${appId}/user_settings`, user.uid);
         await setDoc(settingsRef, {
-            artistName: name,
+            userName: name,      // Salva o nome do usuário
+            artistName: name,    // Inicializa o nome do artista com o nome do usuário
             instrument: instrument,
             isManager: false,
             managedBy: null
