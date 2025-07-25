@@ -987,29 +987,28 @@ const setupModalHTML = () => {
                 }
             };
             
-   const loadUserSettings = async (uid) => {
-    const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
-    try {
-        const docSnap = await getDoc(settingsRef);
-        if (docSnap.exists()) {
-            userSettings = docSnap.data();
-        } else {
-            // Se o usuário foi criado antes da adição dos novos campos
-            const defaultSettings = { isManager: false, managedBy: null, artistName: 'Músico', instrument: 'Não definido' };
-            await setDoc(settingsRef, defaultSettings);
-            userSettings = defaultSettings;
-        }
-    } catch (error) {
-        console.error("Erro ao carregar configurações do usuário:", error);
-        userSettings = {};
-    } finally {
-        updateSettingsUI();
-        // ADICIONAR LINHAS ABAIXO
-// Popula os campos de perfil do usuário
-        document.getElementById('profile-name').value = userSettings.userName || ''; // <-- MUDANÇA AQUI
-        document.getElementById('profile-instrument').value = userSettings.instrument || '';
-    }
-};
+        const loadUserSettings = async (uid) => {
+            const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
+            try {
+                const docSnap = await getDoc(settingsRef);
+                if (docSnap.exists()) {
+                    userSettings = docSnap.data();
+                } else {
+                    // Configuração padrão para usuários mais antigos
+                    const defaultSettings = { isManager: false, managedBy: null, userName: 'Músico', instrument: 'Não definido' };
+                    await setDoc(settingsRef, defaultSettings);
+                    userSettings = defaultSettings;
+                }
+            } catch (error) {
+                console.error("Erro ao carregar configurações do usuário:", error);
+                userSettings = {};
+            } finally {
+                updateSettingsUI();
+                // Popula os campos do formulário de perfil
+                document.getElementById('profile-name').value = userSettings.userName || '';
+                document.getElementById('profile-instrument').value = userSettings.instrument || '';
+            }
+        };
 
             const updateSettingsUI = async () => {
                  const managerToggle = document.getElementById('manager-mode-toggle');
@@ -1064,26 +1063,26 @@ const setupModalHTML = () => {
 const showRegisterError = (message) => { registerError.textContent = message; registerError.classList.remove('hidden'); };
 
 profileForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentUser) return;
+            e.preventDefault();
+            if (!currentUser) return;
 
-    const newName = document.getElementById('profile-name').value;
-    const newInstrument = document.getElementById('profile-instrument').value;
-    const profileSuccess = document.getElementById('profile-success');
+            const newName = document.getElementById('profile-name').value;
+            const newInstrument = document.getElementById('profile-instrument').value;
+            const profileSuccess = document.getElementById('profile-success');
 
-    const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
-    try {
-     await updateDoc(settingsRef, {
-            userName: newName, // <-- MUDANÇA AQUI
-            instrument: newInstrument
+            const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
+            try {
+                await updateDoc(settingsRef, {
+                    userName: newName,
+                    instrument: newInstrument
+                });
+                profileSuccess.classList.remove('hidden');
+                setTimeout(() => profileSuccess.classList.add('hidden'), 3000); // Esconde a mensagem após 3s
+            } catch (err) {
+                showError("Não foi possível atualizar o perfil.");
+                console.error("Erro ao salvar perfil:", err);
+            }
         });
-        profileSuccess.classList.remove('hidden');
-        setTimeout(() => profileSuccess.classList.add('hidden'), 3000); // Esconde a mensagem após 3s
-    } catch (err) {
-        showError("Não foi possível atualizar o perfil.");
-        console.error("Erro ao salvar perfil:", err);
-    }
-});
 
 showRegisterFormBtn.addEventListener('click', () => {
     loginContainer.classList.add('hidden');
@@ -1098,43 +1097,42 @@ backToLoginBtn.addEventListener('click', () => {
 });
 
 registerForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('register-name').value;
-    const instrument = document.getElementById('register-instrument').value;
-    const email = document.getElementById('register-email').value;
-    const password = document.getElementById('register-password').value;
+            e.preventDefault();
+            const name = document.getElementById('register-name').value;
+            const instrument = document.getElementById('register-instrument').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
 
-    if (!email || !password || !name || !instrument) {
-        showRegisterError("Por favor, preencha todos os campos.");
-        return;
-    }
+            if (!email || !password || !name || !instrument) {
+                showRegisterError("Por favor, preencha todos os campos.");
+                return;
+            }
 
-    try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
 
-        // Salva as informações adicionais do perfil
-  // Salva as informações adicionais do perfil
-        const settingsRef = doc(db, `artifacts/${appId}/user_settings`, user.uid);
-        await setDoc(settingsRef, {
-            userName: name,      // Salva o nome do usuário
-            artistName: name,    // Inicializa o nome do artista com o nome do usuário
-            instrument: instrument,
-            isManager: false,
-            managedBy: null
+                // Salva as informações adicionais do perfil no banco de dados
+                const settingsRef = doc(db, `artifacts/${appId}/user_settings`, user.uid);
+                await setDoc(settingsRef, {
+                    userName: name,      // Salva o nome do usuário
+                    artistName: name,    // Inicializa o nome do artista com o nome do usuário
+                    instrument: instrument,
+                    isManager: false,
+                    managedBy: null
+                });
+
+            } catch (error) {
+                if (error.code === 'auth/email-already-in-use') {
+                    showRegisterError("Este e-mail já está em uso.");
+                } else if (error.code === 'auth/weak-password') {
+                    showRegisterError("A senha deve ter pelo menos 6 caracteres.");
+                } else {
+                    showRegisterError("Ocorreu um erro ao registrar.");
+                    console.error(error);
+                }
+            }
         });
-
-    } catch (error) {
-        if (error.code === 'auth/email-already-in-use') {
-            showRegisterError("Este e-mail já está em uso.");
-        } else if (error.code === 'auth/weak-password') {
-            showRegisterError("A senha deve ter pelo menos 6 caracteres.");
-        } else {
-            showRegisterError("Ocorreu um erro ao registrar.");
-            console.error(error);
-        }
-    }
-});
             logoutBtn.addEventListener('click', () => signOut(auth));
             
             addShowForm.addEventListener('submit', async (e) => {
