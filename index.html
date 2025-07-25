@@ -1092,10 +1092,6 @@ registerForm.addEventListener('submit', async (e) => {
                 const musicianCheckboxes = document.querySelectorAll('#add-musicians-list input:checked');
                 const linkedMusicians = isPrivate ? [] : Array.from(musicianCheckboxes).map(cb => cb.dataset.uid);
 
-               const isPrivate = document.getElementById('add-private-event').checked;
-const musicianCheckboxes = document.querySelectorAll('#add-musicians-list input:checked');
-const linkedMusicians = isPrivate ? [] : Array.from(musicianCheckboxes).map(cb => cb.dataset.uid);
-
 const newShowData = { 
     date, time, artists, location, status, observacoes, setlistId, 
     isManaged: userSettings.isManager && !isPrivate,
