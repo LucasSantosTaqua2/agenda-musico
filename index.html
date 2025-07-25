@@ -432,14 +432,10 @@ const profileForm = document.getElementById('profile-form');
                 return `${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}, ${formattedDate}`;
             };
             // --- Funções de Notificação ---
-const notifyLinkedMusicians = async (message, showDate, showTime) => {
-                if (!currentUser || !userSettings.isManager) return;
+const notifyLinkedMusicians = async (musicianIds, message, showDate, showTime) => {
+                if (!currentUser || !userSettings.isManager || musicianIds.length === 0) return;
                 try {
-                    const followersPath = `artifacts/${appId}/users/${currentUser.uid}/followers`;
-                    const querySnapshot = await getDocs(collection(db, followersPath));
-
-                    querySnapshot.forEach((musicianDoc) => {
-                        const musicianId = musicianDoc.id;
+                    musicianIds.forEach((musicianId) => {
                         const notification = {
                             message: message,
                             read: false,
@@ -509,6 +505,13 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                     document.getElementById('edit-status').value = show.status;
                     document.getElementById('edit-observacoes').value = show.observacoes;
                     document.getElementById('edit-setlist').value = show.setlistId || '';
+                    editModal.classList.add('is-open');
+                    populateMusiciansChecklist('edit', show.linkedMusicians || []);
+
+                    const privateCheckbox = document.getElementById('edit-private-event');
+                    privateCheckbox.checked = show.isPrivate || false;
+                    privateCheckbox.dispatchEvent(new Event('change')); // Dispara o evento para atualizar a UI
+
                     editModal.classList.add('is-open');
                 }
             };
@@ -706,6 +709,42 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                 
                 lucide.createIcons();
             };
+
+            const populateMusiciansChecklist = (prefix, selectedMusicians = []) => {
+                const listContainer = document.getElementById(`${prefix}-musicians-list`);
+                const managerOptions = document.getElementById(`${prefix}-manager-options`);
+                const privateEventCheckbox = document.getElementById(`${prefix}-private-event`);
+                const musiciansContainer = document.getElementById(`${prefix}-musicians-container`);
+                
+                listContainer.innerHTML = ''; // Limpa a lista antiga
+
+                if (userSettings.isManager && allTeamMembers.length > 0) {
+                    managerOptions.classList.remove('hidden');
+                    allTeamMembers.forEach(musico => {
+                        const isChecked = selectedMusicians.includes(musico.id);
+                        const checkboxHTML = `
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-md hover:bg-gray-700">
+                                <input type="checkbox" data-uid="${musico.id}" class="musician-checkbox w-5 h-5 bg-gray-900 border-gray-600 text-purple-500 focus:ring-purple-600" ${isChecked ? 'checked' : ''}>
+                                <div>
+                                    <span class="text-white">${musico.name}</span>
+                                    <p class="text-xs text-gray-500">${musico.instrumento}</p>
+                                </div>
+                            </label>`;
+                        listContainer.insertAdjacentHTML('beforeend', checkboxHTML);
+                    });
+                } else {
+                    managerOptions.classList.add('hidden');
+                }
+
+                // Lógica para desabilitar músicos se for evento particular
+                privateEventCheckbox.addEventListener('change', (e) => {
+                    musiciansContainer.classList.toggle('opacity-50', e.target.checked);
+                    listContainer.querySelectorAll('input').forEach(input => {
+                        input.disabled = e.target.checked;
+                        if (e.target.checked) input.checked = false;
+                    });
+                });
+            };
             
             const createShowElement = (show) => {
                 const showElement = document.createElement('div');
@@ -803,10 +842,16 @@ const notifyLinkedMusicians = async (message, showDate, showTime) => {
                         renderTeam(); // ADICIONAR
                         populateSetlistDropdowns();
     
-                        if (!userSettings.managedBy) {
-                            checkPastShows();
-                        }
-                    };
+                      if (userSettings.managedBy) {
+    const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
+    // A MÁGICA ACONTECE AQUI: busca shows onde o array 'linkedMusicians' contém o ID do músico atual
+    const q = query(collection(db, managedShowsPath), where("linkedMusicians", "array-contains", currentUser.uid));
+
+    unsubscribeShows.push(onSnapshot(q, s => {
+        managedShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        combineAndRenderAll();
+    }));
+}
 
                     const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
                     unsubscribeShows.push(onSnapshot(query(collection(db, personalShowsPath)), s => {
@@ -1042,18 +1087,37 @@ registerForm.addEventListener('submit', async (e) => {
                 const status = document.getElementById('add-status').value;
                 const observacoes = document.getElementById('add-observacoes').value;
                 const setlistId = document.getElementById('add-setlist').value;
-                const isManaged = userSettings.isManager || false;
-                try {
-                    const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
-                    await addDoc(collection(db, showsCollectionPath), { date, time, artists, location, status, observacoes, setlistId, isManaged, createdAt: serverTimestamp() });
-                    addShowForm.reset();
-                    addModal.classList.remove('is-open');
-                    notifyLinkedMusicians(`Novo show adicionado: ${artists} em ${location}`, date, time);
-                } catch (err) {
-                    console.error("Erro ao adicionar show:", err);
-                    showError("Ocorreu um erro ao salvar o show.");
-                }
-            });
+
+                const isPrivate = document.getElementById('add-private-event').checked;
+                const musicianCheckboxes = document.querySelectorAll('#add-musicians-list input:checked');
+                const linkedMusicians = isPrivate ? [] : Array.from(musicianCheckboxes).map(cb => cb.dataset.uid);
+
+               const isPrivate = document.getElementById('add-private-event').checked;
+const musicianCheckboxes = document.querySelectorAll('#add-musicians-list input:checked');
+const linkedMusicians = isPrivate ? [] : Array.from(musicianCheckboxes).map(cb => cb.dataset.uid);
+
+const newShowData = { 
+    date, time, artists, location, status, observacoes, setlistId, 
+    isManaged: userSettings.isManager && !isPrivate,
+    isPrivate: isPrivate,
+    linkedMusicians: linkedMusicians,
+    createdAt: serverTimestamp() 
+};
+
+try {
+    const showsCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
+    await addDoc(collection(db, showsCollectionPath), newShowData);
+    addShowForm.reset();
+    addModal.classList.remove('is-open');
+
+    if (!isPrivate) {
+        notifyLinkedMusicians(linkedMusicians, `Novo show: ${artists} em ${location}`, date, time);
+    }
+} catch (err) {
+    console.error("Erro ao adicionar show:", err);
+    showError("Ocorreu um erro ao salvar o show.");
+}
+});
 
             filterArtistInput.addEventListener('input', renderShows);
             filterLocationInput.addEventListener('input', renderShows);
@@ -1071,6 +1135,7 @@ registerForm.addEventListener('submit', async (e) => {
                 if(userSettings.isManager && userSettings.artistName) {
                     document.getElementById('add-artists').value = userSettings.artistName;
                 }
+                populateMusiciansChecklist('add');
                 addModal.classList.add('is-open');
             });
             cancelAddBtn.addEventListener('click', () => addModal.classList.remove('is-open'));
@@ -1122,6 +1187,10 @@ registerForm.addEventListener('submit', async (e) => {
             editShowForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser || !itemToModifyId) return;
+                const isPrivate = document.getElementById('edit-private-event').checked;
+                const musicianCheckboxes = document.querySelectorAll('#edit-musicians-list input:checked');
+                const linkedMusicians = isPrivate ? [] : Array.from(musicianCheckboxes).map(cb => cb.dataset.uid);
+
                 const updatedData = {
                     date: document.getElementById('edit-date').value,
                     time: document.getElementById('edit-time').value,
@@ -1130,7 +1199,9 @@ registerForm.addEventListener('submit', async (e) => {
                     status: document.getElementById('edit-status').value,
                     observacoes: document.getElementById('edit-observacoes').value,
                     setlistId: document.getElementById('edit-setlist').value,
-                    isManaged: userSettings.isManager || false
+                    isManaged: userSettings.isManager && !isPrivate,
+                    isPrivate: isPrivate,
+                    linkedMusicians: linkedMusicians
                 };
                 try {
                     const ownerId = currentUser.uid;
@@ -1138,7 +1209,9 @@ registerForm.addEventListener('submit', async (e) => {
                     await updateDoc(doc(db, showDocPath), updatedData);
                     editModal.classList.remove('is-open');
                     itemToModifyId = null;
-                    notifyLinkedMusicians(`Show atualizado: ${updatedData.artists} em ${updatedData.location}`, updatedData.date, updatedData.time);
+                    if (!isPrivate) {
+                    notifyLinkedMusicians(linkedMusicians, `Show atualizado: ${updatedData.artists} em ${updatedData.location}`, updatedData.date, updatedData.time);
+                    }
                 } catch (err) {
                     showError("Não foi possível salvar as alterações.");
                 }
