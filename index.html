@@ -57,6 +57,11 @@
         .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #8b5cf6; }
         input:checked + .slider:before { transform: translateX(26px); }
+
+        .calendar-day.has-event-ensaio { background-color: #f59e0b; color: white; border-radius: 50%; font-weight: bold; } /* amber-500 */
+        .calendar-day.has-event-entrevista { background-color: #10b981; color: white; border-radius: 50%; font-weight: bold; } /* emerald-500 */
+        .calendar-day.has-event-gravacao { background-color: #3b82f6; color: white; border-radius: 50%; font-weight: bold; } /* blue-500 */
+        .calendar-day.has-event-viagem { background-color: #6366f1; color: white; border-radius: 50%; font-weight: bold; } /* indigo-500 */
     </style>
 </head>
 <body class="text-white font-sans">
@@ -637,6 +642,7 @@ const profileForm = document.getElementById('profile-form');
                 itemToModifyId = showId;
                 const show = allShows.find(s => s.id === showId);
                 if (show) {
+                    document.getElementById('edit-type').value = show.eventType || 'show';
                     document.getElementById('edit-date').value = show.date;
                     document.getElementById('edit-time').value = show.time || '';
                     document.getElementById('edit-artists').value = show.artists;
@@ -754,22 +760,17 @@ const profileForm = document.getElementById('profile-form');
 
                 const timeHTML = show.time ? `<p class="flex items-center gap-3"><i data-lucide="clock" class="w-5 h-5 text-gray-400"></i> <span>${show.time}</span></p>` : '';
 
-                detailsContent.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <h2 class="text-2xl font-bold text-purple-300">${show.artists}</h2>
-                        <button id="close-details-modal" class="text-gray-400 hover:text-white p-2 -mr-2 -mt-2"><i data-lucide="x" class="w-6 h-6"></i></button>
+                  detailsContent.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <h2 class="text-2xl font-bold text-purple-300">${show.artists}</h2>
+                    <button id="close-details-modal" class="text-gray-400 hover:text-white p-2 -mr-2 -mt-2"><i data-lucide="x" class="w-6 h-6"></i></button>
+                </div>
+                <div class="mt-4 space-y-3">
+                    ${typeHTML} <p class="flex items-center gap-3"><i data-lucide="calendar" class="w-5 h-5 text-gray-400"></i> <span class="font-semibold">${formatDate(show.date)}</span></p>
+                    ${timeHTML}
                     </div>
-                    <div class="mt-4 space-y-3">
-                        <p class="flex items-center gap-3"><i data-lucide="calendar" class="w-5 h-5 text-gray-400"></i> <span class="font-semibold">${formatDate(show.date)}</span></p>
-                        ${timeHTML}
-                        <p class="flex items-center gap-3"><i data-lucide="map-pin" class="w-5 h-5 text-gray-400"></i> <span>${show.location}</span></p>
-                        <div class="flex items-center gap-3"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> <span class="text-sm font-bold py-1 px-3 rounded-full ${statusInfo.color}">${statusInfo.text}</span></div>
-                        ${show.observacoes ? `<div class="pt-2"><p class="font-semibold text-gray-300">Observações:</p><p class="text-gray-400 whitespace-pre-wrap">${show.observacoes}</p></div>` : ''}
-                        ${teamHTML}
-                        ${setlistHTML}
-                    </div>
-                    ${actionButtonsHTML}
-                `;
+                ${actionButtonsHTML}
+            `;
 
                 lucide.createIcons();
                 showDetailsModal.classList.add('is-open');
@@ -793,17 +794,55 @@ const profileForm = document.getElementById('profile-form');
                 }
             };
 
-            const showModalFieldsHTML = (prefix) => `
+const showModalFieldsHTML = (prefix) => {
+                // Gera as opções do dropdown a partir do objeto eventTypes
+                const typeOptions = Object.entries(eventTypes).map(([key, value]) => 
+                    `<option value="${key}">${value.text}</option>`
+                ).join('');
+
+                return `
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label for="${prefix}-date" class="text-sm font-medium text-gray-400 mb-1">Data</label><input id="${prefix}-date" type="date" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                        <div><label for="${prefix}-time" class="text-sm font-medium text-gray-400 mb-1">Horário</label><input id="${prefix}-time" type="time" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></div>
-                        <div class="md:col-span-2"><label for="${prefix}-artists" class="text-sm font-medium text-gray-400 mb-1">Artista(s) / Evento</label><input id="${prefix}-artists" type="text" placeholder="Ex: João Silva" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                        <div class="md:col-span-2"><label for="${prefix}-location" class="text-sm font-medium text-gray-400 mb-1">Local</label><input id="${prefix}-location" type="text" placeholder="Ex: Virada Cultural, SP" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required></div>
-                        <div><label for="${prefix}-status" class="text-sm font-medium text-gray-400 mb-1">Status</label><select id="${prefix}-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option><option value="cancelado">Cancelado</option><option value="realizado">Realizado</option></select></div>
-                        <div><label for="${prefix}-setlist" class="text-sm font-medium text-gray-400 mb-1">Setlist</label><select id="${prefix}-setlist" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"><option value="">Nenhuma</option></select></div>
+                        <div>
+                            <label for="${prefix}-type" class="text-sm font-medium text-gray-400 mb-1">Tipo de Evento</label>
+                            <select id="${prefix}-type" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">${typeOptions}</select>
+                        </div>
+                        <div>
+                            <label for="${prefix}-status" class="text-sm font-medium text-gray-400 mb-1">Status</label>
+                            <select id="${prefix}-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                                <option value="confirmado">Confirmado</option>
+                                <option value="aguardando">Aguardando</option>
+                                <option value="cancelado">Cancelado</option>
+                                <option value="realizado">Realizado</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="${prefix}-artists" class="text-sm font-medium text-gray-400 mb-1">Título / Artista(s)</label>
+                            <input id="${prefix}-artists" type="text" placeholder="Ex: Show com João Silva" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                        </div>
+                        <div>
+                            <label for="${prefix}-date" class="text-sm font-medium text-gray-400 mb-1">Data</label>
+                            <input id="${prefix}-date" type="date" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                        </div>
+                        <div>
+                            <label for="${prefix}-time" class="text-sm font-medium text-gray-400 mb-1">Horário</label>
+                            <input id="${prefix}-time" type="time" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="${prefix}-location" class="text-sm font-medium text-gray-400 mb-1">Local</label>
+                            <input id="${prefix}-location" type="text" placeholder="Ex: Virada Cultural, SP" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        </div>
+                        <div>
+                            <label for="${prefix}-setlist" class="text-sm font-medium text-gray-400 mb-1">Setlist</label>
+                            <select id="${prefix}-setlist" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                                <option value="">Nenhuma</option>
+                            </select>
+                        </div>
                     </div>
-                    <div><label for="${prefix}-observacoes" class="text-sm font-medium text-gray-400 mb-1">Observações</label><textarea id="${prefix}-observacoes" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></textarea></div>
+                    <div>
+                        <label for="${prefix}-observacoes" class="text-sm font-medium text-gray-400 mb-1">Observações</label>
+                        <textarea id="${prefix}-observacoes" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"></textarea>
+                    </div>
                     
                     <div id="${prefix}-manager-options" class="hidden space-y-4 pt-4 border-t border-gray-700">
                         <div>
@@ -813,9 +852,8 @@ const profileForm = document.getElementById('profile-form');
                             </label>
                         </div>
                         <div id="${prefix}-musicians-container">
-                            <label class="text-sm font-medium text-gray-400 mb-2 block">Vincular Músicos ao Show:</label>
-                            <div id="${prefix}-musicians-list" class="space-y-2 max-h-40 overflow-y-auto bg-gray-900/50 p-3 rounded-lg">
-                                </div>
+                            <label class="text-sm font-medium text-gray-400 mb-2 block">Vincular Músicos ao Evento:</label>
+                            <div id="${prefix}-musicians-list" class="space-y-2 max-h-40 overflow-y-auto bg-gray-900/50 p-3 rounded-lg"></div>
                         </div>
                     </div>
                 </div>
@@ -824,6 +862,7 @@ const profileForm = document.getElementById('profile-form');
                     <button type="button" id="cancel-${prefix}-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button>
                     <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">${prefix === 'add' ? 'Adicionar' : 'Salvar'}</button>
                 </div>`;
+            };
             
 const setupModalHTML = () => {
                 // Nova estrutura do Modal de Adicionar
@@ -884,6 +923,14 @@ const setupModalHTML = () => {
                 aguardando: { text: 'Aguardando', color: 'bg-yellow-500/20 text-yellow-300' },
                 cancelado: { text: 'Cancelado', color: 'bg-red-500/20 text-red-300' },
                 realizado: { text: 'Realizado', color: 'bg-blue-500/20 text-blue-300' }
+            };
+
+            const eventTypes = {
+                show: { text: 'Show', icon: 'music', color: 'text-purple-300' },
+                ensaio: { text: 'Ensaio', icon: 'users', color: 'text-amber-300' },
+                entrevista: { text: 'Entrevista', icon: 'mic', color: 'text-emerald-300' },
+                gravacao: { text: 'Gravação', icon: 'disc', color: 'text-blue-300' },
+                viagem: { text: 'Viagem', icon: 'plane', color: 'text-indigo-300' }
             };
 
             const renderShows = () => {
@@ -974,54 +1021,46 @@ const setupModalHTML = () => {
                 });
             };
             
-  const createShowElement = (show) => {
-                const showElement = document.createElement('div');
-                showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4 cursor-pointer hover:bg-gray-700/50";
-                showElement.dataset.id = show.id;
+      const createShowElement = (show) => {
+            const showElement = document.createElement('div');
+            showElement.className = "bg-gray-800 rounded-lg p-5 shadow-md flex flex-col items-start gap-4 cursor-pointer hover:bg-gray-700/50";
+            showElement.dataset.id = show.id;
 
-                const statusInfo = statusMap[show.status] || { text: '', color: ''};
-                const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
-                
-                let typeTag = '';
-                if (show.isPersonal) {
-                    if (show.isManaged) {
-                        // Show criado pelo usuário no modo Gerente
-                        typeTag = `<div class="text-xs font-bold py-1 px-2 rounded-full bg-orange-500/20 text-orange-300">Gerenciador</div>`;
-                    } else {
-                        // Show pessoal do usuário
-                        typeTag = `<div class="text-xs font-bold py-1 px-2 rounded-full bg-blue-500/20 text-blue-300">Pessoal</div>`;
-                    }
-                } else {
-                    // Show gerenciado por outra pessoa
-                    typeTag = `<div class="text-xs font-bold py-1 px-2 rounded-full bg-purple-500/20 text-purple-300">Gerenciado</div>`;
-                }
+            const eventType = show.eventType || 'show';
+            const typeInfo = eventTypes[eventType] || eventTypes.show;
+            const statusInfo = statusMap[show.status] || { text: '', color: ''};
+            const statusHTML = show.status ? `<div class="text-xs font-bold py-1 px-2 rounded-full ${statusInfo.color}">${statusInfo.text}</div>` : '';
 
-                const setlist = allSetlists.find(s => s.id === show.setlistId);
-                const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
-                const obsSnippet = show.observacoes ? `<p class="text-sm text-gray-400 mt-2 italic">"${show.observacoes.substring(0, 50)}..."</p>` : '';
+            let typeTag = '';
+            if (show.isPersonal) {
+                typeTag = `<div class="text-xs font-bold py-1 px-2 rounded-full bg-blue-500/20 text-blue-300">Pessoal</div>`;
+            } else {
+                typeTag = `<div class="text-xs font-bold py-1 px-2 rounded-full bg-purple-500/20 text-purple-300">Gerenciado</div>`;
+            }
 
-                const timeHTML = show.time ? `<span class="ml-2 text-gray-400 text-base">às ${show.time}</span>` : '';
+            const setlist = allSetlists.find(s => s.id === show.setlistId);
+            const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
+            const timeHTML = show.time ? `<span class="ml-2 text-gray-400 text-base">às ${show.time}</span>` : '';
 
-                showElement.innerHTML = `
-                    <div class="flex justify-between items-start w-full">
-                        <div>
-                            <p class="font-bold text-lg text-purple-300 flex items-center gap-2">
-                                <i data-lucide="calendar" class="w-5 h-5"></i> 
-                                ${formatDate(show.date)}
-                                ${timeHTML}
-                            </p>
-                            <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
-                            <p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>
-                            ${setlistHTML}
-                        </div>
-                        <div class="flex flex-col items-end gap-2">
-                            ${statusHTML}
-                            ${typeTag}
-                        </div>
+            showElement.innerHTML = `
+                <div class="flex justify-between items-start w-full">
+                    <div>
+                        <p class="font-bold text-lg ${typeInfo.color} flex items-center gap-2">
+                            <i data-lucide="${typeInfo.icon}" class="w-5 h-5"></i> 
+                            ${formatDate(show.date)}
+                            ${timeHTML}
+                        </p>
+                        <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
+                        ${show.location ? `<p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>` : ''}
+                        ${setlistHTML}
                     </div>
-                    ${obsSnippet}`;
-                return showElement;
-            };
+                    <div class="flex flex-col items-end gap-2">
+                        ${statusHTML}
+                        ${typeTag}
+                    </div>
+                </div>`;
+            return showElement;
+        };
             
             const checkPastShows = () => {
                  const today = new Date();
@@ -1338,6 +1377,7 @@ registerForm.addEventListener('submit', async (e) => {
                 const linkedMusicians = isPrivate ? [] : Array.from(musicianCheckboxes).map(cb => cb.dataset.uid);
 
 const newShowData = { 
+    eventType: document.getElementById('add-type').value, // <-- ADICIONE ESTA LINHA
     date, time, artists, location, status, observacoes, setlistId, 
     isManaged: userSettings.isManager && !isPrivate,
     isPrivate: isPrivate,
@@ -1433,6 +1473,7 @@ try {
                 const linkedMusicians = isPrivate ? [] : Array.from(musicianCheckboxes).map(cb => cb.dataset.uid);
 
                 const updatedData = {
+                    eventType: document.getElementById('edit-type').value,
                     date: document.getElementById('edit-date').value,
                     time: document.getElementById('edit-time').value,
                     artists: document.getElementById('edit-artists').value,
@@ -1510,7 +1551,12 @@ try {
                 for (let day = 1; day <= daysInMonth; day++) {
                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const showsOnDay = allShows.filter(s => s.date === dateStr);
-                    const dayClass = showsOnDay.length > 0 ? 'has-event' : '';
+                    let dayClass = '';
+                    if (showsOnDay.length > 0) {
+                    // Usa o tipo do primeiro evento do dia para colorir
+                    const eventType = showsOnDay[0].eventType || 'show';
+                    dayClass = eventType === 'show' ? 'has-event' : `has-event-${eventType}`;
+                }
                     calendarGrid.insertAdjacentHTML('beforeend', `<div data-date="${dateStr}" class="calendar-day p-2 cursor-pointer hover:bg-gray-700 rounded-full ${dayClass}">${day}</div>`);
                 }
             };
