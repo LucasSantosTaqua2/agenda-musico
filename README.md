@@ -9,7 +9,7 @@
 </div>
 
 <p align="center">
-  Uma aplicação web completa para gerenciamento de agendas, setlists e finanças de músicos e bandas.
+  Uma aplicação web completa para gerenciamento de agendas, setlists de músicos e bandas.
   <br />
   <a href="#-sobre-o-projeto"><strong>Saiba mais »</strong></a>
   <br />
