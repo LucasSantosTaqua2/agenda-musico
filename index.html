@@ -1818,20 +1818,12 @@ setlistForm.addEventListener('submit', async (e) => {
                 editSelect.value = savedEditValue;
             };
 
-           exportPdfBtn.addEventListener('click', async () => {
+           exportPdfBtn.addEventListener('click', () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
 
-                // --- INÍCIO DA MELHORIA: FONTES E EMOJIS ---
-                
-                // 1. Adiciona a fonte Noto Sans (com suporte a emojis) ao jsPDF.
-                // A fonte foi pré-convertida para base64 para funcionar no navegador.
-                const notoSansBase64 = "AAEAAAARAQAABAAQR0RFRgARAAIAAAE... (texto base64 muito longo, será adicionado pelo Gemini)"; // Esta string é gigante, não se preocupe com o conteúdo.
-                doc.addFileToVFS('NotoSans-Regular-normal.ttf', notoSansBase64);
-                doc.addFont('NotoSans-Regular-normal.ttf', 'NotoSans-Regular', 'normal');
-                doc.setFont('NotoSans-Regular', 'normal');
-
-                // --- FIM DA MELHORIA ---
+                // Define uma fonte padrão que já vem com a biblioteca
+                doc.setFont("Helvetica", "normal");
 
                 const artistFilter = filterArtistInput.value;
                 const locationFilter = filterLocationInput.value;
@@ -1851,47 +1843,47 @@ setlistForm.addEventListener('submit', async (e) => {
                 
                 let y = 40;
                 doc.setFontSize(14);
-                doc.text("Shows Agendados", 14, y);
+                doc.text("Eventos Agendados", 14, y);
                 y += 10;
 
                 agendados.forEach(show => {
                     if (y > 280) { 
-                        doc.addPage(); 
+                        doc.addPage();
                         y = 20; 
                     }
-                    doc.setFontSize(12);
-                    const timeText = show.time ? ` às ${show.time}` : '';
                     
-                    // Usa o ícone do tipo de evento
                     const eventType = show.eventType || 'show';
                     const typeInfo = eventTypes[eventType] || eventTypes.show;
-                    const iconUnicode = {
-                        music: '🎵',
-                        users: '👥',
-                        mic: '🎤',
-                        disc: '💿',
-                        plane: '✈️'
-                    };
-                    const titleText = `${iconUnicode[typeInfo.icon] || '📅'} ${formatDate(show.date)}${timeText} - ${show.artists}`;
+                    const timeText = show.time ? ` às ${show.time}` : '';
+
+                    // Usa prefixos de texto em vez de emojis
+                    const titleText = `[${typeInfo.text}] ${formatDate(show.date)}${timeText} - ${show.artists}`;
                     
+                    doc.setFontSize(12);
+                    doc.setFont("Helvetica", "bold"); // Título em negrito
                     doc.text(titleText, 14, y);
-                    y += 8; // Aumentado o espaçamento aqui (era 7)
-                    doc.setFontSize(10);
-                    doc.text(`Local: ${show.location}`, 16, y);
-                    y += 6; // Aumentado o espaçamento aqui (era 5)
+                    y += 8;
                     
-                    if (show.observacoes) {
-                        const lines = doc.splitTextToSize(`Obs: ${show.observacoes}`, 180);
-                        doc.text(lines, 16, y);
-                        y += (lines.length * 5); // Ajustado para espaçamento de linha
+                    doc.setFont("Helvetica", "normal"); // Resto do texto normal
+                    doc.setFontSize(10);
+                    
+                    if (show.location) {
+                        doc.text(`Local: ${show.location}`, 16, y);
+                        y += 6;
                     }
                     
-                    y += 10; // Aumentado o espaçamento final entre os eventos (era 5)
+                    if (show.observacoes) {
+                        // A função splitTextToSize é mais segura para evitar erros
+                        const lines = doc.splitTextToSize(`Obs: ${show.observacoes}`, 180);
+                        doc.text(lines, 16, y);
+                        y += (lines.length * 5);
+                    }
+                    
+                    y += 12; // Aumentado o espaçamento final entre os eventos
                 });
 
-                doc.save("agenda-shows.pdf");
+                doc.save("AGENDA-EVENTOS.pdf");
             });
-
             managerModeToggle.addEventListener('change', async (e) => {
                 const isManager = e.target.checked;
                 const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
