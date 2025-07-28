@@ -1515,8 +1515,15 @@ try {
                 }
             };
             
-            document.getElementById('prev-month-btn').addEventListener('click', () => { /* ... */ });
-            document.getElementById('next-month-btn').addEventListener('click', () => { /* ... */ });
+           document.getElementById('prev-month-btn').addEventListener('click', () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+                renderCalendar();
+            });
+            
+            document.getElementById('next-month-btn').addEventListener('click', () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+                renderCalendar();
+            });
 
             calendarGrid.addEventListener('click', (e) => {
                 if (e.target.classList.contains('calendar-day') && e.target.dataset.date) {
