@@ -258,11 +258,6 @@
                         <div id="map-legend" class="absolute bottom-2 right-2 z-[1000] bg-gray-900/70 p-2 rounded-lg text-xs space-y-1">
                             </div>
                     </div>
-                    <div class="relative">
-                        <div id="mapa-shows" style="height: 400px; border-radius: 12px; background-color: #374151;"></div>
-                        <div id="map-legend" class="absolute bottom-2 right-2 z-[1000] bg-gray-900/70 p-2 rounded-lg text-xs space-y-1">
-                            </div>
-                    </div>
                 </div>
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Shows por Mês (Últimos 12 meses)</h3>
@@ -714,78 +709,60 @@ const profileForm = document.getElementById('profile-form');
                 doc.save(fileName);
             };
             
-           const openShowDetailsModal = (showId) => {
+const openShowDetailsModal = (showId) => {
                 const show = allShows.find(s => s.id === showId);
                 if (!show) return;
 
                 const detailsContent = document.getElementById('show-details-content');
+
+                // --- Define todas as variáveis de HTML primeiro ---
+                const eventType = show.eventType || 'show';
+                const typeInfo = eventTypes[eventType] || eventTypes.show;
                 const statusInfo = statusMap[show.status] || { text: '', color: ''};
                 const setlist = allSetlists.find(s => s.id === show.setlistId);
-
-                // --- Lógica para exibir a equipe do evento ---
+                
+                const typeHTML = `<p class="flex items-center gap-3"><i data-lucide="${typeInfo.icon}" class="w-5 h-5 ${typeInfo.color}"></i> <span class="font-semibold">${typeInfo.text}</span></p>`;
+                const timeHTML = show.time ? `<p class="flex items-center gap-3"><i data-lucide="clock" class="w-5 h-5 text-gray-400"></i> <span>${show.time}</span></p>` : '';
+                const locationHTML = show.location ? `<p class="flex items-center gap-3"><i data-lucide="map-pin" class="w-5 h-5 text-gray-400"></i> <span>${show.location}</span></p>` : '';
+                const statusHTML = `<div class="flex items-center gap-3"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> <span class="text-sm font-bold py-1 px-3 rounded-full ${statusInfo.color}">${statusInfo.text}</span></div>`;
+                const obsHTML = show.observacoes ? `<div class="pt-2"><p class="font-semibold text-gray-300">Observações:</p><p class="text-gray-400 whitespace-pre-wrap">${show.observacoes}</p></div>` : '';
+                
                 let teamHTML = '';
-                // Verifica se o usuário é gerente e se há músicos vinculados
                 if (userSettings.isManager && show.linkedMusicians && show.linkedMusicians.length > 0) {
-                    const linkedMembers = show.linkedMusicians.map(musicianId => {
-                        return allTeamMembers.find(member => member.id === musicianId);
-                    }).filter(Boolean); // Garante que não há membros indefinidos
-
+                    const linkedMembers = show.linkedMusicians.map(id => allTeamMembers.find(member => member.id === id)).filter(Boolean);
                     if (linkedMembers.length > 0) {
-                        const memberList = linkedMembers.map(member =>
-                            `<li class="text-gray-400 text-sm flex items-center gap-2"><i data-lucide="user-check" class="w-4 h-4 text-gray-500"></i> ${member.name} (${member.instrumento})</li>`
-                        ).join('');
-                        
-                        teamHTML = `
-                            <div class="pt-2">
-                                <p class="font-semibold text-gray-300 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5"></i> Equipe do Evento</p>
-                                <ul class="mt-1 space-y-1">${memberList}</ul>
-                            </div>`;
+                        const memberList = linkedMembers.map(member => `<li class="text-gray-400 text-sm flex items-center gap-2"><i data-lucide="user-check" class="w-4 h-4 text-gray-500"></i> ${member.name} (${member.instrumento})</li>`).join('');
+                        teamHTML = `<div class="pt-2"><p class="font-semibold text-gray-300 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5"></i> Equipe do Evento</p><ul class="mt-1 space-y-1">${memberList}</ul></div>`;
                     }
                 }
-                // --- Fim da lógica da equipe ---
 
                 let setlistHTML = '';
                 if (setlist) {
-                    setlistHTML = `
-                        <div class="pt-2">
-                            <p class="font-semibold text-gray-300 flex items-center gap-2">
-                                <i data-lucide="list-music" class="w-5 h-5"></i> Setlist: ${setlist.name}
-                            </p>
-                            <button id="download-setlist-pdf-btn" class="mt-2 w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
-                                <i data-lucide="download" class="w-5 h-5"></i> Baixar Setlist em PDF
-                            </button>
-                        </div>`;
+                    setlistHTML = `<div class="pt-2"><p class="font-semibold text-gray-300 flex items-center gap-2"><i data-lucide="list-music" class="w-5 h-5"></i> Setlist: ${setlist.name}</p><button id="download-setlist-pdf-btn" class="mt-2 w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"><i data-lucide="download" class="w-5 h-5"></i> Baixar Setlist em PDF</button></div>`;
                 } else {
-                    setlistHTML = `
-                        <div class="pt-2">
-                            <p class="font-semibold text-gray-300 flex items-center gap-2"><i data-lucide="list-music" class="w-5 h-5"></i> Setlist</p>
-                            <p class="text-sm text-gray-500 mt-1">Nenhuma setlist associada.</p>
-                        </div>`;
+                    setlistHTML = `<div class="pt-2"><p class="font-semibold text-gray-300 flex items-center gap-2"><i data-lucide="list-music" class="w-5 h-5"></i> Setlist</p><p class="text-sm text-gray-500 mt-1">Nenhuma setlist associada.</p></div>`;
                 }
 
-                const actionButtonsHTML = show.isPersonal ? `
-                    <div class="flex gap-2 mt-6 border-t border-gray-700 pt-4">
-                        <button id="detail-edit-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
-                            <i data-lucide="pencil" class="w-5 h-5"></i> Editar
-                        </button>
-                        <button id="detail-delete-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
-                            <i data-lucide="trash-2" class="w-5 h-5"></i> Excluir
-                        </button>
-                    </div>` : '';
+                const actionButtonsHTML = show.isPersonal ? `<div class="flex gap-2 mt-6 border-t border-gray-700 pt-4"><button id="detail-edit-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"><i data-lucide="pencil" class="w-5 h-5"></i> Editar</button><button id="detail-delete-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"><i data-lucide="trash-2" class="w-5 h-5"></i> Excluir</button></div>` : '';
 
-                const timeHTML = show.time ? `<p class="flex items-center gap-3"><i data-lucide="clock" class="w-5 h-5 text-gray-400"></i> <span>${show.time}</span></p>` : '';
-
-                  detailsContent.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <h2 class="text-2xl font-bold text-purple-300">${show.artists}</h2>
-                    <button id="close-details-modal" class="text-gray-400 hover:text-white p-2 -mr-2 -mt-2"><i data-lucide="x" class="w-6 h-6"></i></button>
-                </div>
-                <div class="mt-4 space-y-3">
-                    ${typeHTML} <p class="flex items-center gap-3"><i data-lucide="calendar" class="w-5 h-5 text-gray-400"></i> <span class="font-semibold">${formatDate(show.date)}</span></p>
-                    ${timeHTML}
+                // --- Agora, monta o HTML final ---
+                detailsContent.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h2 class="text-2xl font-bold text-purple-300">${show.artists}</h2>
+                        <button id="close-details-modal" class="text-gray-400 hover:text-white p-2 -mr-2 -mt-2"><i data-lucide="x" class="w-6 h-6"></i></button>
                     </div>
-                ${actionButtonsHTML}
-            `;
+                    <div class="mt-4 space-y-3">
+                        ${typeHTML}
+                        <p class="flex items-center gap-3"><i data-lucide="calendar" class="w-5 h-5 text-gray-400"></i> <span class="font-semibold">${formatDate(show.date)}</span></p>
+                        ${timeHTML}
+                        ${locationHTML}
+                        ${statusHTML}
+                        ${obsHTML}
+                        ${teamHTML}
+                        ${setlistHTML}
+                    </div>
+                    ${actionButtonsHTML}
+                `;
 
                 lucide.createIcons();
                 showDetailsModal.classList.add('is-open');
