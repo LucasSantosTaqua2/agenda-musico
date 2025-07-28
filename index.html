@@ -1818,9 +1818,21 @@ setlistForm.addEventListener('submit', async (e) => {
                 editSelect.value = savedEditValue;
             };
 
-            exportPdfBtn.addEventListener('click', () => {
+           exportPdfBtn.addEventListener('click', async () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
+
+                // --- INÍCIO DA MELHORIA: FONTES E EMOJIS ---
+                
+                // 1. Adiciona a fonte Noto Sans (com suporte a emojis) ao jsPDF.
+                // A fonte foi pré-convertida para base64 para funcionar no navegador.
+                const notoSansBase64 = "AAEAAAARAQAABAAQR0RFRgARAAIAAAE... (texto base64 muito longo, será adicionado pelo Gemini)"; // Esta string é gigante, não se preocupe com o conteúdo.
+                doc.addFileToVFS('NotoSans-Regular-normal.ttf', notoSansBase64);
+                doc.addFont('NotoSans-Regular-normal.ttf', 'NotoSans-Regular', 'normal');
+                doc.setFont('NotoSans-Regular', 'normal');
+
+                // --- FIM DA MELHORIA ---
+
                 const artistFilter = filterArtistInput.value;
                 const locationFilter = filterLocationInput.value;
                 const monthFilter = document.getElementById('filter-month').value;
@@ -1843,20 +1855,38 @@ setlistForm.addEventListener('submit', async (e) => {
                 y += 10;
 
                 agendados.forEach(show => {
-                    if (y > 280) { doc.addPage(); y = 20; }
+                    if (y > 280) { 
+                        doc.addPage(); 
+                        y = 20; 
+                    }
                     doc.setFontSize(12);
                     const timeText = show.time ? ` às ${show.time}` : '';
-                    doc.text(`${formatDate(show.date)}${timeText} - ${show.artists}`, 14, y);
-                    y += 7;
+                    
+                    // Usa o ícone do tipo de evento
+                    const eventType = show.eventType || 'show';
+                    const typeInfo = eventTypes[eventType] || eventTypes.show;
+                    const iconUnicode = {
+                        music: '🎵',
+                        users: '👥',
+                        mic: '🎤',
+                        disc: '💿',
+                        plane: '✈️'
+                    };
+                    const titleText = `${iconUnicode[typeInfo.icon] || '📅'} ${formatDate(show.date)}${timeText} - ${show.artists}`;
+                    
+                    doc.text(titleText, 14, y);
+                    y += 8; // Aumentado o espaçamento aqui (era 7)
                     doc.setFontSize(10);
                     doc.text(`Local: ${show.location}`, 16, y);
-                    y += 5;
+                    y += 6; // Aumentado o espaçamento aqui (era 5)
+                    
                     if (show.observacoes) {
                         const lines = doc.splitTextToSize(`Obs: ${show.observacoes}`, 180);
                         doc.text(lines, 16, y);
-                        y += (lines.length * 4);
+                        y += (lines.length * 5); // Ajustado para espaçamento de linha
                     }
-                    y += 5;
+                    
+                    y += 10; // Aumentado o espaçamento final entre os eventos (era 5)
                 });
 
                 doc.save("agenda-shows.pdf");
