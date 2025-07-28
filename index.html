@@ -519,12 +519,16 @@ const profileForm = document.getElementById('profile-form');
 
 // --- FUNÇÃO RENDERMAP ATUALIZADA COM ZOOM AUTOMÁTICO ---
           // --- FUNÇÃO RENDERMAP COM ZOOM INICIAL INTELIGENTE ---
+            // --- FUNÇÃO RENDERMAP COM ZOOM DEFINITIVO ---
             const renderMap = async () => {
                 if (!map) {
-                    map = L.map('mapa-shows').setView([20, 0], 2); // Visão global inicial
+                    // MUDANÇA PRINCIPAL: Inicializa o mapa SEM definir uma visão (zoom).
+                    // Isso evita que o mapa global seja exibido primeiro.
+                    map = L.map('mapa-shows'); 
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     }).addTo(map);
+                    
                     Object.values(layers).forEach(layer => layer.addTo(map));
                     setupMapFilters();
                 }
@@ -539,67 +543,60 @@ const profileForm = document.getElementById('profile-form');
                 `;
 
                 const showsWithLocation = allShows.filter(show => show.location && show.location.trim() !== '');
+                
+                // Se não houver nenhum show com localização, definimos uma visão padrão e paramos.
                 if (showsWithLocation.length === 0) {
-                    map.setView([-14.235, -51.925], 4); // Se não houver shows, foca no Brasil
+                    map.setView([-14.235, -51.925], 4); // Foca no Brasil
                     return;
                 }
 
-                const allMarkers = [];
+                // Espera todas as buscas de coordenadas terminarem
+                const markerPromises = showsWithLocation.map(async (show) => {
+                    let lat = show.lat;
+                    let lng = show.lng;
 
-                // 1. Processa shows que JÁ TÊM coordenadas salvas
-                showsWithLocation.filter(s => s.lat && s.lng).forEach(show => {
-                    const status = show.status || 'aguardando';
-                    const icon = icons[status] || icons.aguardando;
-                    if (layers[status]) {
-                        const marker = L.marker([show.lat, show.lng], { icon: icon })
-                            .bindPopup(`<b>${show.artists}</b><br>${show.location}`);
-                        allMarkers.push(marker);
-                        layers[status].addLayer(marker);
+                    if (!lat || !lng) {
+                        try {
+                            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(show.location)}&limit=1`);
+                            const data = await response.json();
+                            if (data && data.length > 0) {
+                                lat = parseFloat(data[0].lat);
+                                lng = parseFloat(data[0].lon);
+                                
+                                const ownerId = show.isPersonal ? currentUser.uid : userSettings.managedBy;
+                                if (ownerId) {
+                                    const showRef = doc(db, `artifacts/${appId}/users/${ownerId}/shows`, show.id);
+                                    updateDoc(showRef, { lat, lng });
+                                }
+                            }
+                        } catch (error) { console.error("Erro na geocodificação:", error); }
+                    }
+                    
+                    // Retorna os dados para criação do marcador
+                    if (lat && lng) {
+                        return { lat, lng, status: show.status || 'aguardando', artists: show.artists, location: show.location };
+                    }
+                    return null;
+                });
+
+                const markerData = (await Promise.all(markerPromises)).filter(Boolean); // Remove os nulos
+
+                // Adiciona todos os marcadores aos seus layers de uma vez
+                markerData.forEach(data => {
+                    const icon = icons[data.status] || icons.aguardando;
+                    if (layers[data.status]) {
+                         L.marker([data.lat, data.lng], { icon: icon })
+                          .bindPopup(`<b>${data.artists}</b><br>${data.location}`)
+                          .addTo(layers[data.status]);
                     }
                 });
                 
-                // 2. APLICA O ZOOM INICIAL com os marcadores que já temos
-                const initiallyVisibleMarkers = allMarkers.filter(marker => map.hasLayer(marker._eventParents));
-                if (initiallyVisibleMarkers.length > 0) {
-                    const featureGroup = L.featureGroup(initiallyVisibleMarkers);
-                    map.fitBounds(featureGroup.getBounds().pad(0.1));
-                }
-
-                // 3. Busca as coordenadas dos shows restantes em segundo plano
-                const showsToGeocode = showsWithLocation.filter(s => !s.lat || !s.lng);
-                const geocodePromises = showsToGeocode.map(async (show) => {
-                    try {
-                        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(show.location)}&limit=1`);
-                        const data = await response.json();
-                        if (data && data.length > 0) {
-                            const lat = parseFloat(data[0].lat);
-                            const lng = parseFloat(data[0].lon);
-                            const status = show.status || 'aguardando';
-                            const icon = icons[status] || icons.aguardando;
-
-                            if (layers[status]) {
-                                const marker = L.marker([lat, lng], { icon: icon })
-                                    .bindPopup(`<b>${show.artists}</b><br>${show.location}`);
-                                layers[status].addLayer(marker);
-                            }
-                            
-                            const ownerId = show.isPersonal ? currentUser.uid : userSettings.managedBy;
-                            if (ownerId) {
-                                const showRef = doc(db, `artifacts/${appId}/users/${ownerId}/shows`, show.id);
-                                updateDoc(showRef, { lat, lng });
-                            }
-                        }
-                    } catch (error) { console.error("Erro na geocodificação:", error); }
-                });
-
-                await Promise.all(geocodePromises);
-                
-                // 4. Reajusta o zoom caso novos marcadores tenham sido adicionados (opcional, mas bom)
-                const finalVisibleMarkers = Object.values(layers).flatMap(layer => map.hasLayer(layer) ? layer.getLayers() : []);
-                if (finalVisibleMarkers.length > 0) {
-                    const featureGroup = L.featureGroup(finalVisibleMarkers);
-                    map.fitBounds(featureGroup.getBounds().pad(0.1));
-                } else if (showsWithLocation.length > 0) {
+                // Agora, com todos os marcadores prontos, definimos o zoom.
+                const visibleMarkers = Object.values(layers).flatMap(layer => map.hasLayer(layer) ? layer.getLayers() : []);
+                if (visibleMarkers.length > 0) {
+                    const featureGroup = L.featureGroup(visibleMarkers);
+                    map.fitBounds(featureGroup.getBounds().pad(0.1)); 
+                } else {
                     map.setView([-14.235, -51.925], 4); // Se filtros esconderem tudo, foca no Brasil
                 }
             };
