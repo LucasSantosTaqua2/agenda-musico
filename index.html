@@ -933,22 +933,6 @@ const setupModalHTML = () => {
             const linkForm = document.getElementById('link-form');
             const unlinkBtn = document.getElementById('unlink-btn');
 
-            const statusMap = {
-                confirmado: { text: 'Confirmado', color: 'bg-green-500/20 text-green-300' },
-                aguardando: { text: 'Aguardando', color: 'bg-yellow-500/20 text-yellow-300' },
-                cancelado: { text: 'Cancelado', color: 'bg-red-500/20 text-red-300' },
-                realizado: { text: 'Realizado', color: 'bg-blue-500/20 text-blue-300' }
-            };
-
-      const eventTypes = {
-    show: { text: 'Show', icon: 'music', color: 'text-purple-300' },
-    ensaio: { text: 'Ensaio', icon: 'users', color: 'text-amber-300' },
-    entrevista: { text: 'Entrevista', icon: 'mic', color: 'text-emerald-300' },
-    gravacao: { text: 'Gravação', icon: 'disc', color: 'text-blue-300' },
-    viagem: { text: 'Viagem', icon: 'plane', color: 'text-indigo-300' }
-};
-
-
             const renderShows = () => {
                 showsListAgendados.innerHTML = '';
                 showsListRealizados.innerHTML = '';
