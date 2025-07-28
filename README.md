@@ -73,8 +73,23 @@ O sistema foi construído para ser intuitivo, rápido e acessível de qualquer d
 ## 📸 Telas da Aplicação
 
 <div align="center">
+  <p>Tela Inicial.</p>
+  <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/banda-sync/refs/heads/main/img/testes/inicial.png" alt="Dashboard no celular" width="300"/>
+</div>
+
+<div align="center">
+  <p>Tela do Calendário.</p>
+  <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/banda-sync/refs/heads/main/img/testes/calendario.png" alt="Calendário no celular" width="300"/>
+</div>
+
+<div align="center">
   <p>Visão do Dashboard no celular, com o mapa de shows responsivo.</p>
-  <img src="https://i.imgur.com/kP1N3Yv.png" alt="Dashboard no celular" width="300"/>
+  <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/banda-sync/refs/heads/main/img/testes/dash.png" alt="Calendário no celular" width="300"/>
+</div>
+
+<div align="center">
+  <p>Tela de configurações.</p>
+  <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/banda-sync/refs/heads/main/img/testes/config.png" alt="Calendário no celular" width="300"/>
 </div>
 
 ---
