@@ -169,19 +169,32 @@
                     <i data-lucide="filter" class="w-5 h-5"></i>
                     <span id="toggle-filters-text">Exibir Filtros</span>
                 </button>
-                <div id="filters-container" class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8 hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                        <input id="filter-location" type="text" placeholder="Filtrar por local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                        <div>
-                            <label for="filter-month" class="text-xs text-gray-400">Filtrar por Mês/Ano</label>
-                            <input id="filter-month" type="month" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                        </div>
-                    </div>
-                     <button id="export-pdf-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
-                         <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
-                     </button>
-                </div>
+          <div id="filters-container" class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8 hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+        
+        <input id="filter-location" type="text" placeholder="Filtrar por local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+        
+        <div>
+            <label for="filter-month" class="text-xs text-gray-400">Filtrar por Mês/Ano</label>
+            <input id="filter-month" type="month" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+        </div>
+        
+        <div>
+            <label for="filter-status" class="text-xs text-gray-400">Filtrar por Status</label>
+            <select id="filter-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                <option value="">Todos os Status</option>
+                <option value="confirmado">Confirmado</option>
+                <option value="aguardando">Aguardando</option>
+                <option value="realizado">Realizado</option>
+                <option value="cancelado">Cancelado</option>
+            </select>
+        </div>
+    </div>
+    <button id="export-pdf-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+        <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
+    </button>
+</div>
 
                 <div class="flex border-b border-gray-700 mb-4">
                     <button id="view-agendados-btn" class="flex-1 py-2 text-center font-semibold border-b-2 border-purple-400 text-white">Agendados</button>
@@ -911,42 +924,60 @@ const setupModalHTML = () => {
             const unlinkBtn = document.getElementById('unlink-btn');
 
             const renderShows = () => {
-                showsListAgendados.innerHTML = '';
-                showsListRealizados.innerHTML = '';
-                loadingState.classList.add('hidden');
-                
-                const artistFilter = filterArtistInput.value.toLowerCase();
-                const locationFilter = filterLocationInput.value.toLowerCase();
-                const monthFilter = document.getElementById('filter-month').value;
+    showsListAgendados.innerHTML = '';
+    showsListRealizados.innerHTML = '';
+    loadingState.classList.add('hidden');
+    emptyState.classList.add('hidden'); // Oculta a mensagem genérica inicial
 
-                const agendados = allShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado');
-                const historico = allShows.filter(s => s.status === 'realizado' || s.status === 'cancelado');
+    const artistFilter = filterArtistInput.value.toLowerCase();
+    const locationFilter = filterLocationInput.value.toLowerCase();
+    const monthFilter = document.getElementById('filter-month').value;
+    const statusFilter = document.getElementById('filter-status').value; // Pega o valor do novo filtro
 
-                const applyFilters = (show) => {
-                    const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter);
-                    const locationMatch = (show.location || '').toLowerCase().includes(locationFilter);
-                    const dateMatch = !monthFilter || (show.date && show.date.startsWith(monthFilter));
-                    return artistMatch && locationMatch && dateMatch;
-                };
+    const applyFilters = (show) => {
+        const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter);
+        const locationMatch = (show.location || '').toLowerCase().includes(locationFilter);
+        const dateMatch = !monthFilter || (show.date && show.date.startsWith(monthFilter));
+        const statusMatch = !statusFilter || show.status === statusFilter; // Adiciona a condição do status
+        return artistMatch && locationMatch && dateMatch && statusMatch;
+    };
 
-                const filteredAgendados = agendados.filter(applyFilters).sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
-                const filteredHistorico = historico.filter(applyFilters).sort((a, b) => new Date(b.date) - new Date(a.date));
+    const agendados = allShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado');
+    const historico = allShows.filter(s => s.status === 'realizado' || s.status === 'cancelado');
+    
+    const filteredAgendados = agendados.filter(applyFilters).sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
+    const filteredHistorico = historico.filter(applyFilters).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-                if (allShows.length > 0 && filteredAgendados.length === 0 && filteredHistorico.length === 0) {
-                    emptyState.classList.remove('hidden');
-                    emptyState.querySelector('p').textContent = 'Nenhum show encontrado para os filtros aplicados.';
-                } else if (allShows.length === 0) {
-                    emptyState.classList.remove('hidden');
-                    emptyState.querySelector('p').textContent = 'Nenhum show encontrado.';
-                } else {
-                    emptyState.classList.add('hidden');
-                }
+    // Lógica para exibir mensagens de "lista vazia"
+    const emptyMessageHTML = (title, subtitle) => `
+        <div class="text-center py-10 bg-gray-800/50 rounded-lg">
+            <p class="text-gray-400 font-semibold">${title}</p>
+            <p class="text-gray-500 text-sm mt-2">${subtitle}</p>
+        </div>
+    `;
 
-                filteredAgendados.forEach(show => showsListAgendados.appendChild(createShowElement(show)));
-                filteredHistorico.forEach(show => showsListRealizados.appendChild(createShowElement(show)));
-                
-                lucide.createIcons();
-            };
+    if (filteredAgendados.length === 0) {
+        if (artistFilter || locationFilter || monthFilter || statusFilter) {
+            showsListAgendados.innerHTML = emptyMessageHTML('Nenhum show agendado encontrado.', 'Tente ajustar seus filtros.');
+        } else {
+            showsListAgendados.innerHTML = emptyMessageHTML('Nenhum show agendado por enquanto.', 'Clique no botão "+" para adicionar um novo evento.');
+        }
+    } else {
+        filteredAgendados.forEach(show => showsListAgendados.appendChild(createShowElement(show)));
+    }
+
+    if (filteredHistorico.length === 0) {
+        if (artistFilter || locationFilter || monthFilter || statusFilter) {
+            showsListRealizados.innerHTML = emptyMessageHTML('Nenhum evento encontrado no histórico.', 'Tente ajustar seus filtros.');
+        } else {
+            showsListRealizados.innerHTML = emptyMessageHTML('O histórico de shows está vazio.', 'Eventos realizados ou cancelados aparecerão aqui.');
+        }
+    } else {
+        filteredHistorico.forEach(show => showsListRealizados.appendChild(createShowElement(show)));
+    }
+    
+    lucide.createIcons();
+};
 
              const setupMapFilters = () => {
                 const checkboxes = document.querySelectorAll('.map-filter-cb');
@@ -1379,6 +1410,8 @@ try {
 
             filterArtistInput.addEventListener('input', renderShows);
             filterLocationInput.addEventListener('input', renderShows);
+            // Adicione esta linha junto com os outros event listeners de filtro
+            document.getElementById('filter-status').addEventListener('input', renderShows);
             
             const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
             const filtersContainer = document.getElementById('filters-container');
