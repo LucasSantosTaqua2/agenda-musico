@@ -932,21 +932,20 @@ const setupModalHTML = () => {
     const artistFilter = filterArtistInput.value.toLowerCase();
     const locationFilter = filterLocationInput.value.toLowerCase();
     const monthFilter = document.getElementById('filter-month').value;
-    const statusFilter = document.getElementById('filter-status').value; // Pega o valor do novo filtro
+    const statusFilter = document.getElementById('filter-status').value;
 
-    const applyFilters = (show) => {
+    // 1. FILTRAR a lista completa PRIMEIRO com todos os filtros
+    const filteredShows = allShows.filter(show => {
         const artistMatch = (show.artists || '').toLowerCase().includes(artistFilter);
         const locationMatch = (show.location || '').toLowerCase().includes(locationFilter);
         const dateMatch = !monthFilter || (show.date && show.date.startsWith(monthFilter));
-        const statusMatch = !statusFilter || show.status === statusFilter; // Adiciona a condição do status
+        const statusMatch = !statusFilter || show.status === statusFilter;
         return artistMatch && locationMatch && dateMatch && statusMatch;
-    };
+    });
 
-    const agendados = allShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado');
-    const historico = allShows.filter(s => s.status === 'realizado' || s.status === 'cancelado');
-    
-    const filteredAgendados = agendados.filter(applyFilters).sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
-    const filteredHistorico = historico.filter(applyFilters).sort((a, b) => new Date(b.date) - new Date(a.date));
+    // 2. AGORA, separar a lista JÁ FILTRADA em agendados e histórico
+    const filteredAgendados = filteredShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado').sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
+    const filteredHistorico = filteredShows.filter(s => s.status === 'realizado' || s.status === 'cancelado').sort((a, b) => new Date(b.date) - new Date(a.date));
 
     // Lógica para exibir mensagens de "lista vazia"
     const emptyMessageHTML = (title, subtitle) => `
