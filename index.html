@@ -165,40 +165,44 @@
             </div>
 
             <div id="view-agenda">
-                <button id="toggle-filters-btn" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 mb-6">
-                    <i data-lucide="filter" class="w-5 h-5"></i>
-                    <span id="toggle-filters-text">Exibir Filtros</span>
-                </button>
-          <div id="filters-container" class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8 hidden">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div>
-            <label for="filter-artist" class="text-xs text-gray-400">Filtrar por Artista</label>
-            <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-        </div>
-        <div>
-            <label for="filter-location" class="text-xs text-gray-400">Filtrar por Local</label>
-            <input id="filter-location" type="text" placeholder="Local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-        </div>
-        
-        <div>
-            <label for="filter-month" class="text-xs text-gray-400">Filtrar por Mês/Ano</label>
-            <input id="filter-month" type="month" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-        </div>
-        
-        <div>
-            <label for="filter-status" class="text-xs text-gray-400">Filtrar por Status</label>
-            <select id="filter-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                <option value="">Todos os Status</option>
-                <option value="confirmado">Confirmado</option>
-                <option value="aguardando">Aguardando</option>
-                <option value="realizado">Realizado</option>
-                <option value="cancelado">Cancelado</option>
-            </select>
-        </div>
+               <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-200 flex items-center gap-2">
+            <i data-lucide="filter" class="w-5 h-5 text-purple-400"></i>
+            Filtros da Agenda
+        </h3>
+        <button id="toggle-filters-btn" class="text-purple-400 hover:text-purple-300 text-sm font-semibold flex items-center gap-1">
+            <span id="toggle-filters-text">Ocultar</span>
+            <i id="toggle-filters-icon" data-lucide="chevron-up" class="w-5 h-5"></i>
+        </button>
     </div>
-    <button id="export-pdf-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
-        <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
-    </button>
+
+    <div id="filters-container">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+
+            <input id="filter-location" type="text" placeholder="Filtrar por local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+
+            <div>
+                <label for="filter-month" class="text-xs text-gray-400">Filtrar por Mês/Ano</label>
+                <input id="filter-month" type="month" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+            </div>
+
+            <div>
+                <label for="filter-status" class="text-xs text-gray-400">Filtrar por Status</label>
+                <select id="filter-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                    <option value="">Todos os Status</option>
+                    <option value="confirmado">Confirmado</option>
+                    <option value="aguardando">Aguardando</option>
+                    <option value="realizado">Realizado</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+            </div>
+        </div>
+        <button id="export-pdf-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+            <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
+        </button>
+    </div>
 </div>
 
                 <div class="flex border-b border-gray-700 mb-4">
@@ -1417,12 +1421,7 @@ try {
             // Adicione esta linha junto com os outros event listeners de filtro
             document.getElementById('filter-status').addEventListener('input', renderShows);
             
-            const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
-            const filtersContainer = document.getElementById('filters-container');
-            toggleFiltersBtn.addEventListener('click', () => {
-                const isHidden = filtersContainer.classList.toggle('hidden');
-                document.getElementById('toggle-filters-text').textContent = isHidden ? 'Exibir Filtros' : 'Ocultar Filtros';
-            });
+            
 
             document.getElementById('filter-month').addEventListener('input', renderShows);
 
@@ -2040,6 +2039,23 @@ unlinkBtn.addEventListener('click', async () => {
                     notificationsPanel.classList.add('hidden');
                 }
             });
+
+            const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
+const filtersContainer = document.getElementById('filters-container');
+const toggleFiltersText = document.getElementById('toggle-filters-text');
+const toggleFiltersIcon = document.getElementById('toggle-filters-icon');
+
+toggleFiltersBtn.addEventListener('click', () => {
+    const isHidden = filtersContainer.classList.toggle('hidden');
+    if (isHidden) {
+        toggleFiltersText.textContent = 'Exibir';
+        toggleFiltersIcon.setAttribute('data-lucide', 'chevron-down');
+    } else {
+        toggleFiltersText.textContent = 'Ocultar';
+        toggleFiltersIcon.setAttribute('data-lucide', 'chevron-up');
+    }
+    lucide.createIcons(); // Recria os ícones para atualizar a seta
+});
         });
 
         const manifest = { 
