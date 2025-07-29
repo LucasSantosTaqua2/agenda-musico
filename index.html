@@ -171,9 +171,14 @@
                 </button>
           <div id="filters-container" class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8 hidden">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-        
-        <input id="filter-location" type="text" placeholder="Filtrar por local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+        <div>
+            <label for="filter-artist" class="text-xs text-gray-400">Filtrar por Artista</label>
+            <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+        </div>
+        <div>
+            <label for="filter-location" class="text-xs text-gray-400">Filtrar por Local</label>
+            <input id="filter-location" type="text" placeholder="Local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+        </div>
         
         <div>
             <label for="filter-month" class="text-xs text-gray-400">Filtrar por Mês/Ano</label>
