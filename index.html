@@ -18,7 +18,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
-
+        import { firebaseConfig } from './firebase-config.js'; 
+        
         window.firebaseApp = { initializeApp };
         window.firebaseAuth = { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
         window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField };
@@ -369,14 +370,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             
-            const firebaseConfig = {
-                apiKey: "AIzaSyBIPPMg_OUyC2AKmJpy36ljJCjdvZVUxuE",
-                authDomain: "minha-agenda-de-shows.firebaseapp.com",
-                projectId: "minha-agenda-de-shows",
-                storageBucket: "minha-agenda-de-shows.firebasestorage.app",
-                messagingSenderId: "676045633970",
-                appId: "1:676045633970:web:d9c4916ffa716e96290cab"
-            };
             
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
