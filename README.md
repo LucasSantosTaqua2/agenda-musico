@@ -115,12 +115,34 @@ O projeto foi desenvolvido com as seguintes tecnologias:
 
 ## 🚀 Como Usar
 
-A aplicação está disponível publicamente e pronta para uso. Não é necessário instalar nada.
+A aplicação está disponível publicamente. Siga os passos abaixo para começar a organizar sua carreira musical:
 
-1.  Acesse o site: [**bandasync.com.br**](https://bandasync.com.br)
-2.  Crie sua conta.
-3.  Comece a organizar sua carreira musical!
+* **1. Crie sua Conta:**
 
+  * Acesse o site: bandasync.com.br.
+  * Na tela de login, clique em "Registre-se".
+  * Preencha seus dados (nome, instrumento, e-mail e senha) e crie sua conta.
+
+* **2. Adicione e Gerencie seus Eventos:**
+
+  * Na tela de Agenda, clique no botão + para adicionar um novo evento (show, ensaio, etc.).
+  * Preencha todas as informações, como data, local, status e observações.
+  * Use os filtros para visualizar eventos específicos e exporte sua agenda para PDF a qualquer momento.
+
+* **3. Crie suas Setlists:**
+
+  * Navegue até a aba Setlists.
+  * Clique em "Criar Nova Setlist", dê um nome e adicione as músicas do seu repertório, uma por linha.
+  * Você pode associar uma setlist a um evento e fazer o download em PDF.
+
+* **4. Explore o Modo Gerente:**
+  
+  * Se você é um gerente: Vá em Configurações, ative o "Modo Gerente" e compartilhe seu código de convite com os músicos da sua equipe.
+  * Se você é um músico: Insira o código do seu gerente na tela de Configurações para vincular sua agenda à dele.
+
+* **5. Instale o Aplicativo (PWA):**
+
+  * Para um acesso rápido, instale o Banda Sync no seu celular ou desktop. Procure pelo ícone de instalação na barra de endereço do seu navegador e selecione "Instalar" ou "Adicionar à Tela de Início".
 ---
 
 <p align="center">Desenvolvido de músico para músico por Lucas Santos</p>
