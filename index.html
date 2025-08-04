@@ -49,7 +49,6 @@
             border: 2px solid #111827; /* Cor de fundo do body */
         }
         .tab-active { border-color: #8b5cf6; color: #c4b5fd; }
-        .calendar-day.has-event { background-color: #8b5cf6; color: white; border-radius: 50%; font-weight: bold; }
         .calendar-day.selected { background-color: #c4b5fd; color: #111827; }
         .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -58,10 +57,11 @@
         input:checked + .slider { background-color: #8b5cf6; }
         input:checked + .slider:before { transform: translateX(26px); }
 
-        .calendar-day.has-event-ensaio { background-color: #f59e0b; color: white; border-radius: 50%; font-weight: bold; } /* amber-500 */
-        .calendar-day.has-event-entrevista { background-color: #10b981; color: white; border-radius: 50%; font-weight: bold; } /* emerald-500 */
-        .calendar-day.has-event-gravacao { background-color: #3b82f6; color: white; border-radius: 50%; font-weight: bold; } /* blue-500 */
-        .calendar-day.has-event-viagem { background-color: #6366f1; color: white; border-radius: 50%; font-weight: bold; } /* indigo-500 */
+        .calendar-day.has-event {
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="text-white font-sans">
@@ -390,12 +390,12 @@
             realizado: { text: 'Realizado', color: 'bg-blue-500/20 text-blue-300' }
         };
 
-        const eventTypes = {
-            show: { text: 'Show', icon: 'music', color: 'text-purple-300' },
-            ensaio: { text: 'Ensaio', icon: 'users', color: 'text-amber-300' },
-            entrevista: { text: 'Entrevista', icon: 'mic', color: 'text-emerald-300' },
-            gravacao: { text: 'Gravação', icon: 'disc', color: 'text-blue-300' },
-            viagem: { text: 'Viagem', icon: 'plane', color: 'text-indigo-300' }
+const eventTypes = {
+            show: { text: 'Show', icon: 'music', color: 'text-purple-300', calendarBg: 'bg-purple-500' },
+            ensaio: { text: 'Ensaio', icon: 'users', color: 'text-amber-300', calendarBg: 'bg-amber-500' },
+            entrevista: { text: 'Entrevista', icon: 'mic', color: 'text-emerald-300', calendarBg: 'bg-emerald-500' },
+            gravacao: { text: 'Gravação', icon: 'disc', color: 'text-blue-300', calendarBg: 'bg-blue-500' },
+            viagem: { text: 'Viagem', icon: 'plane', color: 'text-indigo-300', calendarBg: 'bg-indigo-500' }
         };
 
             // --- Constantes para Elementos do DOM ---
@@ -1562,10 +1562,11 @@ try {
                     const showsOnDay = allShows.filter(s => s.date === dateStr);
                     let dayClass = '';
                     if (showsOnDay.length > 0) {
-                    // Usa o tipo do primeiro evento do dia para colorir
-                    const eventType = showsOnDay[0].eventType || 'show';
-                    dayClass = eventType === 'show' ? 'has-event' : `has-event-${eventType}`;
-                }
+                        const eventType = showsOnDay[0].eventType || 'show';
+                        const typeInfo = eventTypes[eventType] || eventTypes.show;
+                        // Adiciona a classe de fundo dinâmica e a classe genérica 'has-event'
+                        dayClass = `has-event ${typeInfo.calendarBg}`;
+                    }
                     calendarGrid.insertAdjacentHTML('beforeend', `<div data-date="${dateStr}" class="calendar-day p-2 cursor-pointer hover:bg-gray-700 rounded-full ${dayClass}">${day}</div>`);
                 }
             };
