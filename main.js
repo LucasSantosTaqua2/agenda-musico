@@ -1065,36 +1065,45 @@ allListsContainer.addEventListener('click', (e) => {
 });
 
 confirmDeleteBtn.addEventListener('click', async () => {
-    if (!currentUser || !itemToModifyId) return;
-    
-    let collectionName = '';
-    if (itemTypeToDelete === 'show') {
-        collectionName = 'shows';
-    } else if (itemTypeToDelete === 'setlist') {
-        collectionName = 'setlists';
-    } else if (itemTypeToDelete === 'musico') {
-        collectionName = 'team';
-    } else {
-        return;
-    }
+                if (!currentUser || !itemToModifyId) return;
 
-    const showToDelete = allShows.find(s => s.id === itemToModifyId && s.isPersonal);
+                let collectionName = '';
+                if (itemTypeToDelete === 'show') {
+                    collectionName = 'shows';
+                } else if (itemTypeToDelete === 'setlist') {
+                    collectionName = 'setlists';
+                } else {
+                    return; // Sai se o tipo não for reconhecido
+                }
 
-    try {
-        const docPath = `artifacts/${appId}/users/${currentUser.uid}/${collectionName}/${itemToModifyId}`;
-        await deleteDoc(doc(db, docPath));
-        deleteModal.classList.remove('is-open');
+                // Encontra o show ANTES de tentar deletar para pegar os dados para notificação
+                const showToDelete = allShows.find(s => s.id === itemToModifyId && s.isPersonal);
 
-        if (showToDelete && collectionName === 'shows') {
-           notifyLinkedMusicians(linkedMusicians, `Show cancelado/removido: ${showToDelete.artists} em ${showToDelete.location}`, showToDelete.date, showToDelete.time);
-        }
-        itemToModifyId = null;
-        itemTypeToDelete = '';
-    } catch (err) {
-        showError(`Não foi possível excluir o item.`);
-        deleteModal.classList.remove('is-open');
-    }
-});
+                try {
+                    const docPath = `artifacts/${appId}/users/${currentUser.uid}/${collectionName}/${itemToModifyId}`;
+                    await deleteDoc(doc(db, docPath)); // Deleta o documento
+
+                    // Se for um show e tiver músicos vinculados, envia a notificação
+                    if (showToDelete && showToDelete.linkedMusicians && showToDelete.linkedMusicians.length > 0) {
+                        const message = `Show cancelado/removido: ${showToDelete.artists} em ${showToDelete.location}`;
+                        notifyLinkedMusicians(
+                            showToDelete.linkedMusicians, // Argumento 1: A lista de músicos
+                            message,                      // Argumento 2: A mensagem
+                            showToDelete.date,            // Argumento 3: A data
+                            showToDelete.time             // Argumento 4: A hora
+                        );
+                    }
+                    
+                    deleteModal.classList.remove('is-open');
+                    itemToModifyId = null;
+                    itemTypeToDelete = '';
+
+                } catch (err) {
+                    console.error("Erro ao excluir item:", err); // Adiciona um log para facilitar futuras depurações
+                    showError(`Não foi possível excluir o item.`);
+                    deleteModal.classList.remove('is-open');
+                }
+            });
 
 cancelDeleteBtn.addEventListener('click', () => { deleteModal.classList.remove('is-open'); itemToModifyId = null; });
 editShowForm.addEventListener('submit', async (e) => {
