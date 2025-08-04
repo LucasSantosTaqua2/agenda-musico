@@ -16,7 +16,6 @@ const { initializeApp } = window.firebaseApp;
         const { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window.firebaseAuth;
         const { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } = window.firebaseFirestore;
 
-        document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             
             
@@ -1790,5 +1789,3 @@ unlinkBtn.addEventListener('click', async () => {
         const manifestString = JSON.stringify(manifest);
         const manifestUri = 'data:application/manifest+json,' + encodeURIComponent(manifestString);
         document.getElementById('manifest-link').href = manifestUri;
-
-  });
