@@ -304,6 +304,18 @@
             </div>
         </form>
     </div>
+                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Cores dos Eventos</h3>
+                    <p class="text-gray-400 text-sm mb-4">Personalize as cores que aparecem na agenda e no calendário para cada tipo de evento.</p>
+                    <div id="event-colors-container" class="space-y-4"></div>
+                    <div id="colors-success" class="bg-green-500/20 text-green-300 p-3 rounded-lg text-sm hidden mt-4">Cores atualizadas com sucesso!</div>
+                    <div class="flex justify-end mt-4">
+                        <button id="save-colors-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="w-5 h-5"></i>
+                            <span>Salvar Cores</span>
+                        </button>
+                    </div>
+                </div>
                 
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Modo Gerente</h3>
@@ -543,6 +555,49 @@ const profileForm = document.getElementById('profile-form');
                     
                     notificationsList.appendChild(notifElement);
                 });
+            };
+
+            const renderColorPickers = (colorSettings) => {
+                const container = document.getElementById('event-colors-container');
+                container.innerHTML = ''; 
+
+                // Cores padrão para referência, caso o usuário não tenha personalizado
+                const defaultColors = {
+                    show: { color: '#c4b5fd', calendarBg: '#8b5cf6' },
+                    ensaio: { color: '#fcd34d', calendarBg: '#f59e0b' },
+                    entrevista: { color: '#6ee7b7', calendarBg: '#10b981' },
+                    gravacao: { color: '#93c5fd', calendarBg: '#3b82f6' },
+                    viagem: { color: '#a5b4fc', calendarBg: '#6366f1' }
+                };
+
+                for (const type in eventTypes) {
+                    const typeInfo = eventTypes[type];
+                    const userColors = colorSettings ? colorSettings[type] : null;
+                    
+                    const currentColor = userColors ? userColors.color : defaultColors[type].color;
+                    const currentBg = userColors ? userColors.calendarBg : defaultColors[type].calendarBg;
+
+                    const pickerHTML = `
+                        <div class="flex items-center justify-between p-2 rounded-lg border-b border-gray-700/50">
+                            <label for="${type}-color-picker" class="font-medium text-gray-300 flex items-center gap-2">
+                                <i data-lucide="${typeInfo.icon}" class="w-5 h-5" style="color: ${currentColor};"></i>
+                                ${typeInfo.text}
+                            </label>
+                            <div class="flex items-center gap-4">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-xs text-gray-500 mb-1">Texto/Ícone</span>
+                                    <input type="color" id="${type}-color-picker" data-type="${type}" data-prop="color" value="${currentColor}" class="w-10 h-10 p-1 bg-gray-700 rounded-lg cursor-pointer border-2 border-transparent">
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-xs text-gray-500 mb-1">Fundo Calendário</span>
+                                    <input type="color" id="${type}-bg-picker" data-type="${type}" data-prop="calendarBg" value="${currentBg}" class="w-10 h-10 p-1 bg-gray-700 rounded-lg cursor-pointer border-2 border-transparent">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', pickerHTML);
+                }
+                lucide.createIcons();
             };
 
             const markNotificationsAsRead = () => {
@@ -1049,23 +1104,16 @@ const setupModalHTML = () => {
             const setlistHTML = setlist ? `<p class="text-sm text-gray-400 mt-1 flex items-center gap-2"><i data-lucide="list-music" class="w-4 h-4"></i> ${setlist.name}</p>` : '';
             const timeHTML = show.time ? `<span class="ml-2 text-gray-400 text-base">às ${show.time}</span>` : '';
 
-            showElement.innerHTML = `
+           showElement.innerHTML = `
                 <div class="flex justify-between items-start w-full">
                     <div>
-                        <p class="font-bold text-lg ${typeInfo.color} flex items-center gap-2">
+                        <p class="font-bold text-lg flex items-center gap-2" style="color: ${typeInfo.color};">
                             <i data-lucide="${typeInfo.icon}" class="w-5 h-5"></i> 
                             ${formatDate(show.date)}
                             ${timeHTML}
                         </p>
-                        <p class="text-gray-200 flex items-center gap-2 mt-2"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> ${show.artists}</p>
-                        ${show.location ? `<p class="text-gray-300 flex items-center gap-2 mt-1"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> ${show.location}</p>` : ''}
-                        ${setlistHTML}
-                    </div>
-                    <div class="flex flex-col items-end gap-2">
-                        ${statusHTML}
-                        ${typeTag}
-                    </div>
-                </div>`;
+                        </div>
+                    </div>`;
             return showElement;
         };
             
@@ -1221,11 +1269,20 @@ const setupModalHTML = () => {
             };
             
         const loadUserSettings = async (uid) => {
-            const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
+          const settingsRef = doc(db, `artifacts/${appId}/user_settings`, uid);
             try {
                 const docSnap = await getDoc(settingsRef);
                 if (docSnap.exists()) {
                     userSettings = docSnap.data();
+                    // Atualiza o objeto eventTypes com as cores do usuário, se existirem
+                    if(userSettings.eventColors) {
+                        for(const type in userSettings.eventColors) {
+                            if(eventTypes[type]) {
+                                eventTypes[type].color = userSettings.eventColors[type].color;
+                                eventTypes[type].calendarBg = userSettings.eventColors[type].calendarBg;
+                            }
+                        }
+                    }
                 } else {
                     // Configuração padrão para usuários mais antigos
                     const defaultSettings = { isManager: false, managedBy: null, userName: 'Músico', instrument: 'Não definido' };
@@ -1237,9 +1294,10 @@ const setupModalHTML = () => {
                 userSettings = {};
             } finally {
                 updateSettingsUI();
-                // Popula os campos do formulário de perfil
                 document.getElementById('profile-name').value = userSettings.userName || '';
                 document.getElementById('profile-instrument').value = userSettings.instrument || '';
+                // NOVO: Renderiza os seletores de cor com as configurações carregadas
+                renderColorPickers(userSettings.eventColors);
             }
         };
 
@@ -1509,6 +1567,43 @@ try {
             });
 
             cancelEditBtn.addEventListener('click', () => { editModal.classList.remove('is-open'); itemToModifyId = null; });
+
+            // NOVO: Listener para o botão de salvar cores
+            document.getElementById('save-colors-btn').addEventListener('click', async () => {
+                if (!currentUser) return;
+
+                const newColorSettings = {};
+                const pickers = document.querySelectorAll('#event-colors-container input[type="color"]');
+
+                pickers.forEach(picker => {
+                    const type = picker.dataset.type;
+                    const prop = picker.dataset.prop;
+                    if (!newColorSettings[type]) {
+                        newColorSettings[type] = {};
+                    }
+                    newColorSettings[type][prop] = picker.value;
+                });
+
+                const settingsRef = doc(db, `artifacts/${appId}/user_settings`, currentUser.uid);
+                try {
+                    await updateDoc(settingsRef, {
+                        eventColors: newColorSettings
+                    });
+                    
+                    // Recarrega as configurações para aplicar as cores em toda a UI
+                    await loadUserSettings(currentUser.uid);
+                    renderCalendar();
+                    renderShows();
+                    
+                    const successBanner = document.getElementById('colors-success');
+                    successBanner.classList.remove('hidden');
+                    setTimeout(() => successBanner.classList.add('hidden'), 3000);
+
+                } catch (err) {
+                    showError("Não foi possível salvar as cores.");
+                    console.error("Erro ao salvar cores:", err);
+                }
+            });
             
             const updatePastShowStatus = async (status) => {
                 if (!currentUser || !itemToModifyId) return;
@@ -1557,19 +1652,20 @@ try {
                 const firstDayOfMonth = new Date(year, month, 1).getDay();
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
                 for (let i = 0; i < firstDayOfMonth; i++) { calendarGrid.insertAdjacentHTML('beforeend', '<div></div>'); }
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const showsOnDay = allShows.filter(s => s.date === dateStr);
-                    let dayClass = '';
-                    if (showsOnDay.length > 0) {
-                        const eventType = showsOnDay[0].eventType || 'show';
-                        const typeInfo = eventTypes[eventType] || eventTypes.show;
-                        // Adiciona a classe de fundo dinâmica e a classe genérica 'has-event'
-                        dayClass = `has-event ${typeInfo.calendarBg}`;
-                    }
-                    calendarGrid.insertAdjacentHTML('beforeend', `<div data-date="${dateStr}" class="calendar-day p-2 cursor-pointer hover:bg-gray-700 rounded-full ${dayClass}">${day}</div>`);
+              for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const showsOnDay = allShows.filter(s => s.date === dateStr);
+                let dayClass = '';
+                let dayStyle = '';
+                if (showsOnDay.length > 0) {
+                    const eventType = showsOnDay[0].eventType || 'show';
+                    const typeInfo = eventTypes[eventType] || eventTypes.show;
+                    dayClass = 'has-event';
+                    dayStyle = `style="background-color: ${typeInfo.calendarBg};"`;
                 }
-            };
+                calendarGrid.insertAdjacentHTML('beforeend', `<div data-date="${dateStr}" class="calendar-day p-2 cursor-pointer hover:bg-gray-700 rounded-full ${dayClass}" ${dayStyle}>${day}</div>`);
+            }
+        };
             
            document.getElementById('prev-month-btn').addEventListener('click', () => {
                 currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
