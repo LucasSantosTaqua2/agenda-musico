@@ -14,16 +14,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
-        import { firebaseConfig } from './firebase-config.js';
-        
-        window.firebaseApp = { initializeApp };
-        window.firebaseAuth = { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
-        window.firebaseFirestore = { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField };
-    </script>
     
     <style>
         body { background-color: #111827; }
@@ -374,5 +364,7 @@
     <div id="show-details-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50 p-4"></div>
     <div id="equipe-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
 
+
+        <script type="module" src="/main.js"></script>
 </body>
 </html>
