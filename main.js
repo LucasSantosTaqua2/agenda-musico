@@ -533,12 +533,25 @@ const openShowDetailsModal = (showId) => {
         </div>
         ${actionButtonsHTML}
     `;
-
+    
     lucide.createIcons();
     showDetailsModal.classList.add('is-open');
+    loadAndRenderComments(show.ownerId, showId);
+
 
     document.getElementById('close-details-modal').addEventListener('click', () => showDetailsModal.classList.remove('is-open'));
 
+    const addCommentForm = document.getElementById('add-comment-form');
+addCommentForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const commentInput = document.getElementById('comment-input');
+    const commentText = commentInput.value.trim();
+    if (commentText) {
+        addComment(show.ownerId, showId, commentText);
+        commentInput.value = ''; // Limpa o campo
+    }
+});
+    
     const downloadBtn = document.getElementById('download-setlist-pdf-btn');
     if (downloadBtn) {
         downloadBtn.addEventListener('click', () => downloadSetlistAsPDF(setlist.id));
@@ -1821,6 +1834,56 @@ document.getElementById('save-colors-btn').addEventListener('click', async () =>
         console.error("Erro ao salvar cores:", err);
     }
 });
+
+let unsubscribeComments = null; // Variável para controlar a inscrição em tempo real
+
+const loadAndRenderComments = (ownerId, showId) => {
+    const commentsList = document.getElementById('comments-list');
+    const commentsPath = `artifacts/${appId}/users/${ownerId}/shows/${showId}/comments`;
+    const q = query(collection(db, commentsPath), orderBy("timestamp", "asc"));
+
+    // Cancela a inscrição anterior para não carregar comentários de shows diferentes
+    if (unsubscribeComments) {
+        unsubscribeComments();
+    }
+
+    unsubscribeComments = onSnapshot(q, (snapshot) => {
+        commentsList.innerHTML = ''; // Limpa a lista antes de renderizar
+        if (snapshot.empty) {
+            commentsList.innerHTML = '<p class="text-sm text-gray-500">Nenhum comentário ainda.</p>';
+            return;
+        }
+        snapshot.forEach(doc => {
+            const comment = doc.data();
+            const commentElement = document.createElement('div');
+            commentElement.className = "text-sm";
+            commentElement.innerHTML = `
+                <p class="font-semibold text-purple-200">${comment.userName || 'Usuário'}</p>
+                <p class="text-gray-300">${comment.text}</p>
+            `;
+            commentsList.appendChild(commentElement);
+        });
+    });
+};
+
+const addComment = async (ownerId, showId, text) => {
+    if (!currentUser) return;
+
+    const newComment = {
+        text: text,
+        userId: currentUser.uid,
+        userName: userSettings.userName, // Usando o nome do usuário logado
+        timestamp: serverTimestamp()
+    };
+
+    const commentsPath = `artifacts/${appId}/users/${ownerId}/shows/${showId}/comments`;
+    try {
+        await addDoc(collection(db, commentsPath), newComment);
+    } catch (error) {
+        console.error("Erro ao adicionar comentário: ", error);
+        showError("Não foi possível enviar seu comentário.");
+    }
+};
 
 // ADICIONE ESTE BLOCO NO FINAL DO ARQUIVO
 const historicoPrevBtn = document.getElementById('historico-prev-btn');
