@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
 import { firebaseConfig } from './firebase-config.js';
 
@@ -157,6 +157,67 @@ const formatDate = (dateString) => {
     const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     return `${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}, ${formattedDate}`;
 };
+
+// Adicione estas constantes junto com as outras
+const resetPasswordModal = document.getElementById('reset-password-modal');
+const resetPasswordForm = document.getElementById('reset-password-form');
+const newPasswordInput = document.getElementById('new-password');
+const resetFeedback = document.getElementById('reset-feedback');
+
+// Função para extrair parâmetros da URL
+const getURLParameter = (name) => {
+    return new URLSearchParams(window.location.search).get(name);
+};
+
+// Lógica para lidar com a redefinição de senha
+const handlePasswordReset = async () => {
+    const mode = getURLParameter('mode');
+    const actionCode = getURLParameter('oobCode');
+
+    if (mode === 'resetPassword' && actionCode) {
+        try {
+            // Verifique se o código é válido
+            await verifyPasswordResetCode(auth, actionCode);
+
+            // Mostre o modal para o usuário inserir a nova senha
+            resetPasswordModal.classList.add('is-open');
+
+            resetPasswordForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newPassword = newPasswordInput.value;
+
+                try {
+                    // Salve a nova senha
+                    await confirmPasswordReset(auth, actionCode, newPassword);
+                    resetFeedback.textContent = 'Senha redefinida com sucesso! Você já pode fazer login com a nova senha.';
+                    resetFeedback.className = 'text-sm mt-4 text-green-400';
+                    resetFeedback.classList.remove('hidden');
+
+                    // Fecha o modal após alguns segundos
+                    setTimeout(() => {
+                        resetPasswordModal.classList.remove('is-open');
+                         // Limpa os parâmetros da URL para evitar que o modal reapareça
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }, 4000);
+
+                } catch (error) {
+                    console.error("Erro ao redefinir a senha:", error);
+                    resetFeedback.textContent = 'Link inválido ou expirado. Tente novamente.';
+                    resetFeedback.className = 'text-sm mt-4 text-red-400';
+                    resetFeedback.classList.remove('hidden');
+                }
+            });
+
+        } catch (error) {
+            console.error("Código de redefinição inválido:", error);
+            showLoginError("O link para redefinição de senha é inválido ou expirou. Por favor, solicite um novo.");
+        }
+    }
+};
+
+// Chame a função quando a página carregar
+window.addEventListener('DOMContentLoaded', handlePasswordReset);
+
 // --- Funções de Notificação ---
 const notifyLinkedMusicians = async (musicianIds, message, showDate, showTime) => {
     if (!currentUser || !userSettings.isManager || musicianIds.length === 0) return;
