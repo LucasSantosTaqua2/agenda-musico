@@ -133,6 +133,19 @@
     </div>
 </div>
 
+    <div id="reset-password-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
+    <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl">
+        <h2 class="text-xl font-semibold mb-4">Crie sua Nova Senha</h2>
+        <form id="reset-password-form">
+            <input id="new-password" type="password" placeholder="Nova senha" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white mb-4" required>
+            <div id="reset-feedback" class="text-sm mt-4 hidden"></div>
+            <div class="flex justify-center gap-4 mt-6">
+                <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">Salvar Nova Senha</button>
+            </div>
+        </form>
+    </div>
+</div>
+
     <div id="app-content" class="hidden">
         <div class="max-w-3xl mx-auto p-4 md:p-8 pb-24">
             <header class="flex items-center justify-between mb-8">
