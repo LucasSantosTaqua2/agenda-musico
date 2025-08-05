@@ -404,7 +404,21 @@
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="confirm-status-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="setlist-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
-    <div id="show-details-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50 p-4"></div>
+    <div id="show-details-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50 p-4">
+        <div id="comments-section" class="mt-6 border-t border-gray-700 pt-4">
+    <h3 class="text-lg font-semibold text-gray-200 mb-3">Comentários</h3>
+    
+    <div id="comments-list" class="space-y-3 max-h-48 overflow-y-auto mb-4 pr-2">
+        </div>
+
+    <form id="add-comment-form" class="flex gap-2">
+        <input type="text" id="comment-input" placeholder="Adicionar um comentário..." class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white" required>
+        <button type="submit" class="p-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white">
+            <i data-lucide="send" class="w-5 h-5"></i>
+        </button>
+    </form>
+</div>
+    </div>
     <div id="equipe-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
 
 
