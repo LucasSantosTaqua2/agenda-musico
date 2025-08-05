@@ -1104,6 +1104,9 @@ profileForm.addEventListener('submit', async (e) => {
             userName: newName,
             instrument: newInstrument
         });
+
+        userSettings.userName = newName; 
+        
         profileSuccess.classList.remove('hidden');
         setTimeout(() => profileSuccess.classList.add('hidden'), 3000);
     } catch (err) {
