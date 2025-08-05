@@ -110,6 +110,8 @@ let layers = {
     gravacao: L.layerGroup(),
     viagem: L.layerGroup()
 };
+let historicoCurrentPage = 1;
+const historicoItemsPerPage = 5;
 
 // --- Funções Auxiliares ---
 const showError = (message) => { errorBanner.textContent = message; errorBanner.classList.remove('hidden'); };
@@ -598,7 +600,10 @@ const renderShows = () => {
         return artistMatch && locationMatch && dateMatch && statusMatch;
     });
 
+    // Lógica para Agendados (sem paginação)
     const filteredAgendados = filteredShows.filter(s => s.status !== 'realizado' && s.status !== 'cancelado').sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
+    
+    // Lógica para Histórico (com paginação)
     const filteredHistorico = filteredShows.filter(s => s.status === 'realizado' || s.status === 'cancelado').sort((a, b) => new Date(b.date) - new Date(a.date));
 
     const emptyMessageHTML = (title, subtitle) => `
@@ -608,6 +613,7 @@ const renderShows = () => {
         </div>
     `;
 
+    // Renderiza Agendados
     if (filteredAgendados.length === 0) {
         if (artistFilter || locationFilter || monthFilter || statusFilter) {
             showsListAgendados.innerHTML = emptyMessageHTML('Nenhum show agendado encontrado.', 'Tente ajustar seus filtros.');
@@ -618,15 +624,44 @@ const renderShows = () => {
         filteredAgendados.forEach(show => showsListAgendados.appendChild(createShowElement(show)));
     }
 
-    if (filteredHistorico.length === 0) {
+    // --- LÓGICA DE PAGINAÇÃO PARA O HISTÓRICO ---
+    const paginationControls = document.getElementById('historico-pagination-controls');
+    const pageInfo = document.getElementById('historico-page-info');
+    const prevBtn = document.getElementById('historico-prev-btn');
+    const nextBtn = document.getElementById('historico-next-btn');
+    
+    if (filteredHistorico.length > 0) {
+        const totalPages = Math.ceil(filteredHistorico.length / historicoItemsPerPage);
+        
+        // Garante que a página atual não seja maior que o total de páginas (após um filtro)
+        if (historicoCurrentPage > totalPages) {
+            historicoCurrentPage = totalPages;
+        }
+
+        const start = (historicoCurrentPage - 1) * historicoItemsPerPage;
+        const end = start + historicoItemsPerPage;
+        const paginatedItems = filteredHistorico.slice(start, end);
+
+        paginatedItems.forEach(show => showsListRealizados.appendChild(createShowElement(show)));
+        
+        // Atualiza e exibe os controles de paginação se houver mais de uma página
+        if (totalPages > 1) {
+            paginationControls.classList.remove('hidden');
+            pageInfo.textContent = `Página ${historicoCurrentPage} de ${totalPages}`;
+            prevBtn.disabled = historicoCurrentPage === 1;
+            nextBtn.disabled = historicoCurrentPage === totalPages;
+        } else {
+            paginationControls.classList.add('hidden');
+        }
+    } else {
+        paginationControls.classList.add('hidden'); // Esconde os controles se não houver itens
         if (artistFilter || locationFilter || monthFilter || statusFilter) {
             showsListRealizados.innerHTML = emptyMessageHTML('Nenhum evento encontrado no histórico.', 'Tente ajustar seus filtros.');
         } else {
             showsListRealizados.innerHTML = emptyMessageHTML('O histórico de shows está vazio.', 'Eventos realizados ou cancelados aparecerão aqui.');
         }
-    } else {
-        filteredHistorico.forEach(show => showsListRealizados.appendChild(createShowElement(show)));
     }
+    // --- FIM DA LÓGICA DE PAGINAÇÃO ---
     
     lucide.createIcons();
 };
@@ -1037,9 +1072,18 @@ addShowForm.addEventListener('submit', async (e) => {
     }
 });
 
-filterArtistInput.addEventListener('input', renderShows);
-filterLocationInput.addEventListener('input', renderShows);
-document.getElementById('filter-status').addEventListener('input', renderShows);
+filterArtistInput.addEventListener('input', () => {
+    historicoCurrentPage = 1; // Reseta a página
+    renderShows();
+});
+filterLocationInput.addEventListener('input', () => {
+    historicoCurrentPage = 1; // Reseta a página
+    renderShows();
+});
+document.getElementById('filter-status').addEventListener('input', () => {
+    historicoCurrentPage = 1; // Reseta a página
+    renderShows();
+});
 
 const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
 const filtersContainer = document.getElementById('filters-container');
@@ -1048,7 +1092,10 @@ toggleFiltersBtn.addEventListener('click', () => {
     document.getElementById('toggle-filters-text').textContent = isHidden ? 'Exibir Filtros' : 'Ocultar Filtros';
 });
 
-document.getElementById('filter-month').addEventListener('input', renderShows);
+document.getElementById('filter-month').addEventListener('input', () => {
+    historicoCurrentPage = 1; // Reseta a página
+    renderShows();
+});
 openAddModalBtn.addEventListener('click', () => {
     if(userSettings.isManager && userSettings.artistName) {
         document.getElementById('add-artists').value = userSettings.artistName;
@@ -1677,5 +1724,21 @@ document.getElementById('save-colors-btn').addEventListener('click', async () =>
     } catch (err) {
         showError("Não foi possível salvar as cores.");
         console.error("Erro ao salvar cores:", err);
+    }
+});
+
+// ADICIONE ESTE BLOCO NO FINAL DO ARQUIVO
+const historicoPrevBtn = document.getElementById('historico-prev-btn');
+const historicoNextBtn = document.getElementById('historico-next-btn');
+
+historicoNextBtn.addEventListener('click', () => {
+    historicoCurrentPage++;
+    renderShows();
+});
+
+historicoPrevBtn.addEventListener('click', () => {
+    if (historicoCurrentPage > 1) {
+        historicoCurrentPage--;
+        renderShows();
     }
 });
