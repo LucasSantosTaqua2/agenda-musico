@@ -57,6 +57,7 @@
 </head>
 <body class="text-white font-sans">
 
+
     <div id="login-screen" class="min-h-screen flex flex-col justify-center items-center p-4">
         <div id="login-container" class="w-full max-w-sm text-center hidden">
             <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/logo1080.png" alt="Banda Sync Logo" style="height: 10rem;" class="mx-auto mb-8 block">    
@@ -77,6 +78,9 @@
 <div class="text-center mt-4">
     <p class="text-sm text-gray-400">Não tem uma conta? 
         <button type="button" id="show-register-form-btn" class="font-semibold text-purple-400 hover:underline">Registre-se</button>
+    </p>
+    <p class="text-sm text-gray-400 mt-2">
+        <button type="button" id="forgot-password-btn" class="font-semibold text-purple-400 hover:underline">Esqueci minha senha</button>
     </p>
 </div>
             </form>
@@ -113,6 +117,21 @@
              <p class="text-gray-400">Carregando...</p>
         </div>
     </div>
+
+        <div id="forgot-password-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
+    <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl">
+        <h2 class="text-xl font-semibold mb-4">Redefinir Senha</h2>
+        <p class="text-gray-400 mb-4">Digite seu e-mail para enviarmos um link de redefinição de senha.</p>
+        <form id="forgot-password-form">
+            <input id="forgot-email" type="email" placeholder="Seu e-mail" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+            <div id="forgot-feedback" class="text-sm mt-4 hidden"></div>
+            <div class="flex justify-center gap-4 mt-6">
+                <button type="button" id="cancel-forgot-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button>
+                <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">Enviar</button>
+            </div>
+        </form>
+    </div>
+</div>
 
     <div id="app-content" class="hidden">
         <div class="max-w-3xl mx-auto p-4 md:p-8 pb-24">
