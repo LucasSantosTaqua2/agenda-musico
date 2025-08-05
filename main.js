@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc, getDoc, where, getDocs, deleteField } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
 import { firebaseConfig } from './firebase-config.js';
 
@@ -26,6 +26,40 @@ const eventTypes = {
     gravacao: { text: 'Gravação', icon: 'disc', color: 'text-blue-300', calendarBg: 'bg-blue-500' },
     viagem: { text: 'Viagem', icon: 'plane', color: 'text-indigo-300', calendarBg: 'bg-indigo-500' }
 };
+
+const forgotPasswordBtn = document.getElementById('forgot-password-btn');
+const forgotPasswordModal = document.getElementById('forgot-password-modal');
+const cancelForgotBtn = document.getElementById('cancel-forgot-btn');
+const forgotPasswordForm = document.getElementById('forgot-password-form');
+const forgotEmailInput = document.getElementById('forgot-email');
+const forgotFeedback = document.getElementById('forgot-feedback');
+
+forgotPasswordBtn.addEventListener('click', () => {
+    forgotPasswordModal.classList.add('is-open');
+});
+
+cancelForgotBtn.addEventListener('click', () => {
+    forgotPasswordModal.classList.remove('is-open');
+    forgotFeedback.classList.add('hidden');
+    forgotFeedback.textContent = '';
+});
+
+forgotPasswordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = forgotEmailInput.value;
+
+    try {
+        await sendPasswordResetEmail(auth, email);
+        forgotFeedback.textContent = 'E-mail de redefinição enviado com sucesso! Verifique sua caixa de entrada.';
+        forgotFeedback.className = 'text-sm mt-4 text-green-400';
+        forgotFeedback.classList.remove('hidden');
+    } catch (error) {
+        console.error("Erro ao enviar e-mail de redefinição:", error);
+        forgotFeedback.textContent = 'Erro ao enviar e-mail. Verifique se o e-mail está correto.';
+        forgotFeedback.className = 'text-sm mt-4 text-red-400';
+        forgotFeedback.classList.remove('hidden');
+    }
+});
 
 // --- Constantes para Elementos do DOM ---
 const loginScreen = document.getElementById('login-screen');
