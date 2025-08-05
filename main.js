@@ -104,10 +104,11 @@ let allTeamMembers = [];
 let unsubscribeTeam = [];
 let map = null;
 let layers = {
-    confirmado: L.layerGroup(),
-    aguardando: L.layerGroup(),
-    realizado: L.layerGroup(),
-    cancelado: L.layerGroup()
+    show: L.layerGroup(),
+    ensaio: L.layerGroup(),
+    entrevista: L.layerGroup(),
+    gravacao: L.layerGroup(),
+    viagem: L.layerGroup()
 };
 
 // --- Funções Auxiliares ---
@@ -183,14 +184,13 @@ const markNotificationsAsRead = () => {
 
 const renderMap = async () => {
     const loader = document.getElementById('map-loader');
-    
     if (loader) {
         loader.style.display = 'flex';
         lucide.createIcons();
     }
 
     if (!map) {
-        map = L.map('mapa-shows'); 
+        map = L.map('mapa-shows');
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
@@ -200,22 +200,29 @@ const renderMap = async () => {
 
     Object.values(layers).forEach(layer => layer.clearLayers());
     
+    // Gera a legenda dinamicamente
     const legendContainer = document.getElementById('map-legend');
-    legendContainer.innerHTML = `
-        <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-green-500"></div> Confirmado</div>
-        <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-yellow-400"></div> Aguardando</div>
-        <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-blue-500"></div> Realizado</div>
-    `;
+    legendContainer.innerHTML = '';
+    for (const type in eventTypes) {
+        const typeInfo = eventTypes[type];
+        const legendItem = `
+            <div class="flex items-center gap-1.5">
+                <div class="w-3 h-3 rounded-full" style="background-color: ${typeInfo.calendarBg};"></div> 
+                ${typeInfo.text}
+            </div>
+        `;
+        legendContainer.insertAdjacentHTML('beforeend', legendItem);
+    }
 
-    const showsWithLocation = allShows.filter(show => show.location && show.location.trim() !== '');
+    const eventsWithLocation = allShows.filter(show => show.location && show.location.trim() !== '');
     
-    if (showsWithLocation.length === 0) {
+    if (eventsWithLocation.length === 0) {
         map.setView([-14.235, -51.925], 4);
         if (loader) loader.style.display = 'none';
         return;
     }
 
-    const markerDataPromises = showsWithLocation.map(async (show) => {
+    const markerDataPromises = eventsWithLocation.map(async (show) => {
         let lat = show.lat;
         let lng = show.lng;
         if (!lat || !lng) {
@@ -234,18 +241,21 @@ const renderMap = async () => {
                 }
             } catch (error) { console.error("Geocoding error:", error); }
         }
-        if (lat && lng) return { lat, lng, status: show.status || 'aguardando', artists: show.artists, location: show.location };
+        if (lat && lng) return { lat, lng, eventType: show.eventType || 'show', artists: show.artists, location: show.location };
         return null;
     });
 
     const allMarkerData = (await Promise.all(markerDataPromises)).filter(Boolean);
 
     allMarkerData.forEach(data => {
-        const icon = icons[data.status] || icons.aguardando;
-        if (layers[data.status]) {
+        const eventType = data.eventType;
+        const typeInfo = eventTypes[eventType] || eventTypes.show;
+        const icon = createColorIcon(typeInfo.calendarBg);
+        
+        if (layers[eventType]) {
              L.marker([data.lat, data.lng], { icon: icon })
-              .bindPopup(`<b>${data.artists}</b><br>${data.location}`)
-              .addTo(layers[data.status]);
+              .bindPopup(`<b>${typeInfo.text}: ${data.artists}</b><br>${data.location}`)
+              .addTo(layers[eventType]);
         }
     });
     
@@ -261,20 +271,13 @@ const renderMap = async () => {
 };
 
 const createColorIcon = (color) => {
-    return new L.Icon({
-        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
+    const markerHtml = `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`;
+    return new L.DivIcon({
+        html: markerHtml,
+        className: '',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
     });
-};
-const icons = {
-    confirmado: createColorIcon('green'),
-    aguardando: createColorIcon('yellow'),
-    realizado: createColorIcon('blue'),
-    cancelado: createColorIcon('red')
 };
 
 // --- Funções de Modais e UI ---
@@ -632,11 +635,11 @@ const setupMapFilters = () => {
     const checkboxes = document.querySelectorAll('.map-filter-cb');
     checkboxes.forEach(cb => {
         cb.addEventListener('change', () => {
-            const status = cb.dataset.status;
+            const type = cb.dataset.type;
             if (cb.checked) {
-                map.addLayer(layers[status]);
+                map.addLayer(layers[type]);
             } else {
-                map.removeLayer(layers[status]);
+                map.removeLayer(layers[type]);
             }
         });
     });
