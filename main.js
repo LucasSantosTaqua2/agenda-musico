@@ -1269,11 +1269,46 @@ const renderTopLocations = () => {
         const location = (show.location || 'N/A').trim();
         if (location) { locationCounts[location] = (locationCounts[location] || 0) + 1; }
     });
+
     const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const labels = sortedLocations.map(a => a[0]);
     const data = sortedLocations.map(a => a[1]);
+
+    // Função para gerar cores vibrantes e distintas
+    const generateCoolColors = (count) => {
+        const colors = [];
+        const hueStep = 360 / count;
+        for (let i = 0; i < count; i++) {
+            // Usamos saturação e luminosidade diferentes para variar a paleta
+            const hue = (i * hueStep + 30) % 360; // Adiciona um offset para começar com cores diferentes
+            colors.push(`hsl(${hue}, 75%, 65%)`);
+        }
+        return colors;
+    };
+
+    const backgroundColors = generateCoolColors(labels.length);
+
     if (topLocationsChart) topLocationsChart.destroy();
-    topLocationsChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#6d28d9', '#5b21b6'] }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#9ca3af' } } } } });
+    topLocationsChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: backgroundColors
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        color: '#9ca3af'
+                    }
+                }
+            }
+        }
+    });
 };
 
 const renderTopArtists = () => {
