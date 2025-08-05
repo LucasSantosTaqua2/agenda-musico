@@ -481,12 +481,15 @@ const downloadSetlistAsPDF = (setlistId) => {
     doc.save(fileName);
 };
 
+// main.js - Substitua TODA a sua função openShowDetailsModal por esta versão corrigida
+
 const openShowDetailsModal = (showId) => {
     const show = allShows.find(s => s.id === showId);
     if (!show) return;
 
     const detailsContent = document.getElementById('show-details-content');
 
+    // ... (todo o código para gerar typeHTML, timeHTML, etc., permanece o mesmo) ...
     const eventType = show.eventType || 'show';
     const typeInfo = eventTypes[eventType] || eventTypes.show;
     const statusInfo = statusMap[show.status] || { text: '', color: ''};
@@ -514,8 +517,10 @@ const openShowDetailsModal = (showId) => {
         setlistHTML = `<div class="pt-2"><p class="font-semibold text-gray-300 flex items-center gap-2"><i data-lucide="list-music" class="w-5 h-5"></i> Setlist</p><p class="text-sm text-gray-500 mt-1">Nenhuma setlist associada.</p></div>`;
     }
 
+    // Ação apenas para o dono do show
     const actionButtonsHTML = show.isPersonal ? `<div class="flex gap-2 mt-6 border-t border-gray-700 pt-4"><button id="detail-edit-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"><i data-lucide="pencil" class="w-5 h-5"></i> Editar</button><button id="detail-delete-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"><i data-lucide="trash-2" class="w-5 h-5"></i> Excluir</button></div>` : '';
 
+    // **AQUI ESTÁ A MUDANÇA PRINCIPAL**: Inserimos o HTML dos comentários
     detailsContent.innerHTML = `
         <div class="flex justify-between items-start">
             <h2 class="text-2xl font-bold text-purple-300">${show.artists}</h2>
@@ -531,26 +536,41 @@ const openShowDetailsModal = (showId) => {
             ${teamHTML}
             ${setlistHTML}
         </div>
+        
+        <div id="comments-section" class="mt-6 border-t border-gray-700 pt-4">
+            <h3 class="text-lg font-semibold text-gray-200 mb-3">Comentários</h3>
+            <div id="comments-list" class="space-y-3 max-h-48 overflow-y-auto mb-4 pr-2">
+                </div>
+            <form id="add-comment-form" class="flex gap-2">
+                <input type="text" id="comment-input" placeholder="Adicionar um comentário..." class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white" required>
+                <button type="submit" class="p-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white">
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                </button>
+            </form>
+        </div>
+        
         ${actionButtonsHTML}
     `;
     
     lucide.createIcons();
     showDetailsModal.classList.add('is-open');
+    
+    // **AGORA AS FUNÇÕES SÃO CHAMADAS APÓS O HTML EXISTIR**
     loadAndRenderComments(show.ownerId, showId);
-
 
     document.getElementById('close-details-modal').addEventListener('click', () => showDetailsModal.classList.remove('is-open'));
 
+    // Adiciona o "ouvinte" aqui, pois o formulário já foi criado no innerHTML
     const addCommentForm = document.getElementById('add-comment-form');
-addCommentForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const commentInput = document.getElementById('comment-input');
-    const commentText = commentInput.value.trim();
-    if (commentText) {
-        addComment(show.ownerId, showId, commentText);
-        commentInput.value = ''; // Limpa o campo
-    }
-});
+    addCommentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const commentInput = document.getElementById('comment-input');
+        const commentText = commentInput.value.trim();
+        if (commentText) {
+            addComment(show.ownerId, showId, commentText);
+            commentInput.value = '';
+        }
+    });
     
     const downloadBtn = document.getElementById('download-setlist-pdf-btn');
     if (downloadBtn) {
@@ -892,24 +912,26 @@ const handleUser = async (user) => {
 
         let personalShows = [], managedShows = [], personalSetlists = [], managedSetlists = [];
 
-        const combineAndRenderAll = () => {
-            allShows = [
-                ...personalShows.map(s => ({ ...s, isPersonal: true })),
-                ...managedShows.map(s => ({ ...s, isPersonal: false }))
-            ];
-            allSetlists = [...new Map([...managedSetlists, ...personalSetlists].map(item => [item.id, item])).values()];
-            
-            renderShows();
-            renderCalendar();
-            renderDashboard();
-            renderSetlists();
-            renderTeam();
-            populateSetlistDropdowns();
+const combineAndRenderAll = () => {
+    allShows = [
+        // Adiciona a propriedade ownerId para os shows pessoais
+        ...personalShows.map(s => ({ ...s, isPersonal: true, ownerId: currentUser.uid })),
+        // Adiciona a propriedade ownerId para os shows do gerente
+        ...managedShows.map(s => ({ ...s, isPersonal: false, ownerId: userSettings.managedBy }))
+    ];
+    allSetlists = [...new Map([...managedSetlists, ...personalSetlists].map(item => [item.id, item])).values()];
+    
+    renderShows();
+    renderCalendar();
+    renderDashboard();
+    renderSetlists();
+    renderTeam();
+    populateSetlistDropdowns();
 
-            if (!userSettings.managedBy) {
-                checkPastShows();
-            }
-        };
+    if (!userSettings.managedBy) {
+        checkPastShows();
+    }
+};
 
         const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
         unsubscribeShows.push(onSnapshot(query(collection(db, personalShowsPath)), s => {
