@@ -442,78 +442,77 @@
                 </div>
 
                 <div id="view-rider" class="hidden">
-                <button id="open-add-rider-modal-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
-                    <i data-lucide="plus" class="w-5 h-5"></i> Criar Novo Rider Técnico
-                </button>
-                <div id="riders-list" class="space-y-6"></div>
-                <div id="empty-rider-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
-                    <p class="text-gray-400">Nenhum Rider Técnico encontrado.</p>
+                    <button id="open-add-rider-modal-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
+                        <i data-lucide="plus" class="w-5 h-5"></i> Criar Novo Rider Técnico
+                    </button>
+                    <div id="riders-list" class="space-y-6"></div>
+                    <div id="empty-rider-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
+                        <p class="text-gray-400">Nenhum Rider Técnico encontrado.</p>
+                    </div>
                 </div>
-            </div>
-                            <div id="view-stage-plot" class="hidden space-y-8 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
 
-    <div class="md:col-span-2">
-        <div id="stage-area-container" class="relative pt-8 pb-8 h-full flex flex-col">
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 text-gray-500 text-sm font-semibold tracking-widest">FUNDO</div>
-            
-            <div id="stage-area" class="bg-gray-900 rounded-lg relative border-2 border-dashed border-gray-600 flex-grow min-h-[24rem] md:min-h-[32rem]">
-                <p class="text-center text-gray-500 p-4">Arraste ou toque nos itens para adicionar ao palco</p>
-            </div>
-            
-            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 text-gray-500 text-sm font-semibold tracking-widest">FRENTE</div>
-        </div>
-    </div>
-
-    <div class="md:col-span-1 space-y-6">
-        <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg">
-            <h3 class="text-xl font-semibold mb-4">Itens de Palco</h3>
-            <div id="item-toolbar" class="grid grid-cols-4 gap-4">
-                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="mic">
-                    <i data-lucide="mic" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Mic</span>
-                </div>
-                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="amp">
-                    <i data-lucide="speaker" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Amp</span>
-                </div>
-                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="drum">
-                    <i data-lucide="drum" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Bateria</span>
-                </div>
-                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="monitor">
-                    <i data-lucide="monitor" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Monitor</span>
-                </div>
-                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="singer">
-                    <i data-lucide="user-circle" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Cantor(a)</span>
-                </div>
-                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="guitar">
-                    <i data-lucide="guitar" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Guitarra</span>
-                </div>
-                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="bass">
-                    <i data-lucide="git-commit-vertical" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Baixo</span>
-                </div>
-                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="acoustic">
-                    <i data-lucide="music-2" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Violão</span>
-                </div>
-                 <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="keyboard">
-                    <i data-lucide="piano" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Teclado</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg">
-            <h3 class="text-xl font-semibold mb-4">Ações</h3>
-            <div class="flex flex-col gap-3">
-                <button id="save-stage-plot-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"><i data-lucide="save" class="w-5 h-5"></i> Salvar</button>
-                <button id="export-stage-plot-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"><i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF</button>
-                <button id="delete-mode-btn" class="w-full bg-gray-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i> Excluir Item</button>
-            </div>
-        </div>
-        <button id="open-add-modal-btn"
+                <div id="view-stage-plot" class="hidden space-y-8 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
+                    <div class="md:col-span-2">
+                        <div id="stage-area-container" class="relative pt-8 pb-8 h-full flex flex-col">
+                            <div class="absolute top-0 left-1/2 -translate-x-1/2 text-gray-500 text-sm font-semibold tracking-widest">FUNDO</div>
+                            
+                            <div id="stage-area" class="bg-gray-900 rounded-lg relative border-2 border-dashed border-gray-600 flex-grow min-h-[24rem] md:min-h-[32rem]">
+                                <p class="text-center text-gray-500 p-4">Arraste ou toque nos itens para adicionar ao palco</p>
+                            </div>
+                            
+                            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 text-gray-500 text-sm font-semibold tracking-widest">FRENTE</div>
+                        </div>
+                    </div>
+                
+                    <div class="md:col-span-1 space-y-6">
+                        <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-semibold mb-4">Itens de Palco</h3>
+                            <div id="item-toolbar" class="grid grid-cols-4 gap-4">
+                                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="mic">
+                                    <i data-lucide="mic" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Mic</span>
+                                </div>
+                                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="amp">
+                                    <i data-lucide="speaker" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Amp</span>
+                                </div>
+                                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="drum">
+                                    <i data-lucide="drum" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Bateria</span>
+                                </div>
+                                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="monitor">
+                                    <i data-lucide="monitor" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Monitor</span>
+                                </div>
+                                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="singer">
+                                    <i data-lucide="user-circle" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Cantor(a)</span>
+                                </div>
+                                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="guitar">
+                                    <i data-lucide="guitar" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Guitarra</span>
+                                </div>
+                                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="bass">
+                                    <i data-lucide="git-commit-vertical" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Baixo</span>
+                                </div>
+                                <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="acoustic">
+                                    <i data-lucide="music-2" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Violão</span>
+                                </div>
+                                 <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="keyboard">
+                                    <i data-lucide="piano" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Teclado</span>
+                                </div>
+                            </div>
+                        </div>
+                
+                        <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-semibold mb-4">Ações</h3>
+                            <div class="flex flex-col gap-3">
+                                <button id="save-stage-plot-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"><i data-lucide="save" class="w-5 h-5"></i> Salvar</button>
+                                <button id="export-stage-plot-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"><i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF</button>
+                                <button id="delete-mode-btn" class="w-full bg-gray-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i> Excluir Item</button>
+                            </div>
+                        </div>
+                    </div>
+                </div> </div> <button id="open-add-modal-btn"
             class="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110">
             <i data-lucide="plus" class="w-8 h-8"></i>
         </button>
-    </div>
-     </div> </div>
 
-    <div id="add-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
+    </div> <div id="add-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="edit-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
     </div>
