@@ -495,9 +495,15 @@
                 <button id="export-stage-plot-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 ml-2"><i data-lucide="file-down" class="w-5 h-5"></i> Exportar</button>
             </div>
         </div>
-        <div id="stage-area" class="bg-gray-900 h-96 rounded-lg relative border-2 border-dashed border-gray-600">
-            <p class="text-center text-gray-500 p-4">Arraste os itens para o palco</p>
-        </div>
+       <div id="stage-area-container" class="relative pt-8 pb-8">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 text-gray-500 text-sm font-semibold tracking-widest">FUNDO</div>
+    
+    <div id="stage-area" class="bg-gray-900 h-96 rounded-lg relative border-2 border-dashed border-gray-600">
+        <p class="text-center text-gray-500 p-4">Arraste os itens para o palco</p>
+    </div>
+    
+    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 text-gray-500 text-sm font-semibold tracking-widest">FRENTE</div>
+</div>
     </div>
 </div>
 
