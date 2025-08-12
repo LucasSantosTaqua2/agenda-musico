@@ -29,9 +29,7 @@ import {
 import { firebaseConfig } from './firebase-config.js';
 
 // Inicializa os ícones e o Firebase uma única vez
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-});
+lucide.createIcons();
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -204,8 +202,6 @@ let topLocationsChart = null;
 let topArtistsChart = null;
 let allRiders = [];
 let unsubscribeRiders = [];
-let allStagePlots = [];
-let unsubscribeStagePlots = [];
 let allTeamMembers = [];
 let unsubscribeTeam = [];
 let map = null;
@@ -1129,14 +1125,12 @@ const handleUser = async user => {
   if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
   if (unsubscribeSetlists) unsubscribeSetlists.forEach(unsub => unsub());
   if (unsubscribeRiders) unsubscribeRiders.forEach(unsub => unsub());
-  if (unsubscribeStagePlots) unsubscribeStagePlots.forEach(unsub => unsub()); // Adicionado
   if (unsubscribeNotifications) unsubscribeNotifications();
   if (unsubscribeTeam) unsubscribeTeam.forEach(unsub => unsub());
 
   unsubscribeShows = [];
   unsubscribeSetlists = [];
   unsubscribeRiders = [];
-  unsubscribeStagePlots = []; // Adicionado
   unsubscribeTeam = [];
 
   if (user) {
@@ -1151,34 +1145,37 @@ const handleUser = async user => {
       personalSetlists = [],
       managedSetlists = [],
       personalRiders = [],
-      managedRiders = [],
-      personalStagePlots = [], // Adicionado
-      managedStagePlots = []; // Adicionado
+      managedRiders = [];
 
     const combineAndRenderAll = () => {
       allShows = [
-        ...personalShows.map(s => ({ ...s, isPersonal: true, ownerId: currentUser.uid })),
-        ...managedShows.map(s => ({ ...s, isPersonal: false, ownerId: userSettings.managedBy })),
+        ...personalShows.map(s => ({
+          ...s,
+          isPersonal: true,
+          ownerId: currentUser.uid,
+        })),
+        ...managedShows.map(s => ({
+          ...s,
+          isPersonal: false,
+          ownerId: userSettings.managedBy,
+        })),
       ];
-      allSetlists = [...new Map([...managedSetlists, ...personalSetlists].map(item => [item.id, item])).values()];
+      allSetlists = [
+        ...new Map(
+          [...managedSetlists, ...personalSetlists].map(item => [item.id, item])
+        ).values(),
+      ];
       allRiders = [
-        ...personalRiders.map(r => ({ ...r, isPersonal: true })),
-        ...managedRiders.map(r => ({ ...r, isPersonal: false }))
+          ...personalRiders.map(r => ({ ...r, isPersonal: true })),
+          ...managedRiders.map(r => ({ ...r, isPersonal: false }))
       ];
       allRiders.sort((a, b) => a.name.localeCompare(b.name));
-
-      allStagePlots = [ // Adicionado
-        ...personalStagePlots.map(p => ({ ...p, isPersonal: true })),
-        ...managedStagePlots.map(p => ({ ...p, isPersonal: false }))
-      ];
-      allStagePlots.sort((a, b) => a.name.localeCompare(b.name));
 
       renderShows();
       renderCalendar();
       renderDashboard();
       renderSetlists();
-      renderRiders();
-      renderStagePlots(); // Adicionado
+      renderRiders(); 
       renderTeam();
       populateSetlistDropdowns();
 
@@ -1188,58 +1185,126 @@ const handleUser = async user => {
     };
 
     const personalShowsPath = `artifacts/${appId}/users/${currentUser.uid}/shows`;
-    unsubscribeShows.push(onSnapshot(query(collection(db, personalShowsPath)), s => {
-      personalShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      combineAndRenderAll();
-    }));
+    unsubscribeShows.push(
+      onSnapshot(query(collection(db, personalShowsPath)), s => {
+        personalShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        combineAndRenderAll();
+      })
+    );
 
     const personalSetlistsPath = `artifacts/${appId}/users/${currentUser.uid}/setlists`;
-    unsubscribeSetlists.push(onSnapshot(query(collection(db, personalSetlistsPath), orderBy('name', 'asc')), s => {
-      personalSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data(), isPersonal: true }));
-      combineAndRenderAll();
-    }));
-
+    unsubscribeSetlists.push(
+      onSnapshot(
+        query(collection(db, personalSetlistsPath), orderBy('name', 'asc')),
+        s => {
+          personalSetlists = s.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            isPersonal: true,
+          }));
+          combineAndRenderAll();
+        }
+      )
+    );
+      
     const personalRidersPath = `artifacts/${appId}/users/${currentUser.uid}/riders`;
-    unsubscribeRiders.push(onSnapshot(query(collection(db, personalRidersPath), orderBy('name', 'asc')), snapshot => {
-      personalRiders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      combineAndRenderAll();
-    }));
-
-    const personalStagePlotsPath = `artifacts/${appId}/users/${currentUser.uid}/stageplots`; // Adicionado
-    unsubscribeStagePlots.push(onSnapshot(query(collection(db, personalStagePlotsPath), orderBy('name', 'asc')), snapshot => {
-      personalStagePlots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      combineAndRenderAll();
-    }));
+    unsubscribeRiders.push(
+        onSnapshot(query(collection(db, personalRidersPath), orderBy('name', 'asc')), snapshot => {
+            personalRiders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            combineAndRenderAll();
+        })
+    );
 
     if (userSettings.managedBy) {
       const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
-      const qShows = query(collection(db, managedShowsPath), where('linkedMusicians', 'array-contains', currentUser.uid));
-      unsubscribeShows.push(onSnapshot(qShows, s => {
-        managedShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        combineAndRenderAll();
-      }));
+      const qShows = query(
+        collection(db, managedShowsPath),
+        where('linkedMusicians', 'array-contains', currentUser.uid)
+      );
+      unsubscribeShows.push(
+        onSnapshot(qShows, s => {
+          managedShows = s.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          combineAndRenderAll();
+        })
+      );
 
       const managedSetlistsPath = `artifacts/${appId}/users/${userSettings.managedBy}/setlists`;
-      unsubscribeSetlists.push(onSnapshot(query(collection(db, managedSetlistsPath), orderBy('name', 'asc')), s => {
-        managedSetlists = s.docs.map(doc => ({ id: doc.id, ...doc.data(), isPersonal: false }));
-        combineAndRenderAll();
-      }));
-
+      unsubscribeSetlists.push(
+        onSnapshot(
+          query(collection(db, managedSetlistsPath), orderBy('name', 'asc')),
+          s => {
+            managedSetlists = s.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              isPersonal: false,
+            }));
+            combineAndRenderAll();
+          }
+        )
+      );
+        
       const managedRidersPath = `artifacts/${appId}/users/${userSettings.managedBy}/riders`;
-      unsubscribeRiders.push(onSnapshot(query(collection(db, managedRidersPath), orderBy('name', 'asc')), snapshot => {
-        managedRiders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        combineAndRenderAll();
-      }));
-
-      const managedStagePlotsPath = `artifacts/${appId}/users/${userSettings.managedBy}/stageplots`; // Adicionado
-      unsubscribeStagePlots.push(onSnapshot(query(collection(db, managedStagePlotsPath), orderBy('name', 'asc')), snapshot => {
-        managedStagePlots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        combineAndRenderAll();
-      }));
+      unsubscribeRiders.push(
+          onSnapshot(query(collection(db, managedRidersPath), orderBy('name', 'asc')), snapshot => {
+              managedRiders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              combineAndRenderAll();
+          })
+      );
     }
 
-    // ... (O restante da função, a partir de "const managerIdForTeam", continua igual) ...
+    const managerIdForTeam = userSettings.isManager
+      ? currentUser.uid
+      : userSettings.managedBy;
+    if (managerIdForTeam) {
+      const followersPath = `artifacts/${appId}/users/${managerIdForTeam}/followers`;
+      unsubscribeTeam.push(
+        onSnapshot(collection(db, followersPath), async snapshot => {
+          const followerIds = snapshot.docs.map(doc => doc.id);
+          if (followerIds.length === 0) {
+            allTeamMembers = [];
+            combineAndRenderAll();
+            return;
+          }
+          const memberPromises = followerIds.map(id =>
+            getDoc(doc(db, `artifacts/${appId}/user_settings`, id))
+          );
+          try {
+            const memberDocs = await Promise.all(memberPromises);
+            allTeamMembers = memberDocs
+              .filter(docSnap => docSnap.exists())
+              .map(docSnap => ({
+                id: docSnap.id,
+                name: docSnap.data().userName,
+                instrumento: docSnap.data().instrument,
+              }))
+              .sort((a, b) => a.name.localeCompare(b.name));
+          } catch (error) {
+            console.error(
+              'Erro ao buscar detalhes dos membros da equipe:',
+              error
+            );
+            allTeamMembers = [];
+          } finally {
+            combineAndRenderAll();
+          }
+        })
+      );
+    } else {
+      allTeamMembers = [];
+      combineAndRenderAll();
+    }
 
+    const notificationsPath = `artifacts/${appId}/users/${currentUser.uid}/notifications`;
+    unsubscribeNotifications = onSnapshot(
+      query(collection(db, notificationsPath), orderBy('timestamp', 'desc')),
+      snapshot => {
+        allNotifications = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        renderNotifications();
+      }
+    );
   } else {
     currentUser = null;
     appContent.style.display = 'none';
@@ -1248,11 +1313,9 @@ const handleUser = async user => {
     allShows = [];
     allSetlists = [];
     allRiders = [];
-    allStagePlots = []; // Adicionado
     allNotifications = [];
     renderShows();
     renderRiders();
-    renderStagePlots(); // Adicionado
     renderNotifications();
   }
 };
@@ -1560,8 +1623,6 @@ confirmDeleteBtn.addEventListener('click', async () => {
     collectionName = 'setlists';
   } else if (itemTypeToDelete === 'rider') { // Adicionado
     collectionName = 'riders';
-  } else if (itemTypeToDelete === 'stageplot') { // Adicionado
-    collectionName = 'stageplots';
   } else {
     return;
   }
@@ -1675,7 +1736,6 @@ const tabs = [
   tabCalendario,
   tabSetlists,
   tabRider,
-  tabStagePlot,
   tabEquipe,
   tabDashboard,
   tabConfiguracoes,
@@ -1685,7 +1745,6 @@ const views = [
   viewCalendario,
   viewSetlists,
   viewRider,
-  viewStagePlot,
   viewEquipe,
   viewDashboard,
   viewConfiguracoes,
@@ -1971,21 +2030,21 @@ const renderTeam = () => {
 // --- FUNÇÕES DO RIDER TÉCNICO ---
 
 const renderRiders = () => {
-  ridersList.innerHTML = '';
-  emptyRiderState.classList.toggle('hidden', allRiders.length > 0);
+    ridersList.innerHTML = '';
+    emptyRiderState.classList.toggle('hidden', allRiders.length > 0);
 
-  allRiders.forEach(rider => {
-    const riderElement = document.createElement('div');
-    riderElement.className = 'bg-gray-800 rounded-lg p-5 shadow-md';
+    allRiders.forEach(rider => {
+        const riderElement = document.createElement('div');
+        riderElement.className = 'bg-gray-800 rounded-lg p-5 shadow-md';
 
-    const actionButtons = rider.isPersonal ? `
+        const actionButtons = rider.isPersonal ? `
             <div class="flex gap-2">
                 <button data-id="${rider.id}" class="edit-rider-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
                 <button data-id="${rider.id}" class="delete-rider-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
             </div>
         ` : '';
 
-    riderElement.innerHTML = `
+        riderElement.innerHTML = `
             <div class="flex justify-between items-center">
                 <div>
                     <h3 class="text-xl font-bold text-blue-300">${rider.name}</h3>
@@ -1999,15 +2058,15 @@ const renderRiders = () => {
                 </div>
             </div>
         `;
-    ridersList.appendChild(riderElement);
-  });
-  lucide.createIcons();
+        ridersList.appendChild(riderElement);
+    });
+    lucide.createIcons();
 };
 
 const addChannelRow = (channel = { name: '', instrument: '', mic: '' }) => {
-  const channelRow = document.createElement('div');
-  channelRow.className = 'grid grid-cols-1 md:grid-cols-4 gap-2 items-center rider-channel-row';
-  channelRow.innerHTML = `
+    const channelRow = document.createElement('div');
+    channelRow.className = 'grid grid-cols-1 md:grid-cols-4 gap-2 items-center rider-channel-row';
+    channelRow.innerHTML = `
         <input type="text" value="${channel.name}" data-prop="name" placeholder="Canal (Ex: 01)" class="w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white">
         <input type="text" value="${channel.instrument}" data-prop="instrument" placeholder="Instrumento (Ex: Voz)" class="w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white md:col-span-2">
         <div class="flex items-center gap-2">
@@ -2015,81 +2074,35 @@ const addChannelRow = (channel = { name: '', instrument: '', mic: '' }) => {
             <button type="button" class="remove-channel-btn p-2 text-red-400 hover:text-red-300"><i data-lucide="x-circle" class="w-5 h-5 pointer-events-none"></i></button>
         </div>
     `;
-  document.getElementById('rider-channels-container').appendChild(channelRow);
+    document.getElementById('rider-channels-container').appendChild(channelRow);
 };
 
 const openRiderModal = (id = null) => {
-
-  riderForm.reset();
-  riderChannelsContainer.innerHTML = '';
-  document.getElementById('rider-id').value = id || '';
-
-  if (id) {
-    riderModalTitle.innerHTML = '<i data-lucide="pencil" class="text-yellow-400"></i> Editar Rider Técnico';
-    const riderData = allRiders.find(r => r.id === id);
-    if (riderData) {
-      document.getElementById('rider-name').value = riderData.name;
-      (riderData.channels || []).forEach(channel => addChannelRow(channel));
+    
+    riderForm.reset();
+    riderChannelsContainer.innerHTML = '';
+    document.getElementById('rider-id').value = id || '';
+    
+    if (id) {
+        riderModalTitle.innerHTML = '<i data-lucide="pencil" class="text-yellow-400"></i> Editar Rider Técnico';
+        const riderData = allRiders.find(r => r.id === id);
+        if (riderData) {
+            document.getElementById('rider-name').value = riderData.name;
+            (riderData.channels || []).forEach(channel => addChannelRow(channel));
+        }
+    } else {
+        riderModalTitle.innerHTML = '<i data-lucide="plus-circle" class="text-blue-400"></i> Novo Rider Técnico';
+        addChannelRow();
     }
-  } else {
-    riderModalTitle.innerHTML = '<i data-lucide="plus-circle" class="text-blue-400"></i> Novo Rider Técnico';
-    addChannelRow();
-  }
-  lucide.createIcons();
-  riderModal.classList.add('is-open');
-};
-
-// --- Funções do Stage Plot (continuação) ---
-const stageplotsList = document.getElementById('stageplots-list');
-const emptyStagePlotState = document.getElementById('empty-stageplot-state');
-
-const renderStagePlots = () => {
-  stageplotsList.innerHTML = '';
-  emptyStagePlotState.classList.toggle('hidden', allStagePlots.length > 0);
-
-  allStagePlots.forEach(plot => {
-    const plotElement = document.createElement('div');
-    plotElement.className = 'bg-gray-800 rounded-lg shadow-md flex flex-col cursor-pointer hover:ring-2 hover:ring-indigo-500';
-
-    // Gera um container para a pré-visualização
-    const previewContainerId = `plot-preview-${plot.id}`;
-
-    plotElement.innerHTML = `
-            <div class="p-4 flex justify-between items-center border-b border-gray-700">
-                <h3 class="font-bold text-lg text-indigo-300">${plot.name}</h3>
-                <div class="flex gap-2">
-                    <button data-id="${plot.id}" class="edit-stageplot-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
-                    <button data-id="${plot.id}" class="delete-stageplot-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
-                </div>
-            </div>
-            <div id="${previewContainerId}" class="p-2 bg-black flex-1 min-h-[200px]"></div>
-        `;
-    stageplotsList.appendChild(plotElement);
-
-    // Gera a pré-visualização em miniatura
-    setTimeout(() => {
-      const previewStage = new Konva.Stage({
-        container: previewContainerId,
-        width: plotElement.querySelector('.p-2').offsetWidth,
-        height: 200,
-      });
-      const previewLayer = Konva.Node.create(plot.konvaData, 'Layer');
-
-      // Ajusta a escala para caber na pré-visualização
-      const scale = Math.min(previewStage.width() / 1000, previewStage.height() / 600);
-      previewStage.scale({ x: scale, y: scale });
-
-      previewStage.add(previewLayer);
-    }, 10);
-  });
-  lucide.createIcons();
+    lucide.createIcons();
+    riderModal.classList.add('is-open');
 };
 
 const downloadRiderAsPDF = riderId => {
   const rider = allRiders.find(r => r.id === riderId);
   if (!rider) {
-    showError('Rider não encontrado para download.');
-    return;
+      showError('Rider não encontrado para download.');
+      return;
   }
 
   const { jsPDF } = window.jspdf;
@@ -2101,9 +2114,9 @@ const downloadRiderAsPDF = riderId => {
 
   // Nome do Artista (se houver)
   if (userSettings && userSettings.artistName) {
-    doc.setFontSize(14);
-    doc.setTextColor(100);
-    doc.text(userSettings.artistName, 14, 30);
+      doc.setFontSize(14);
+      doc.setTextColor(100);
+      doc.text(userSettings.artistName, 14, 30);
   }
 
   // Preparando os dados para a tabela
@@ -2112,11 +2125,11 @@ const downloadRiderAsPDF = riderId => {
 
   // Gerando a tabela
   doc.autoTable({
-    head: head,
-    body: body,
-    startY: 40, // Posição inicial da tabela
-    headStyles: { fillColor: [74, 85, 104] }, // Cor do cabeçalho
-    styles: { fontSize: 10 },
+      head: head,
+      body: body,
+      startY: 40, // Posição inicial da tabela
+      headStyles: { fillColor: [74, 85, 104] }, // Cor do cabeçalho
+      styles: { fontSize: 10 },
   });
 
   // Salvando o arquivo
@@ -2566,298 +2579,63 @@ cancelRiderBtn.addEventListener('click', () => riderModal.classList.remove('is-o
 addChannelBtn.addEventListener('click', () => addChannelRow());
 
 riderChannelsContainer.addEventListener('click', e => {
-  const removeBtn = e.target.closest('.remove-channel-btn');
-  if (removeBtn) {
-    removeBtn.closest('.rider-channel-row').remove();
-  }
+    const removeBtn = e.target.closest('.remove-channel-btn');
+    if (removeBtn) {
+        removeBtn.closest('.rider-channel-row').remove();
+    }
 });
 
 riderForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  if (!currentUser) return;
+    e.preventDefault();
+    if (!currentUser) return;
 
-  const id = document.getElementById('rider-id').value;
-  const channels = [];
-  document.querySelectorAll('.rider-channel-row').forEach(row => {
-    const inputs = row.querySelectorAll('input');
-    channels.push({
-      name: inputs[0].value,
-      instrument: inputs[1].value,
-      mic: inputs[2].value
+    const id = document.getElementById('rider-id').value;
+    const channels = [];
+    document.querySelectorAll('.rider-channel-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        channels.push({
+            name: inputs[0].value,
+            instrument: inputs[1].value,
+            mic: inputs[2].value
+        });
     });
-  });
 
-  const data = {
-    name: document.getElementById('rider-name').value,
-    channels: channels
-  };
+    const data = {
+        name: document.getElementById('rider-name').value,
+        channels: channels
+    };
 
-  const collectionPath = `artifacts/${appId}/users/${currentUser.uid}/riders`;
-  try {
-    if (id) {
-      await updateDoc(doc(db, collectionPath, id), data);
-    } else {
-      await addDoc(collection(db, collectionPath), data);
+    const collectionPath = `artifacts/${appId}/users/${currentUser.uid}/riders`;
+    try {
+        if (id) {
+            await updateDoc(doc(db, collectionPath, id), data);
+        } else {
+            await addDoc(collection(db, collectionPath), data);
+        }
+        riderModal.classList.remove('is-open');
+    } catch (err) {
+        showError('Não foi possível salvar o Rider Técnico.');
+        console.error("Erro ao salvar rider: ", err);
     }
-    riderModal.classList.remove('is-open');
-  } catch (err) {
-    showError('Não foi possível salvar o Rider Técnico.');
-    console.error("Erro ao salvar rider: ", err);
-  }
 });
 
 ridersList.addEventListener('click', e => {
-  const editBtn = e.target.closest('.edit-rider-btn');
-  const deleteBtn = e.target.closest('.delete-rider-btn');
-  const downloadBtn = e.target.closest('.download-rider-btn');
+    const editBtn = e.target.closest('.edit-rider-btn');
+    const deleteBtn = e.target.closest('.delete-rider-btn');
+    const downloadBtn = e.target.closest('.download-rider-btn');
 
-  if (editBtn) {
-    openRiderModal(editBtn.dataset.id);
-  }
-  if (deleteBtn) {
-    const riderId = deleteBtn.dataset.id;
-    const rider = allRiders.find(r => r.id === riderId);
-    itemToModifyId = riderId;
-    itemTypeToDelete = 'rider';
-    document.getElementById('delete-confirm-text').textContent = `Tem certeza que deseja excluir o rider "${rider.name}"?`;
-    deleteModal.classList.add('is-open');
-  }
-  if (downloadBtn) {
-    downloadRiderAsPDF(downloadBtn.dataset.id);
-  }
-});
-
-// --- INÍCIO DO CÓDIGO DO STAGE PLOT ---
-
-// --- Constantes e Variáveis do Stage Plot ---
-const tabStagePlot = document.getElementById('tab-stageplot');
-const viewStagePlot = document.getElementById('view-stageplot');
-const openAddStagePlotModalBtn = document.getElementById('open-add-stageplot-modal-btn');
-const stagePlotModal = document.getElementById('stageplot-modal');
-const cancelStagePlotBtn = document.getElementById('cancel-stageplot-btn');
-const stagePlotToolbar = document.getElementById('stageplot-toolbar');
-const stageContainer = document.getElementById('stage-container');
-
-let stage; // Variável para o palco Konva
-let layer; // Variável para a camada de desenho
-let currentEditingPlot = null; // Guarda os dados do plot que está sendo editado
-
-// --- Adicionando o Stage Plot ao sistema de abas ---
-tabs.push(tabStagePlot);
-views.push(viewStagePlot);
-
-// --- Funções do Stage Plot ---
-
-// 1. Inicializa o palco Konva
-const initializeStage = () => {
-  const containerWrapper = document.getElementById('stage-container-wrapper');
-  const width = containerWrapper.offsetWidth - 40; // Subtrai o padding
-  const height = containerWrapper.offsetHeight - 40;
-
-  stageContainer.style.width = `${width}px`;
-  stageContainer.style.height = `${height}px`;
-
-  // Destroi o palco anterior se ele já existir (para redimensionamento)
-  if (stage) {
-    stage.destroy();
-  }
-
-  stage = new Konva.Stage({
-    container: 'stage-container',
-    width: width,
-    height: height,
-  });
-
-  layer = new Konva.Layer();
-  stage.add(layer);
-
-  // Adiciona um fundo para o palco
-  const background = new Konva.Rect({
-    x: 0,
-    y: 0,
-    width: stage.width(),
-    height: stage.height(),
-    fill: '#1f2937', // gray-800
-    stroke: '#4b5563', // gray-600
-    strokeWidth: 2,
-  });
-  layer.add(background);
-};
-
-// 2. Define os visuais para cada item de palco
-const itemVisuals = {
-  musico: {
-    shape: () => new Konva.Circle({ radius: 30, fill: '#a78bfa', stroke: '#c4b5fd', strokeWidth: 2 }),
-    icon: () => new Konva.Text({ text: '👤', fontSize: 30, x: -15, y: -15, fill: '#111827' }),
-    labelY: 35
-  },
-  amp: {
-    shape: () => new Konva.Rect({ width: 50, height: 50, fill: '#facc15', stroke: '#fde047', strokeWidth: 2, cornerRadius: 4 }),
-    icon: () => new Konva.Text({ text: '🔊', fontSize: 25, x: 12, y: 12, fill: '#111827' }),
-    labelY: 55
-  },
-  bateria: {
-    shape: () => new Konva.Rect({ width: 120, height: 80, fill: '#60a5fa', stroke: '#93c5fd', strokeWidth: 2, cornerRadius: 8 }),
-    icon: () => new Konva.Text({ text: '🥁', fontSize: 50, x: 30, y: 10, fill: '#111827' }),
-    labelY: 85
-  },
-  monitor: {
-    shape: () => new Konva.Wedge({ angleDeg: 60, radius: 40, rotation: -120, fill: '#9ca3af', stroke: '#d1d5db', strokeWidth: 2 }),
-    icon: () => null, // O próprio shape já representa bem
-    labelY: 25
-  },
-  mic: {
-    shape: () => new Konva.Circle({ radius: 15, fill: '#e5e7eb', stroke: '#f9fafb', strokeWidth: 1 }),
-    icon: () => new Konva.Text({ text: '🎤', fontSize: 15, x: -8, y: -8, fill: '#111827' }),
-    labelY: 20
-  },
-  pedal: {
-    shape: () => new Konva.Rect({ width: 80, height: 40, fill: '#4b5563', stroke: '#6b7280', strokeWidth: 2, cornerRadius: 4 }),
-    icon: () => null,
-    labelY: 45
-  },
-};
-
-// 3. Função para adicionar um item ao palco
-const addItemToStage = (type, text, x, y) => {
-  const visual = itemVisuals[type];
-  if (!visual) return;
-
-  const group = new Konva.Group({
-    x: x || 100,
-    y: y || 100,
-    draggable: true
-  });
-
-  const shape = visual.shape();
-  const icon = visual.icon();
-  const label = new Konva.Text({
-    text: text,
-    fontSize: 14,
-    fontFamily: 'sans-serif',
-    fill: '#e5e7eb',
-    y: visual.labelY,
-    align: 'center',
-  });
-  // Centraliza o texto
-  label.offsetX(label.width() / 2);
-
-  group.add(shape);
-  if (icon) group.add(icon);
-  group.add(label);
-
-  // Adiciona evento de duplo clique para editar o texto
-  group.on('dblclick', () => {
-    const newText = prompt('Digite o novo texto:', label.text());
-    if (newText !== null) {
-      label.text(newText);
-      label.offsetX(label.width() / 2); // Re-centraliza
+    if (editBtn) {
+        openRiderModal(editBtn.dataset.id);
     }
-  });
-
-  layer.add(group);
-};
-
-// 4. Função para abrir o modal do Stage Plot
-const openStagePlotModal = (plotData = null) => {
-  currentEditingPlot = plotData; // Armazena os dados do plot atual
-  stagePlotModal.classList.add('is-open');
-
-  // Um pequeno delay para garantir que o modal está visível antes de criar o palco
-  setTimeout(() => {
-    initializeStage();
-
-    if (plotData) {
-      document.getElementById('stageplot-name').value = plotData.name;
-      // Carrega os itens salvos
-      (plotData.items || []).forEach(item => {
-        addItemToStage(item.type, item.text, item.x, item.y);
-      });
-    } else {
-      document.getElementById('stageplot-name').value = '';
+    if (deleteBtn) {
+        const riderId = deleteBtn.dataset.id;
+        const rider = allRiders.find(r => r.id === riderId);
+        itemToModifyId = riderId;
+        itemTypeToDelete = 'rider';
+        document.getElementById('delete-confirm-text').textContent = `Tem certeza que deseja excluir o rider "${rider.name}"?`;
+        deleteModal.classList.add('is-open');
     }
-
-  }, 100);
-};
-
-
-// --- Event Listeners do Stage Plot ---
-
-openAddStagePlotModalBtn.addEventListener('click', () => {
-  openStagePlotModal(); // Abre com um plot em branco
-});
-
-cancelStagePlotBtn.addEventListener('click', () => {
-  stagePlotModal.classList.remove('is-open');
-  currentEditingPlot = null; // Limpa os dados
-});
-
-// Listener para a barra de ferramentas
-stagePlotToolbar.addEventListener('click', (e) => {
-  const itemEl = e.target.closest('.stage-item');
-  if (itemEl) {
-    const type = itemEl.dataset.type;
-    const text = itemEl.dataset.text;
-    addItemToStage(type, text, 50, 50); // Adiciona no canto superior esquerdo
-  }
-});
-
-// --- FIM DO CÓDIGO DO STAGE PLOT ---
-
-// --- EVENT LISTENERS FINAIS PARA STAGE PLOT ---
-const saveStagePlotBtn = document.getElementById('save-stageplot-btn');
-
-saveStagePlotBtn.addEventListener('click', async () => {
-  if (!currentUser || !stage) return;
-
-  const name = document.getElementById('stageplot-name').value;
-  if (!name) {
-    showError("Por favor, dê um nome ao Stage Plot.");
-    return;
-  }
-
-  // Serializa a camada inteira para JSON
-  const konvaData = layer.toJSON();
-
-  const data = {
-    name: name,
-    konvaData: konvaData // Salva o estado do palco
-  };
-
-  const collectionPath = `artifacts/${appId}/users/${currentUser.uid}/stageplots`;
-  try {
-    if (currentEditingPlot && currentEditingPlot.id) {
-      // Atualiza um plot existente
-      await updateDoc(doc(db, collectionPath, currentEditingPlot.id), data);
-    } else {
-      // Cria um novo plot
-      await addDoc(collection(db, collectionPath), data);
+    if (downloadBtn) {
+      downloadRiderAsPDF(downloadBtn.dataset.id);
     }
-    stagePlotModal.classList.remove('is-open');
-    currentEditingPlot = null;
-  } catch (err) {
-    showError('Não foi possível salvar o Stage Plot.');
-    console.error("Erro ao salvar Stage Plot: ", err);
-  }
-});
-
-stageplotsList.addEventListener('click', e => {
-  const editBtn = e.target.closest('.edit-stageplot-btn');
-  const deleteBtn = e.target.closest('.delete-stageplot-btn');
-
-  if (editBtn) {
-    const plotData = allStagePlots.find(p => p.id === editBtn.dataset.id);
-    if (plotData) {
-      openStagePlotModal(plotData);
-    }
-  }
-
-  if (deleteBtn) {
-    const plotId = deleteBtn.dataset.id;
-    const plot = allStagePlots.find(p => p.id === plotId);
-    itemToModifyId = plotId;
-    itemTypeToDelete = 'stageplot';
-    document.getElementById('delete-confirm-text').textContent = `Tem certeza que deseja excluir o stage plot "${plot.name}"?`;
-    deleteModal.classList.add('is-open');
-  }
 });
