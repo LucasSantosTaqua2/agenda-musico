@@ -19,7 +19,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js" defer></script>
 </head>
@@ -182,6 +182,7 @@
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Equipe</button>
                     <button id="tab-dashboard"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Dashboard</button>
+                    <button id="tab-stage-plot" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Stage Plot</button>
                     <button id="tab-rider"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Rider
                         Técnico</button>
@@ -456,6 +457,47 @@
             <i data-lucide="plus" class="w-8 h-8"></i>
         </button>
     </div>
+
+    <div id="view-stage-plot" class="hidden space-y-8">
+    <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg">
+        <h3 class="text-xl font-semibold mb-3">Itens de Palco</h3>
+        <div id="item-toolbar" class="flex flex-wrap gap-4">
+            <div class="stage-item flex flex-col items-center" data-type="mic">
+                <i data-lucide="mic" class="w-8 h-8 text-gray-300"></i>
+                <span class="text-xs mt-1">Microfone</span>
+            </div>
+            <div class="stage-item flex flex-col items-center" data-type="amp">
+                <i data-lucide="speaker" class="w-8 h-8 text-gray-300"></i>
+                <span class="text-xs mt-1">Amplificador</span>
+            </div>
+            <div class="stage-item flex flex-col items-center" data-type="drum">
+                <i data-lucide="drum" class="w-8 h-8 text-gray-300"></i>
+                <span class="text-xs mt-1">Bateria</span>
+            </div>
+            <div class="stage-item flex flex-col items-center" data-type="monitor">
+                <i data-lucide="monitor" class="w-8 h-8 text-gray-300"></i>
+                <span class="text-xs mt-1">Monitor</span>
+            </div>
+             <div class="stage-item flex flex-col items-center" data-type="person">
+                <i data-lucide="user" class="w-8 h-8 text-gray-300"></i>
+                <span class="text-xs mt-1">Músico</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold">Mapa de Palco</h3>
+            <div>
+                <button id="save-stage-plot-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2"><i data-lucide="save" class="w-5 h-5"></i> Salvar</button>
+                <button id="export-stage-plot-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 ml-2"><i data-lucide="file-down" class="w-5 h-5"></i> Exportar</button>
+            </div>
+        </div>
+        <div id="stage-area" class="bg-gray-900 h-96 rounded-lg relative border-2 border-dashed border-gray-600">
+            <p class="text-center text-gray-500 p-4">Arraste os itens para o palco</p>
+        </div>
+    </div>
+</div>
 
     <div id="add-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="edit-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
