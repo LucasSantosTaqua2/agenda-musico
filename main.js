@@ -29,7 +29,9 @@ import {
 import { firebaseConfig } from './firebase-config.js';
 
 // Inicializa os ícones e o Firebase uma única vez
-lucide.createIcons();
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+});
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
