@@ -22,7 +22,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"
         defer></script>
@@ -195,29 +194,21 @@
             </div>
 
             <div id="view-agenda">
-                <button id="toggle-filters-btn"
-                    class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 mb-6">
+                <button id="toggle-filters-btn" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 mb-6">
                     <i data-lucide="filter" class="w-5 h-5"></i>
                     <span id="toggle-filters-text">Exibir Filtros</span>
                 </button>
                 <div id="filters-container" class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8 hidden">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <input id="filter-artist" type="text" placeholder="Filtrar por artista..."
-                            class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-
-                        <input id="filter-location" type="text" placeholder="Filtrar por local..."
-                            class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-
+                        <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        <input id="filter-location" type="text" placeholder="Filtrar por local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
                         <div>
                             <label for="filter-month" class="text-xs text-gray-400">Filtrar por Mês/Ano</label>
-                            <input id="filter-month" type="month"
-                                class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                            <input id="filter-month" type="month" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
                         </div>
-
                         <div>
                             <label for="filter-status" class="text-xs text-gray-400">Filtrar por Status</label>
-                            <select id="filter-status"
-                                class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                            <select id="filter-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
                                 <option value="">Todos os Status</option>
                                 <option value="confirmado">Confirmado</option>
                                 <option value="aguardando">Aguardando</option>
@@ -226,19 +217,14 @@
                             </select>
                         </div>
                     </div>
-                    <button id="export-pdf-btn"
-                        class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+                    <button id="export-pdf-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
                         <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
                     </button>
                 </div>
-
                 <div class="flex border-b border-gray-700 mb-4">
-                    <button id="view-agendados-btn"
-                        class="flex-1 py-2 text-center font-semibold border-b-2 border-purple-400 text-white">Agendados</button>
-                    <button id="view-historico-btn"
-                        class="flex-1 py-2 text-center font-semibold border-b-2 border-transparent text-gray-400 hover:text-white">Histórico</button>
+                    <button id="view-agendados-btn" class="flex-1 py-2 text-center font-semibold border-b-2 border-purple-400 text-white">Agendados</button>
+                    <button id="view-historico-btn" class="flex-1 py-2 text-center font-semibold border-b-2 border-transparent text-gray-400 hover:text-white">Histórico</button>
                 </div>
-
                 <div>
                     <div id="agendados-content">
                         <h2 class="text-2xl font-bold mb-4 text-gray-200">Eventos Agendados</h2>
@@ -248,18 +234,11 @@
                         <h2 class="text-2xl font-bold mb-4 text-gray-200">Histórico (Realizados/Cancelados)</h2>
                         <div id="shows-list-realizados" class="space-y-4"></div>
                         <div id="historico-pagination-controls" class="flex items-center justify-between mt-6 hidden">
-                            <button id="historico-prev-btn"
-                                class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                                Anterior
-                            </button>
+                            <button id="historico-prev-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
                             <span id="historico-page-info" class="text-gray-400 text-sm font-semibold"></span>
-                            <button id="historico-next-btn"
-                                class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                                Próximo
-                            </button>
+                            <button id="historico-next-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Próximo</button>
                         </div>
                     </div>
-
                     <div id="loading-state" class="text-center text-gray-400 py-8">Carregando shows...</div>
                     <div id="empty-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
                         <p class="text-gray-400">Nenhum show encontrado.</p>
@@ -269,249 +248,42 @@
             </div>
 
             <div id="view-calendario" class="hidden">
-                <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8">
-                    <div class="flex justify-between items-center mb-4">
-                        <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-700"><i
-                                data-lucide="chevron-left"></i></button>
-                        <h2 id="month-year-title" class="text-xl font-bold"></h2>
-                        <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-700"><i
-                                data-lucide="chevron-right"></i></button>
-                    </div>
-                    <div class="grid grid-cols-7 gap-1 text-center font-semibold text-xs text-gray-400 mb-2">
-                        <div>Dom</div>
-                        <div>Seg</div>
-                        <div>Ter</div>
-                        <div>Qua</div>
-                        <div>Qui</div>
-                        <div>Sex</div>
-                        <div>Sáb</div>
-                    </div>
-                    <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center"></div>
                 </div>
-                <div id="calendar-show-details" class="mt-6 space-y-4"></div>
-            </div>
 
             <div id="view-setlists" class="hidden">
-                <button id="open-add-setlist-modal-btn"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
-                    <i data-lucide="plus" class="w-5 h-5"></i> Criar Nova Setlist
-                </button>
-                <div id="setlists-list" class="space-y-4"></div>
-                <div id="empty-setlist-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
-                    <p class="text-gray-400">Nenhuma setlist encontrada.</p>
                 </div>
-            </div>
 
             <div id="view-equipe" class="hidden">
-                <div id="equipe-list" class="space-y-4"></div>
-                <div id="empty-equipe-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
-                    <p class="text-gray-400">Nenhum músico encontrado.</p>
-                    <p id="empty-equipe-subtext" class="text-gray-500 text-sm mt-2"></p>
                 </div>
-            </div>
 
             <div id="view-dashboard" class="hidden space-y-8">
-                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
-                        <h3 class="text-xl font-semibold shrink-0">Mapa de Shows</h3>
-                        <div id="map-filters"
-                            class="flex flex-wrap items-center justify-start sm:justify-end gap-x-4 gap-y-2 text-sm">
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                    data-type="show" class="map-filter-cb" checked> Shows</label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                    data-type="ensaio" class="map-filter-cb" checked> Ensaios</label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                    data-type="entrevista" class="map-filter-cb" checked> Entrevistas</label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                    data-type="gravacao" class="map-filter-cb" checked> Gravações</label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
-                                    data-type="viagem" class="map-filter-cb" checked> Viagens</label>
-                        </div>
-                    </div>
-                    <div class="relative">
-                        <div id="mapa-shows" style="height: 400px; border-radius: 12px; background-color: #374151;"
-                            class="relative">
-                            <div id="map-loader"
-                                class="absolute inset-0 z-[1001] flex items-center justify-center bg-gray-800/50 rounded-lg">
-                                <i data-lucide="loader-2" class="text-purple-400 w-12 h-12 animate-spin"></i>
-                            </div>
-                        </div>
-                        <div id="map-legend"
-                            class="absolute bottom-2 right-2 z-[1000] bg-gray-900/70 p-2 rounded-lg text-xs space-y-1">
-                        </div>
-                    </div>
                 </div>
-                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Shows por Mês (Últimos 12 meses)</h3>
-                    <canvas id="shows-per-month-chart"></canvas>
-                </div>
-                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Locais Mais Frequentes</h3>
-                    <canvas id="top-locations-chart"></canvas>
-                </div>
-                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Artistas Mais Frequentes</h3>
-                    <canvas id="top-artists-chart"></canvas>
-                </div>
-            </div>
             
             <div id="view-stage-plot" class="hidden space-y-8 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
-                <div class="md:col-span-2">
-                    <div id="stage-area-container" class="relative pt-8 pb-8 h-full flex flex-col">
-                        <div class="absolute top-0 left-1/2 -translate-x-1/2 text-gray-500 text-sm font-semibold tracking-widest">FUNDO</div>
-                        <div id="stage-area" class="bg-gray-900 rounded-lg relative border-2 border-dashed border-gray-600 flex-grow min-h-[24rem] md:min-h-[32rem]">
-                            <p class="text-center text-gray-500 p-4">Arraste ou toque nos itens para adicionar ao palco</p>
-                        </div>
-                        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 text-gray-500 text-sm font-semibold tracking-widest">FRENTE</div>
-                    </div>
                 </div>
-                <div class="md:col-span-1 space-y-6">
-                    <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4">Itens de Palco</h3>
-                        <div id="item-toolbar" class="grid grid-cols-4 gap-4">
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="mic"><i data-lucide="mic" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Mic</span></div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="amp"><i data-lucide="speaker" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Amp</span></div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="drum"><i data-lucide="drum" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Bateria</span></div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="monitor"><i data-lucide="monitor" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Monitor</span></div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="singer"><i data-lucide="user-circle" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Cantor(a)</span></div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="guitar"><i data-lucide="guitar" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Guitarra</span></div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="bass"><i data-lucide="git-commit-vertical" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Baixo</span></div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="acoustic"><i data-lucide="music-2" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Violão</span></div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="keyboard"><i data-lucide="piano" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Teclado</span></div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4">Ações</h3>
-                        <div class="flex flex-col gap-3">
-                            <button id="save-stage-plot-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"><i data-lucide="save" class="w-5 h-5"></i> Salvar</button>
-                            <button id="export-stage-plot-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"><i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF</button>
-                            <button id="delete-mode-btn" class="w-full bg-gray-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i> Excluir Item</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            
             <div id="view-rider" class="hidden">
-                <button id="open-add-rider-modal-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
-                    <i data-lucide="plus" class="w-5 h-5"></i> Criar Novo Rider Técnico
-                </button>
-                <div id="riders-list" class="space-y-6"></div>
-                <div id="empty-rider-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
-                    <p class="text-gray-400">Nenhum Rider Técnico encontrado.</p>
                 </div>
-            </div>
 
             <div id="view-configuracoes" class="hidden space-y-8">
-                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Seu Perfil</h3>
-                    <form id="profile-form" class="space-y-4">
-                        <div id="profile-success" class="bg-green-500/20 text-green-300 p-3 rounded-lg text-sm hidden">
-                            Perfil atualizado com sucesso!</div>
-                        <div>
-                            <label for="profile-name" class="text-sm font-medium text-gray-400">Seu Nome</label>
-                            <input id="profile-name" type="text"
-                                class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                        </div>
-                        <div>
-                            <label for="profile-instrument" class="text-sm font-medium text-gray-400">Seu Instrumento
-                                Principal</label>
-                            <input id="profile-instrument" type="text"
-                                class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                        </div>
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">Salvar
-                                Alterações</button>
-                        </div>
-                    </form>
                 </div>
-                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Cores dos Eventos</h3>
-                    <p class="text-gray-400 text-sm mb-4">Personalize as cores que aparecem na agenda e no calendário
-                        para cada tipo de evento.</p>
-                    <div id="event-colors-container" class="space-y-4"></div>
-                    <div id="colors-success" class="bg-green-500/20 text-green-300 p-3 rounded-lg text-sm hidden mt-4">
-                        Cores atualizadas com sucesso!</div>
-                    <div class="flex justify-end mt-4">
-                        <button id="save-colors-btn"
-                            class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
-                            <i data-lucide="save" class="w-5 h-5"></i>
-                            <span>Salvar Cores</span>
-                        </button>
-                    </div>
-                </div>
+        </div> 
+    </div>
 
-                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Modo Gerente</h3>
-                    <div class="flex items-center justify-between">
-                        <p class="text-gray-300">Ativar para gerenciar a agenda de outros músicos.</p>
-                        <label class="switch">
-                            <input type="checkbox" id="manager-mode-toggle">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <div id="manager-settings" class="hidden space-y-8">
-                    <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4">Configurações de Gerente</h3>
-                        <div>
-                            <label for="artist-name-input" class="text-sm font-medium text-gray-400">Nome do Artista
-                                Principal</label>
-                            <input id="artist-name-input" type="text" placeholder="Ex: Zé Lucas"
-                                class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                        </div>
-                        <div class="mt-4">
-                            <p class="text-sm font-medium text-gray-400">Seu Código de Convite</p>
-                            <div class="mt-1 flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
-                                <span id="invite-code" class="text-gray-300 font-mono text-sm"></span>
-                                <button id="copy-invite-code-btn"><i data-lucide="copy"
-                                        class="w-4 h-4 text-gray-400"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="musician-settings" class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Vincular a um Gerente</h3>
-                    <div id="managed-by-info" class="hidden">
-                        <p class="text-gray-300">Você está vinculado à agenda de:</p>
-                        <p id="manager-name-display" class="font-bold text-lg text-purple-300"></p>
-                        <button id="unlink-btn" class="mt-4 text-sm text-red-400 hover:underline">Desvincular</button>
-                    </div>
-                    <form id="link-form" class="">
-                        <label for="manager-code-input" class="text-sm font-medium text-gray-400">Código de Convite do
-                            Gerente</label>
-                        <input id="manager-code-input" type="text"
-                            class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                        <button type="submit"
-                            class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Vincular
-                            Conta</button>
-                    </form>
-                </div>
-            </div>
-            
-        </div>
-        <button id="open-add-modal-btn"
-            class="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110">
-            <i data-lucide="plus" class="w-8 h-8"></i>
-        </button>
-
-    </div> 
+    <button id="open-add-modal-btn"
+        class="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110">
+        <i data-lucide="plus" class="w-8 h-8"></i>
+    </button>
+    
     <div id="add-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="edit-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
-    <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
-    </div>
-    <div id="confirm-status-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
-    </div>
+    <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
+    <div id="confirm-status-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="setlist-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
-    <div id="show-details-modal"
-        class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50 p-4">
-        <div id="show-details-content"
-            class="bg-gray-800 rounded-xl p-6 w-full max-w-lg text-left shadow-2xl max-h-[90vh] overflow-y-auto"></div>
+    <div id="show-details-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50 p-4">
+        <div id="show-details-content" class="bg-gray-800 rounded-xl p-6 w-full max-w-lg text-left shadow-2xl max-h-[90vh] overflow-y-auto"></div>
     </div>
     <div id="equipe-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
-
     <div id="rider-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50 p-4">
         <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh]">
             <div class="p-6 border-b border-gray-700">
@@ -524,16 +296,13 @@
                         <label for="rider-name" class="text-sm font-medium text-gray-400 mb-1">Nome do Rider</label>
                         <input id="rider-name" type="text" placeholder="Ex: Rider Padrão (Palco Grande)" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
                     </div>
-                    
                     <div class="pt-4">
                         <h3 class="text-lg font-semibold text-gray-300 mb-2">Lista de Canais</h3>
-                        <div id="rider-channels-container" class="space-y-3">
-                            </div>
+                        <div id="rider-channels-container" class="space-y-3"></div>
                         <button type="button" id="add-channel-btn" class="mt-4 text-sm text-green-400 hover:text-green-300 font-semibold flex items-center gap-2">
                             <i data-lucide="plus-circle" class="w-4 h-4"></i> Adicionar Canal
                         </button>
                     </div>
-    
                     <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-gray-700">
                         <button type="button" id="cancel-rider-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button>
                         <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">Salvar Rider</button>
