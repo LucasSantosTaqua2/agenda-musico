@@ -2098,6 +2098,45 @@ const openRiderModal = (id = null) => {
     riderModal.classList.add('is-open');
 };
 
+const downloadRiderAsPDF = riderId => {
+  const rider = allRiders.find(r => r.id === riderId);
+  if (!rider) {
+      showError('Rider não encontrado para download.');
+      return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // Título
+  doc.setFontSize(22);
+  doc.text(`Rider Técnico - ${rider.name}`, 14, 22);
+
+  // Nome do Artista (se houver)
+  if (userSettings && userSettings.artistName) {
+      doc.setFontSize(14);
+      doc.setTextColor(100);
+      doc.text(userSettings.artistName, 14, 30);
+  }
+
+  // Preparando os dados para a tabela
+  const head = [['Canal', 'Instrumento/Fonte', 'Microfone/DI Sugerido']];
+  const body = rider.channels.map(ch => [ch.name, ch.instrument, ch.mic]);
+
+  // Gerando a tabela
+  doc.autoTable({
+      head: head,
+      body: body,
+      startY: 40, // Posição inicial da tabela
+      headStyles: { fillColor: [74, 85, 104] }, // Cor do cabeçalho
+      styles: { fontSize: 10 },
+  });
+
+  // Salvando o arquivo
+  const fileName = `Rider-Tecnico-${rider.name.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+  doc.save(fileName);
+};
+
 const renderSetlists = () => {
   setlistsList.innerHTML = '';
   emptySetlistState.classList.toggle('hidden', allSetlists.length > 0);
@@ -2597,6 +2636,6 @@ ridersList.addEventListener('click', e => {
         deleteModal.classList.add('is-open');
     }
     if (downloadBtn) {
-        alert("A função de download em PDF será implementada em breve.");
+      downloadRiderAsPDF(downloadBtn.dataset.id);
     }
 });
