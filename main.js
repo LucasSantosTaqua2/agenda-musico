@@ -2671,16 +2671,19 @@ interact('#stage-area .placed-item').draggable({
     ]
 });
 
+
 // Habilita a área do palco a receber itens
 interact(stageArea).dropzone({
     accept: '.stage-item',
     ondrop: function (event) {
         const draggableElement = event.relatedTarget;
         const type = draggableElement.dataset.type;
-
+        
         const stageRect = stageArea.getBoundingClientRect();
-        const dropX = event.client.x - stageRect.left;
-        const dropY = event.client.y - stageRect.top;
+        
+        // CORREÇÃO: Usar event.dragEvent.client
+        const dropX = event.dragEvent.client.x - stageRect.left;
+        const dropY = event.dragEvent.client.y - stageRect.top;
 
         createItemOnStage(type, dropX, dropY);
     }
