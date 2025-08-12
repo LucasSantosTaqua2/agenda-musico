@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,22 +12,23 @@
     <link id="manifest-link" rel="manifest">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"
+        defer></script>
 </head>
 
 <body class="text-white font-sans">
-
 
     <div id="login-screen" class="min-h-screen flex flex-col justify-center items-center p-4">
         <div id="login-container" class="w-full max-w-sm text-center hidden">
@@ -357,49 +359,27 @@
                 <div class="md:col-span-2">
                     <div id="stage-area-container" class="relative pt-8 pb-8 h-full flex flex-col">
                         <div class="absolute top-0 left-1/2 -translate-x-1/2 text-gray-500 text-sm font-semibold tracking-widest">FUNDO</div>
-                        
                         <div id="stage-area" class="bg-gray-900 rounded-lg relative border-2 border-dashed border-gray-600 flex-grow min-h-[24rem] md:min-h-[32rem]">
                             <p class="text-center text-gray-500 p-4">Arraste ou toque nos itens para adicionar ao palco</p>
                         </div>
-                        
                         <div class="absolute bottom-0 left-1/2 -translate-x-1/2 text-gray-500 text-sm font-semibold tracking-widest">FRENTE</div>
                     </div>
                 </div>
-            
                 <div class="md:col-span-1 space-y-6">
                     <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg">
                         <h3 class="text-xl font-semibold mb-4">Itens de Palco</h3>
                         <div id="item-toolbar" class="grid grid-cols-4 gap-4">
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="mic">
-                                <i data-lucide="mic" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Mic</span>
-                            </div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="amp">
-                                <i data-lucide="speaker" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Amp</span>
-                            </div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="drum">
-                                <i data-lucide="drum" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Bateria</span>
-                            </div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="monitor">
-                                <i data-lucide="monitor" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Monitor</span>
-                            </div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="singer">
-                                <i data-lucide="user-circle" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Cantor(a)</span>
-                            </div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="guitar">
-                                <i data-lucide="guitar" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Guitarra</span>
-                            </div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="bass">
-                                <i data-lucide="git-commit-vertical" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Baixo</span>
-                            </div>
-                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="acoustic">
-                                <i data-lucide="music-2" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Violão</span>
-                            </div>
-                             <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="keyboard">
-                                <i data-lucide="piano" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Teclado</span>
-                            </div>
+                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="mic"><i data-lucide="mic" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Mic</span></div>
+                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="amp"><i data-lucide="speaker" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Amp</span></div>
+                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="drum"><i data-lucide="drum" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Bateria</span></div>
+                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="monitor"><i data-lucide="monitor" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Monitor</span></div>
+                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="singer"><i data-lucide="user-circle" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Cantor(a)</span></div>
+                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="guitar"><i data-lucide="guitar" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Guitarra</span></div>
+                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="bass"><i data-lucide="git-commit-vertical" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Baixo</span></div>
+                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="acoustic"><i data-lucide="music-2" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Violão</span></div>
+                            <div class="stage-item flex flex-col items-center p-2 rounded-lg cursor-pointer" data-type="keyboard"><i data-lucide="piano" class="w-8 h-8 text-gray-300"></i><span class="text-xs mt-1">Teclado</span></div>
                         </div>
                     </div>
-            
                     <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg">
                         <h3 class="text-xl font-semibold mb-4">Ações</h3>
                         <div class="flex flex-col gap-3">
@@ -410,7 +390,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div id="view-rider" class="hidden">
                 <button id="open-add-rider-modal-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
                     <i data-lucide="plus" class="w-5 h-5"></i> Criar Novo Rider Técnico
@@ -460,6 +440,7 @@
                         </button>
                     </div>
                 </div>
+
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Modo Gerente</h3>
                     <div class="flex items-center justify-between">
@@ -470,6 +451,7 @@
                         </label>
                     </div>
                 </div>
+
                 <div id="manager-settings" class="hidden space-y-8">
                     <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                         <h3 class="text-xl font-semibold mb-4">Configurações de Gerente</h3>
@@ -489,6 +471,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div id="musician-settings" class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Vincular a um Gerente</h3>
                     <div id="managed-by-info" class="hidden">
@@ -514,7 +497,7 @@
             <i data-lucide="plus" class="w-8 h-8"></i>
         </button>
 
-    </div>
+    </div> 
     <div id="add-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="edit-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
