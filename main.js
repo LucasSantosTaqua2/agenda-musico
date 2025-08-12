@@ -219,9 +219,8 @@ const formatDate = dateString => {
     month: '2-digit',
     year: 'numeric',
   });
-  return `${
-    dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)
-  }, ${formattedDate}`;
+  return `${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)
+    }, ${formattedDate}`;
 };
 
 // Adicione estas constantes junto com as outras
@@ -340,9 +339,8 @@ const renderNotifications = () => {
     notifElement.className = `p-3 border-b border-gray-700 ${isUnread}`;
 
     const dateInfo = notif.showDate
-      ? `<p class="text-xs text-gray-400 mt-1">${formatDate(notif.showDate)}${
-          notif.showTime ? ` às ${notif.showTime}` : ''
-        }</p>`
+      ? `<p class="text-xs text-gray-400 mt-1">${formatDate(notif.showDate)}${notif.showTime ? ` às ${notif.showTime}` : ''
+      }</p>`
       : '';
 
     notifElement.innerHTML = `
@@ -668,8 +666,8 @@ const openShowDetailsModal = showId => {
         <div class="mt-4 space-y-3">
             ${typeHTML}
             <p class="flex items-center gap-3"><i data-lucide="calendar" class="w-5 h-5 text-gray-400"></i> <span class="font-semibold">${formatDate(
-              show.date
-            )}</span></p>
+    show.date
+  )}</span></p>
             ${timeHTML}
             ${locationHTML}
             ${statusHTML}
@@ -803,9 +801,8 @@ const showModalFieldsHTML = prefix => {
     
     <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-gray-700">
         <button type="button" id="cancel-${prefix}-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button>
-        <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">${
-          prefix === 'add' ? 'Adicionar' : 'Salvar'
-        }</button>
+        <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">${prefix === 'add' ? 'Adicionar' : 'Salvar'
+    }</button>
     </div>`;
 };
 
@@ -1014,16 +1011,13 @@ const populateMusiciansChecklist = (prefix, selectedMusicians = []) => {
       const isChecked = selectedMusicians.includes(musico.id);
       const checkboxHTML = `
                 <label class="flex items-center gap-3 cursor-pointer p-2 rounded-md hover:bg-gray-700">
-                    <input type="checkbox" data-uid="${
-                      musico.id
-                    }" class="musician-checkbox w-5 h-5 bg-gray-900 border-gray-600 text-purple-500 focus:ring-purple-600" ${
-        isChecked ? 'checked' : ''
-      }>
+                    <input type="checkbox" data-uid="${musico.id
+        }" class="musician-checkbox w-5 h-5 bg-gray-900 border-gray-600 text-purple-500 focus:ring-purple-600" ${isChecked ? 'checked' : ''
+        }>
                     <div>
                         <span class="text-white">${musico.name}</span>
-                        <p class="text-xs text-gray-500">${
-                          musico.instrumento
-                        }</p>
+                        <p class="text-xs text-gray-500">${musico.instrumento
+        }</p>
                     </div>
                 </label>`;
       listContainer.insertAdjacentHTML('beforeend', checkboxHTML);
@@ -1059,8 +1053,8 @@ const createShowElement = show => {
     : '';
   const monthShort = show.date
     ? new Date(show.date + 'T00:00:00').toLocaleDateString('pt-BR', {
-        month: 'short',
-      })
+      month: 'short',
+    })
     : '';
 
   showElement.innerHTML = `
@@ -1070,20 +1064,16 @@ const createShowElement = show => {
         </div>
         <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
-                <i data-lucide="${
-                  typeInfo.icon
-                }" class="w-5 h-5 shrink-0" style="color: ${
-    typeInfo.color
-  };"></i>
-                <h3 class="font-bold text-lg text-white truncate" title="${
-                  show.artists
-                }">${show.artists}</h3>
+                <i data-lucide="${typeInfo.icon
+    }" class="w-5 h-5 shrink-0" style="color: ${typeInfo.color
+    };"></i>
+                <h3 class="font-bold text-lg text-white truncate" title="${show.artists
+    }">${show.artists}</h3>
             </div>
-            ${
-              show.location
-                ? `<p class="text-sm text-gray-400 flex items-center gap-1.5 mt-1 truncate" title="${show.location}"><i data-lucide="map-pin" class="w-4 h-4 shrink-0"></i> ${show.location}</p>`
-                : ''
-            }
+            ${show.location
+      ? `<p class="text-sm text-gray-400 flex items-center gap-1.5 mt-1 truncate" title="${show.location}"><i data-lucide="map-pin" class="w-4 h-4 shrink-0"></i> ${show.location}</p>`
+      : ''
+    }
         </div>
         <div class="flex items-center">
             ${statusHTML}
@@ -1107,11 +1097,10 @@ const checkPastShows = () => {
   if (pendingPastShows.length > 0) {
     const showToConfirm = pendingPastShows[0];
     itemToModifyId = showToConfirm.id;
-    document.getElementById('confirm-status-text').textContent = `O show de ${
-      showToConfirm.artists
-    } em ${showToConfirm.location} (${formatDate(
-      showToConfirm.date
-    )}) foi realizado?`;
+    document.getElementById('confirm-status-text').textContent = `O show de ${showToConfirm.artists
+      } em ${showToConfirm.location} (${formatDate(
+        showToConfirm.date
+      )}) foi realizado?`;
     confirmStatusModal.classList.add('is-open');
   }
 };
@@ -1989,9 +1978,8 @@ const renderTeam = () => {
     musicoElement.innerHTML = `
             <div>
                 <h3 class="text-xl font-bold text-blue-300">${musico.name}</h3>
-                <p class="text-gray-400">${
-                  musico.instrumento || 'Instrumento não definido'
-                }</p>
+                <p class="text-gray-400">${musico.instrumento || 'Instrumento não definido'
+      }</p>
             </div>`;
     equipeList.appendChild(musicoElement);
   });
@@ -2389,9 +2377,8 @@ const loadAndRenderComments = (ownerId, showId) => {
       const commentElement = document.createElement('div');
       commentElement.className = 'text-sm';
       commentElement.innerHTML = `
-                <p class="font-semibold text-purple-200">${
-                  comment.userName || 'Usuário'
-                }</p>
+                <p class="font-semibold text-purple-200">${comment.userName || 'Usuário'
+        }</p>
                 <p class="text-gray-300">${comment.text}</p>
             `;
       commentsList.appendChild(commentElement);
@@ -2433,3 +2420,259 @@ historicoPrevBtn.addEventListener('click', () => {
     renderShows();
   }
 });
+
+
+// --- INÍCIO DO CÓDIGO DO RIDER TÉCNICO ---
+
+// --- Constantes para Elementos do DOM (Rider) ---
+const tabRider = document.getElementById('tab-rider');
+const viewRider = document.getElementById('view-rider');
+const openAddRiderModalBtn = document.getElementById('open-add-rider-modal-btn');
+const ridersList = document.getElementById('riders-list');
+const emptyRiderState = document.getElementById('empty-rider-state');
+const riderModal = document.getElementById('rider-modal');
+const riderModalTitle = document.getElementById('rider-modal-title');
+const riderForm = document.getElementById('rider-form');
+const riderIdInput = document.getElementById('rider-id');
+const riderNameInput = document.getElementById('rider-name');
+const riderChannelsContainer = document.getElementById('rider-channels-container');
+const addChannelBtn = document.getElementById('add-channel-btn');
+const cancelRiderBtn = document.getElementById('cancel-rider-btn');
+
+// --- Variáveis de Estado Global (Rider) ---
+let allRiders = [];
+let unsubscribeRiders = [];
+
+// --- Adicionando o Rider ao sistema de abas ---
+tabs.push(tabRider);
+views.push(viewRider);
+
+// --- Funções do Rider Técnico ---
+
+// Função para renderizar a lista de riders salvos
+const renderRiders = () => {
+    ridersList.innerHTML = '';
+    emptyRiderState.classList.toggle('hidden', allRiders.length > 0);
+
+    allRiders.forEach(rider => {
+        const riderElement = document.createElement('div');
+        riderElement.className = 'bg-gray-800 rounded-lg p-5 shadow-md';
+
+        const actionButtons = rider.isPersonal ? `
+            <div class="flex gap-2">
+                <button data-id="${rider.id}" class="edit-rider-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
+                <button data-id="${rider.id}" class="delete-rider-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
+            </div>
+        ` : '';
+
+        riderElement.innerHTML = `
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold text-blue-300">${rider.name}</h3>
+                    <p class="text-sm text-gray-400">${rider.channels ? rider.channels.length : 0} canais</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button data-id="${rider.id}" class="download-rider-btn bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
+                        <i data-lucide="file-down" class="w-4 h-4"></i> PDF
+                    </button>
+                    ${actionButtons}
+                </div>
+            </div>
+        `;
+        ridersList.appendChild(riderElement);
+    });
+    lucide.createIcons();
+};
+
+// Função para adicionar uma nova linha de canal no formulário do modal
+const addChannelRow = (channel = { name: '', instrument: '', mic: '' }) => {
+    const channelId = Date.now(); // ID único para a linha
+    const channelRow = document.createElement('div');
+    channelRow.className = 'grid grid-cols-1 md:grid-cols-4 gap-2 items-center rider-channel-row';
+    channelRow.innerHTML = `
+        <input type="text" value="${channel.name}" placeholder="Canal (Ex: 01)" class="w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white">
+        <input type="text" value="${channel.instrument}" placeholder="Instrumento (Ex: Voz)" class="w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white md:col-span-2">
+        <div class="flex items-center gap-2">
+            <input type="text" value="${channel.mic}" placeholder="Microfone (Ex: SM58)" class="flex-1 w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white">
+            <button type="button" class="remove-channel-btn p-2 text-red-400 hover:text-red-300"><i data-lucide="x-circle" class="w-5 h-5"></i></button>
+        </div>
+    `;
+    riderChannelsContainer.appendChild(channelRow);
+    lucide.createIcons();
+};
+
+// Abre o modal para criar ou editar um Rider
+const openRiderModal = (id = null) => {
+    riderForm.reset();
+    riderChannelsContainer.innerHTML = '';
+    riderIdInput.value = id || '';
+    
+    if (id) {
+        riderModalTitle.innerHTML = '<i data-lucide="pencil" class="text-yellow-400"></i> Editar Rider Técnico';
+        const riderData = allRiders.find(r => r.id === id);
+        if (riderData) {
+            riderNameInput.value = riderData.name;
+            (riderData.channels || []).forEach(channel => addChannelRow(channel));
+        }
+    } else {
+        riderModalTitle.innerHTML = '<i data-lucide="plus-circle" class="text-blue-400"></i> Novo Rider Técnico';
+        addChannelRow(); // Adiciona uma linha em branco para começar
+    }
+    lucide.createIcons();
+    riderModal.classList.add('is-open');
+};
+
+// --- Event Listeners do Rider ---
+
+openAddRiderModalBtn.addEventListener('click', () => openRiderModal());
+cancelRiderBtn.addEventListener('click', () => riderModal.classList.remove('is-open'));
+addChannelBtn.addEventListener('click', () => addChannelRow());
+
+// Delega o evento de clique para remover canais
+riderChannelsContainer.addEventListener('click', e => {
+    if (e.target.closest('.remove-channel-btn')) {
+        e.target.closest('.rider-channel-row').remove();
+    }
+});
+
+// Salva ou atualiza o rider no Firestore
+riderForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    const id = riderIdInput.value;
+    const channels = [];
+    document.querySelectorAll('.rider-channel-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        channels.push({
+            name: inputs[0].value,
+            instrument: inputs[1].value,
+            mic: inputs[2].value
+        });
+    });
+
+    const data = {
+        name: riderNameInput.value,
+        channels: channels
+    };
+
+    const collectionPath = `artifacts/${appId}/users/${currentUser.uid}/riders`;
+    try {
+        if (id) {
+            await updateDoc(doc(db, collectionPath, id), data);
+        } else {
+            await addDoc(collection(db, collectionPath), data);
+        }
+        riderModal.classList.remove('is-open');
+    } catch (err) {
+        showError('Não foi possível salvar o Rider Técnico.');
+        console.error("Erro ao salvar rider: ", err);
+    }
+});
+
+// Delega eventos de clique na lista de riders
+ridersList.addEventListener('click', e => {
+    const editBtn = e.target.closest('.edit-rider-btn');
+    const deleteBtn = e.target.closest('.delete-rider-btn');
+    const downloadBtn = e.target.closest('.download-rider-btn');
+
+    if (editBtn) {
+        openRiderModal(editBtn.dataset.id);
+    } else if (deleteBtn) {
+        const riderId = deleteBtn.dataset.id;
+        const rider = allRiders.find(r => r.id === riderId);
+        itemToModifyId = riderId;
+        itemTypeToDelete = 'rider';
+        document.getElementById('delete-confirm-text').textContent = `Tem certeza que deseja excluir o rider "${rider.name}"?`;
+        deleteModal.classList.add('is-open');
+    } else if (downloadBtn) {
+        // A função de download será adicionada no próximo passo
+        alert("Função de Download do PDF do Rider em breve!");
+    }
+});
+
+
+// --- Integração do Rider com o restante do sistema ---
+
+// Sobrescreve a função original para incluir Riders
+const originalCombineAndRenderAll = combineAndRenderAll;
+combineAndRenderAll = () => {
+    // Primeiro, executa a lógica original
+    originalCombineAndRenderAll();
+    
+    // Depois, adiciona a lógica do Rider
+    renderRiders();
+    // Adicionar a função de popular dropdowns de rider aqui quando for criada
+};
+
+
+// Adiciona o listener para a nova coleção de riders no Firestore
+const originalHandleUser = handleUser;
+handleUser = async (user) => {
+    // Executa a lógica original
+    await originalHandleUser(user);
+
+    if (user) {
+        // Limpa a inscrição anterior se existir
+        if (unsubscribeRiders) unsubscribeRiders.forEach(unsub => unsub());
+        unsubscribeRiders = [];
+
+        let personalRiders = [], managedRiders = [];
+
+        const combineAndRenderRiders = () => {
+            allRiders = [
+                ...personalRiders.map(r => ({ ...r, isPersonal: true })),
+                ...managedRiders.map(r => ({ ...r, isPersonal: false }))
+            ];
+            // Ordena por nome
+            allRiders.sort((a, b) => a.name.localeCompare(b.name));
+            renderRiders();
+            // Adicionar a função de popular dropdowns de rider aqui
+        };
+
+        const personalRidersPath = `artifacts/${appId}/users/${user.uid}/riders`;
+        unsubscribeRiders.push(
+            onSnapshot(query(collection(db, personalRidersPath), orderBy('name', 'asc')), snapshot => {
+                personalRiders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                combineAndRenderRiders();
+            })
+        );
+
+        if (userSettings.managedBy) {
+            const managedRidersPath = `artifacts/${appId}/users/${userSettings.managedBy}/riders`;
+            unsubscribeRiders.push(
+                onSnapshot(query(collection(db, managedRidersPath), orderBy('name', 'asc')), snapshot => {
+                    managedRiders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    combineAndRenderRiders();
+                })
+            );
+        }
+    } else {
+        allRiders = [];
+        renderRiders();
+    }
+};
+
+// Sobrescreve a função de deleção para incluir riders
+const originalConfirmDelete = confirmDeleteBtn.onclick;
+confirmDeleteBtn.onclick = async () => {
+    if (itemTypeToDelete === 'rider') {
+        if (!currentUser || !itemToModifyId) return;
+        try {
+            const docPath = `artifacts/${appId}/users/${currentUser.uid}/riders/${itemToModifyId}`;
+            await deleteDoc(doc(db, docPath));
+            deleteModal.classList.remove('is-open');
+            itemToModifyId = null;
+            itemTypeToDelete = '';
+        } catch (err) {
+            showError(`Não foi possível excluir o rider.`);
+            deleteModal.classList.remove('is-open');
+        }
+    } else if (originalConfirmDelete) {
+        // Chama a função original para lidar com shows e setlists
+        originalConfirmDelete();
+    }
+};
+
+
+// --- FIM DO CÓDIGO DO RIDER TÉCNICO ---
