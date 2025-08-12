@@ -2647,8 +2647,16 @@ ridersList.addEventListener('click', e => {
 
 const stageArea = document.getElementById('stage-area');
 const itemToolbar = document.getElementById('item-toolbar');
+// IMPORTANTE: Adicione um botão com id="delete-mode-btn" ao seu HTML, próximo aos botões de salvar/exportar.
+const deleteModeBtn = document.getElementById('delete-mode-btn'); 
 
-// Função para posicionar o item arrastado
+let activeTool = null;
+let isDeleteMode = false;
+
+// Função para detectar se é um dispositivo de toque
+const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+// Função para posicionar itens que já estão no palco (arrastar)
 function dragMoveListener(event) {
     const target = event.target;
     const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
@@ -2659,7 +2667,9 @@ function dragMoveListener(event) {
     target.setAttribute('data-y', y);
 }
 
-// Habilita os itens existentes no palco a serem arrastáveis
+// --- LÓGICA DE INTERAÇÃO (DESKTOP E MOBILE) ---
+
+// 1. Torna os itens já posicionados no palco arrastáveis (funciona em ambos)
 interact('#stage-area .placed-item').draggable({
     listeners: { move: dragMoveListener },
     inertia: true,
@@ -2671,105 +2681,175 @@ interact('#stage-area .placed-item').draggable({
     ]
 });
 
-// Habilita a área do palco a receber itens
-interact(stageArea).dropzone({
-    accept: '.stage-item',
-    ondrop: function (event) {
-        const draggableElement = event.relatedTarget;
-        const type = draggableElement.dataset.type;
-        
-        const stageRect = stageArea.getBoundingClientRect();
-        
-        // CORREÇÃO: Usar event.dragEvent.client para obter as coordenadas corretas
-        const dropX = event.dragEvent.client.x - stageRect.left;
-        const dropY = event.dragEvent.client.y - stageRect.top;
+// 2. Lógica de clique na Barra de Ferramentas (para modo mobile/toque)
+itemToolbar.addEventListener('click', (e) => {
+    // Só funciona em dispositivos de toque para selecionar a ferramenta
+    if (!isTouchDevice()) return;
 
-        createItemOnStage(type, dropX, dropY);
+    const item = e.target.closest('.stage-item');
+    if (!item) return;
+
+    // Desativa o modo de exclusão se estiver ativo ao selecionar um item
+    if (isDeleteMode) toggleDeleteMode();
+
+    const currentActive = document.querySelector('.stage-item.active');
+    if (currentActive) {
+        currentActive.classList.remove('active');
+    }
+
+    // Se o mesmo item for clicado novamente, desativa a ferramenta. Senão, ativa a nova.
+    if (currentActive === item) {
+        activeTool = null;
+    } else {
+        item.classList.add('active');
+        activeTool = item.dataset.type;
     }
 });
 
-// Habilita os ícones da barra de ferramentas a serem arrastáveis
-interact('.stage-item').draggable({
-    inertia: true,
-    listeners: {
-        start(event) {
-            // Apenas remove o texto de placeholder se for o primeiro item
-            const placeholder = stageArea.querySelector('p');
-            if (placeholder) placeholder.style.display = 'none';
-        },
-        // O listener 'move' complexo foi removido. A própria biblioteca cuidará do feedback visual.
-    }
-});
 
-// --- FUNÇÃO CORRIGIDA ---
-// Função para criar um novo item no palco
+// 3. Lógica de Ação na Área do Palco
+if (isTouchDevice()) {
+    // ABORDAGEM MOBILE: Toque para posicionar ou excluir
+    stageArea.addEventListener('click', (e) => {
+        // Se o clique foi em um item que já está no palco
+        const itemOnStage = e.target.closest('.placed-item');
+
+        if (isDeleteMode) {
+            // Se o modo de exclusão está ativo e clicou em um item, remove-o
+            if (itemOnStage) {
+                itemOnStage.remove();
+            }
+            return; // Impede a adição de novos itens no modo de exclusão
+        }
+
+        // Se uma ferramenta de adição está ativa, adiciona o item
+        if (activeTool) {
+             // Evita adicionar um novo item se o clique foi em um já existente
+            if (itemOnStage) return;
+
+            const stageRect = stageArea.getBoundingClientRect();
+            const dropX = e.clientX - stageRect.left;
+            const dropY = e.clientY - stageRect.top;
+
+            createItemOnStage(activeTool, dropX, dropY);
+
+            // Desativa a ferramenta após o uso para evitar adicionar múltiplos itens sem querer
+            document.querySelector('.stage-item.active')?.classList.remove('active');
+            activeTool = null;
+        }
+    });
+
+} else {
+    // ABORDAGEM DESKTOP: Arrastar e soltar (Drag and Drop)
+    interact(stageArea).dropzone({
+        accept: '.stage-item',
+        ondrop: function (event) {
+            const type = event.relatedTarget.dataset.type;
+            const stageRect = stageArea.getBoundingClientRect();
+            const dropX = event.dragEvent.client.x - stageRect.left;
+            const dropY = event.dragEvent.client.y - stageRect.top;
+            createItemOnStage(type, dropX, dropY);
+        }
+    });
+
+    interact('.stage-item').draggable({
+        inertia: true,
+        listeners: {
+            start(event) {
+                const placeholder = stageArea.querySelector('p');
+                if (placeholder) placeholder.style.display = 'none';
+            }
+        }
+    });
+}
+
+// Função Unificada para criar o item no palco
 function createItemOnStage(type, x, y) {
+    const placeholder = stageArea.querySelector('p');
+    if (placeholder) placeholder.style.display = 'none';
+
     const item = document.createElement('div');
-    item.className = 'placed-item flex flex-col items-center';
-    item.style.left = `${x - 30}px`; // Centraliza o item no cursor
+    item.className = 'placed-item flex flex-col items-center absolute p-1';
+    item.style.left = `${x - 30}px`; // Centraliza o ícone no cursor/toque
     item.style.top = `${y - 30}px`;
-    item.setAttribute('data-x', 0);
-    item.setAttribute('data-y', 0);
     item.dataset.type = type;
 
-    // CORREÇÃO: Busca o item original na toolbar e clona seu primeiro filho (o ícone <svg>)
     const originalToolbarItem = document.querySelector(`.stage-item[data-type="${type}"]`);
     if (originalToolbarItem && originalToolbarItem.children[0]) {
         const icon = originalToolbarItem.children[0].cloneNode(true);
-        // Garante que o ícone clonado tenha as classes de estilo corretas
-        icon.classList.add('w-8', 'h-8', 'text-gray-300');
         item.appendChild(icon);
     }
 
     const label = document.createElement('input');
     label.type = 'text';
-    label.placeholder = 'Nome...';
-    label.className = 'bg-transparent text-center text-xs w-16 border-b border-gray-500 focus:outline-none focus:border-purple-400 mt-1';
-    
+    label.placeholder = '...';
+    label.className = 'bg-transparent text-center text-xs w-16 focus:outline-none focus:border-purple-400 mt-1 text-white';
     item.appendChild(label);
+
     stageArea.appendChild(item);
-    // Não é mais necessário chamar lucide.createIcons() aqui.
 }
 
+// Função para alternar o modo de exclusão
+const toggleDeleteMode = () => {
+    isDeleteMode = !isDeleteMode;
+    stageArea.classList.toggle('delete-mode', isDeleteMode);
+    deleteModeBtn.classList.toggle('active', isDeleteMode);
 
-// Salvar o Stage Plot (Exemplo, precisa integrar com Firebase)
+    if (activeTool) {
+        document.querySelector('.stage-item.active')?.classList.remove('active');
+        activeTool = null;
+    }
+};
+
+
+// --- Lógica dos Botões de Ação ---
+
+// Botão para ativar/desativar modo de exclusão
+deleteModeBtn.addEventListener('click', toggleDeleteMode);
+
+// Salvar o Stage Plot
 document.getElementById('save-stage-plot-btn').addEventListener('click', () => {
     const items = [];
     document.querySelectorAll('#stage-area .placed-item').forEach(itemEl => {
+        const transform = itemEl.style.transform;
+        const translateMatch = transform.match(/translate\((.+)px, (.+)px\)/);
+        let finalX = parseFloat(itemEl.style.left);
+        let finalY = parseFloat(itemEl.style.top);
+
+        if (translateMatch) {
+            finalX += parseFloat(translateMatch[1]);
+            finalY += parseFloat(translateMatch[2]);
+        }
+
         items.push({
             type: itemEl.dataset.type,
-            x: itemEl.style.left,
-            y: itemEl.style.top,
+            x: `${finalX}px`,
+            y: `${finalY}px`,
             label: itemEl.querySelector('input').value
         });
     });
     console.log("Salvando Stage Plot:", items);
-    // AQUI você adicionaria a lógica para salvar `items` no Firebase Firestore,
-    // criando uma coleção "stage_plots"
     alert('Stage Plot salvo no console! (Funcionalidade de salvar no Firebase a ser implementada)');
 });
 
-// --- NOVA FUNÇÃO DE EXPORTAR PDF ---
+// Exportar PDF (com html2canvas)
 document.getElementById('export-stage-plot-btn').addEventListener('click', () => {
-    const stageArea = document.getElementById('stage-area');
+    const stageAreaContainer = document.getElementById('stage-area-container'); // Seleciona o container maior
     const placeholder = stageArea.querySelector('p');
     
-    // Esconde o placeholder "Arraste os itens..." e inputs temporariamente para a "foto"
     if (placeholder) placeholder.style.visibility = 'hidden';
     const inputs = stageArea.querySelectorAll('input');
-    inputs.forEach(input => input.style.border = 'none'); // Remove borda dos inputs para melhor visual
+    inputs.forEach(input => input.style.border = 'none'); 
 
-    html2canvas(stageArea, {
-        backgroundColor: '#1f2937' // Cor de fundo do palco (gray-800)
+    html2canvas(stageAreaContainer, { // Tira "foto" do container
+        backgroundColor: '#1f2937' 
     }).then(canvas => {
-        // Mostra os elementos novamente
         if (placeholder) placeholder.style.visibility = 'visible';
-        inputs.forEach(input => input.style.border = ''); // Restaura borda
+        inputs.forEach(input => input.style.border = ''); 
 
         const imgData = canvas.toDataURL('image/png');
         const { jsPDF } = window.jspdf;
         
-        // Cria um PDF no modo paisagem para melhor caber o palco
         const doc = new jsPDF({
             orientation: 'landscape',
             unit: 'px',
@@ -2780,10 +2860,9 @@ document.getElementById('export-stage-plot-btn').addEventListener('click', () =>
         doc.save('Stage-Plot-BandaSync.pdf');
 
     }).catch(err => {
-        // Garante que os elementos reapareçam mesmo se houver erro
         if (placeholder) placeholder.style.visibility = 'visible';
         inputs.forEach(input => input.style.border = '');
         console.error("Erro ao gerar PDF:", err);
-        alert("Ocorreu um erro ao gerar o PDF. Verifique o console.");
+        alert("Ocorreu um erro ao gerar o PDF.");
     });
 });
