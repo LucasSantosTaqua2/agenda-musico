@@ -1,117 +1,158 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#111827">
     <title>Banda Sync - Agenda de Shows</title>
-    <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/icon.ico">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon"
+        href="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/icon.ico">
     <link id="manifest-link" rel="manifest">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"
+        defer></script>
+
+
+    <script src="https://unpkg.com/konva@9.3.6/konva.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js" defer></script>
-    <script src="https://unpkg.com/konva@9.3.6/konva.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"
+        defer></script>
 </head>
+
 <body class="text-white font-sans">
 
 
     <div id="login-screen" class="min-h-screen flex flex-col justify-center items-center p-4">
         <div id="login-container" class="w-full max-w-sm text-center hidden">
-            <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/logo1080.png" alt="Banda Sync Logo" style="height: 10rem;" class="mx-auto mb-8 block">
+            <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/logo1080.png"
+                alt="Banda Sync Logo" style="height: 10rem;" class="mx-auto mb-8 block">
             <p class="text-gray-400 mb-8">Crie uma conta ou faça login para continuar.</p>
             <form id="login-form" class="text-left">
                 <div id="login-error" class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm hidden"></div>
                 <div>
                     <label for="email" class="text-sm font-medium text-gray-400">E-mail</label>
-                    <input id="email" type="email" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                    <input id="email" type="email"
+                        class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
                 </div>
                 <div class="mt-4">
                     <label for="password" class="text-sm font-medium text-gray-400">Senha</label>
-                    <input id="password" type="password" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                    <input id="password" type="password"
+                        class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
                 </div>
                 <div class="mt-6">
-    <button type="submit" id="login-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">Entrar</button>
-</div>
-<div class="text-center mt-4">
-    <p class="text-sm text-gray-400">Não tem uma conta?
-        <button type="button" id="show-register-form-btn" class="font-semibold text-purple-400 hover:underline">Registre-se</button>
-    </p>
-    <p class="text-sm text-gray-400 mt-2">
-        <button type="button" id="forgot-password-btn" class="font-semibold text-purple-400 hover:underline">Esqueci minha senha</button>
-    </p>
-</div>
+                    <button type="submit" id="login-btn"
+                        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">Entrar</button>
+                </div>
+                <div class="text-center mt-4">
+                    <p class="text-sm text-gray-400">Não tem uma conta?
+                        <button type="button" id="show-register-form-btn"
+                            class="font-semibold text-purple-400 hover:underline">Registre-se</button>
+                    </p>
+                    <p class="text-sm text-gray-400 mt-2">
+                        <button type="button" id="forgot-password-btn"
+                            class="font-semibold text-purple-400 hover:underline">Esqueci minha senha</button>
+                    </p>
+                </div>
             </form>
         </div>
-         <div id="register-container" class="w-full max-w-sm text-center hidden">
-            <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/logo1080.png" alt="Banda Sync Logo" style="height: 10rem;" class="mx-auto mb-8 block">
+        <div id="register-container" class="w-full max-w-sm text-center hidden">
+            <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/logo1080.png"
+                alt="Banda Sync Logo" style="height: 10rem;" class="mx-auto mb-8 block">
             <h2 class="text-2xl font-bold mb-4 text-gray-200">Criar Nova Conta</h2>
             <form id="register-form" class="text-left">
                 <div id="register-error" class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm hidden"></div>
                 <div>
                     <label for="register-name" class="text-sm font-medium text-gray-400">Nome</label>
-                    <input id="register-name" type="text" placeholder="Seu nome" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                    <input id="register-name" type="text" placeholder="Seu nome"
+                        class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
                 </div>
                 <div class="mt-4">
-                    <label for="register-instrument" class="text-sm font-medium text-gray-400">Instrumento Principal</label>
-                    <input id="register-instrument" type="text" placeholder="Ex: Guitarra" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                    <label for="register-instrument" class="text-sm font-medium text-gray-400">Instrumento
+                        Principal</label>
+                    <input id="register-instrument" type="text" placeholder="Ex: Guitarra"
+                        class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
                 </div>
                 <div class="mt-4">
                     <label for="register-email" class="text-sm font-medium text-gray-400">E-mail</label>
-                    <input id="register-email" type="email" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                    <input id="register-email" type="email"
+                        class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
                 </div>
                 <div class="mt-4">
                     <label for="register-password" class="text-sm font-medium text-gray-400">Senha</label>
-                    <input id="register-password" type="password" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                    <input id="register-password" type="password"
+                        class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
                 </div>
                 <div class="mt-6 flex flex-col gap-4">
-                    <button type="submit" id="create-account-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">Criar Conta</button>
-                    <button type="button" id="back-to-login-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">Voltar para o Login</button>
+                    <button type="submit" id="create-account-btn"
+                        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">Criar
+                        Conta</button>
+                    <button type="button" id="back-to-login-btn"
+                        class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">Voltar
+                        para o Login</button>
                 </div>
             </form>
         </div>
         <div id="loading-auth" class="text-center">
-             <i data-lucide="loader-2" class="text-purple-400 w-16 h-16 mx-auto mb-4 animate-spin"></i>
-             <p class="text-gray-400">Carregando...</p>
+            <i data-lucide="loader-2" class="text-purple-400 w-16 h-16 mx-auto mb-4 animate-spin"></i>
+            <p class="text-gray-400">Carregando...</p>
         </div>
     </div>
 
-        <div id="forgot-password-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
-    <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl">
-        <h2 class="text-xl font-semibold mb-4">Redefinir Senha</h2>
-        <p class="text-gray-400 mb-4">Digite seu e-mail para enviarmos um link de redefinição de senha.</p>
-        <form id="forgot-password-form">
-            <input id="forgot-email" type="email" placeholder="Seu e-mail" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
-            <div id="forgot-feedback" class="text-sm mt-4 hidden"></div>
-            <div class="flex justify-center gap-4 mt-6">
-                <button type="button" id="cancel-forgot-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button>
-                <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">Enviar</button>
-            </div>
-        </form>
+    <div id="forgot-password-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
+        <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl">
+            <h2 class="text-xl font-semibold mb-4">Redefinir Senha</h2>
+            <p class="text-gray-400 mb-4">Digite seu e-mail para enviarmos um link de redefinição de senha.</p>
+            <form id="forgot-password-form">
+                <input id="forgot-email" type="email" placeholder="Seu e-mail"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                <div id="forgot-feedback" class="text-sm mt-4 hidden"></div>
+                <div class="flex justify-center gap-4 mt-6">
+                    <button type="button" id="cancel-forgot-btn"
+                        class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button>
+                    <button type="submit"
+                        class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">Enviar</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
     <div id="reset-password-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
-    <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl">
-        <h2 class="text-xl font-semibold mb-4">Crie sua Nova Senha</h2>
-        <form id="reset-password-form">
-            <input id="new-password" type="password" placeholder="Nova senha" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white mb-4" required>
-            <div id="reset-feedback" class="text-sm mt-4 hidden"></div>
-            <div class="flex justify-center gap-4 mt-6">
-                <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">Salvar Nova Senha</button>
-            </div>
-        </form>
+        <div class="bg-gray-800 rounded-xl p-6 w-11/12 max-w-sm text-center shadow-2xl">
+            <h2 class="text-xl font-semibold mb-4">Crie sua Nova Senha</h2>
+            <form id="reset-password-form">
+                <input id="new-password" type="password" placeholder="Nova senha"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white mb-4" required>
+                <div id="reset-feedback" class="text-sm mt-4 hidden"></div>
+                <div class="flex justify-center gap-4 mt-6">
+                    <button type="submit"
+                        class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg">Salvar
+                        Nova Senha</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
     <div id="app-content" class="hidden">
         <div class="max-w-3xl mx-auto p-4 md:p-8 pb-24">
             <header class="flex items-center justify-between mb-8">
                 <div>
-                    <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/logo1080.png" alt="Banda Sync Logo" style="height: 8rem;">
+                    <img src="https://raw.githubusercontent.com/LucasSantosTaqua2/agenda-musico/refs/heads/main/img/logo1080.png"
+                        alt="Banda Sync Logo" style="height: 8rem;">
                 </div>
                 <div class="flex items-center gap-4">
                     <div id="notifications-bell-container" class="relative">
@@ -120,14 +161,16 @@
                             <div id="notification-badge" class="notification-badge hidden"></div>
                         </button>
                     </div>
-                    <button id="logout-btn" class="bg-red-500/20 hover:bg-red-500/40 text-red-300 font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
+                    <button id="logout-btn"
+                        class="bg-red-500/20 hover:bg-red-500/40 text-red-300 font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
                         <i data-lucide="log-out" class="w-5 h-5"></i>
                         <span>Sair</span>
                     </button>
                 </div>
             </header>
 
-            <div id="notifications-panel" class="hidden absolute top-20 right-8 w-80 max-w-sm bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50">
+            <div id="notifications-panel"
+                class="hidden absolute top-20 right-8 w-80 max-w-sm bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50">
                 <div class="p-4 border-b border-gray-700">
                     <h3 class="font-semibold text-white">Notificações</h3>
                 </div>
@@ -139,52 +182,68 @@
 
             <div class="border-b border-gray-700 mb-6">
                 <nav class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
-                    <button id="tab-agenda" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent tab-active">Agenda</button>
-                    <button id="tab-calendario" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Calendário</button>
-                    <button id="tab-setlists" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Setlists</button>
-                    <button id="tab-rider" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Rider Técnico</button>
-                    <button id="tab-stageplot" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Stage Plot</button>
-                    <button id="tab-equipe" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Equipe</button>
-                    <button id="tab-dashboard" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Dashboard</button>
-                    <button id="tab-configuracoes" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Configurações</button>
+                    <button id="tab-agenda"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent tab-active">Agenda</button>
+                    <button id="tab-calendario"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Calendário</button>
+                    <button id="tab-setlists"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Setlists</button>
+                    <button id="tab-equipe"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Equipe</button>
+                    <button id="tab-dashboard"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Dashboard</button>
+                    <button id="tab-rider"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Rider
+                        Técnico</button>
+                        <button id="tab-stageplot" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Stage Plot</button>
+                    <button id="tab-configuracoes"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 hover:text-white border-transparent">Configurações</button>
                 </nav>
             </div>
 
             <div id="view-agenda">
-                <button id="toggle-filters-btn" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 mb-6">
+                <button id="toggle-filters-btn"
+                    class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 mb-6">
                     <i data-lucide="filter" class="w-5 h-5"></i>
                     <span id="toggle-filters-text">Exibir Filtros</span>
                 </button>
-          <div id="filters-container" class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8 hidden">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <input id="filter-artist" type="text" placeholder="Filtrar por artista..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                <div id="filters-container" class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8 hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <input id="filter-artist" type="text" placeholder="Filtrar por artista..."
+                            class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
 
-        <input id="filter-location" type="text" placeholder="Filtrar por local..." class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        <input id="filter-location" type="text" placeholder="Filtrar por local..."
+                            class="bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
 
-        <div>
-            <label for="filter-month" class="text-xs text-gray-400">Filtrar por Mês/Ano</label>
-            <input id="filter-month" type="month" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-        </div>
+                        <div>
+                            <label for="filter-month" class="text-xs text-gray-400">Filtrar por Mês/Ano</label>
+                            <input id="filter-month" type="month"
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        </div>
 
-        <div>
-            <label for="filter-status" class="text-xs text-gray-400">Filtrar por Status</label>
-            <select id="filter-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                <option value="">Todos os Status</option>
-                <option value="confirmado">Confirmado</option>
-                <option value="aguardando">Aguardando</option>
-                <option value="realizado">Realizado</option>
-                <option value="cancelado">Cancelado</option>
-            </select>
-        </div>
-    </div>
-    <button id="export-pdf-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
-        <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
-    </button>
-</div>
+                        <div>
+                            <label for="filter-status" class="text-xs text-gray-400">Filtrar por Status</label>
+                            <select id="filter-status"
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                                <option value="">Todos os Status</option>
+                                <option value="confirmado">Confirmado</option>
+                                <option value="aguardando">Aguardando</option>
+                                <option value="realizado">Realizado</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="export-pdf-btn"
+                        class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+                        <i data-lucide="file-down" class="w-5 h-5"></i> Exportar PDF da Agenda
+                    </button>
+                </div>
 
                 <div class="flex border-b border-gray-700 mb-4">
-                    <button id="view-agendados-btn" class="flex-1 py-2 text-center font-semibold border-b-2 border-purple-400 text-white">Agendados</button>
-                    <button id="view-historico-btn" class="flex-1 py-2 text-center font-semibold border-b-2 border-transparent text-gray-400 hover:text-white">Histórico</button>
+                    <button id="view-agendados-btn"
+                        class="flex-1 py-2 text-center font-semibold border-b-2 border-purple-400 text-white">Agendados</button>
+                    <button id="view-historico-btn"
+                        class="flex-1 py-2 text-center font-semibold border-b-2 border-transparent text-gray-400 hover:text-white">Histórico</button>
                 </div>
 
                 <div>
@@ -196,11 +255,13 @@
                         <h2 class="text-2xl font-bold mb-4 text-gray-200">Histórico (Realizados/Cancelados)</h2>
                         <div id="shows-list-realizados" class="space-y-4"></div>
                         <div id="historico-pagination-controls" class="flex items-center justify-between mt-6 hidden">
-                            <button id="historico-prev-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button id="historico-prev-btn"
+                                class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
                                 Anterior
                             </button>
                             <span id="historico-page-info" class="text-gray-400 text-sm font-semibold"></span>
-                            <button id="historico-next-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button id="historico-next-btn"
+                                class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
                                 Próximo
                             </button>
                         </div>
@@ -215,79 +276,76 @@
             </div>
 
             <div id="view-calendario" class="hidden">
-                 <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8">
+                <div class="bg-gray-800/50 p-4 rounded-xl shadow-lg mb-8">
                     <div class="flex justify-between items-center mb-4">
-                        <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-700"><i data-lucide="chevron-left"></i></button>
+                        <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-700"><i
+                                data-lucide="chevron-left"></i></button>
                         <h2 id="month-year-title" class="text-xl font-bold"></h2>
-                        <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-700"><i data-lucide="chevron-right"></i></button>
+                        <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-700"><i
+                                data-lucide="chevron-right"></i></button>
                     </div>
                     <div class="grid grid-cols-7 gap-1 text-center font-semibold text-xs text-gray-400 mb-2">
-                        <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                        <div>Dom</div>
+                        <div>Seg</div>
+                        <div>Ter</div>
+                        <div>Qua</div>
+                        <div>Qui</div>
+                        <div>Sex</div>
+                        <div>Sáb</div>
                     </div>
                     <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center"></div>
-                 </div>
-                 <div id="calendar-show-details" class="mt-6 space-y-4"></div>
+                </div>
+                <div id="calendar-show-details" class="mt-6 space-y-4"></div>
             </div>
 
             <div id="view-setlists" class="hidden">
-                <button id="open-add-setlist-modal-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
+                <button id="open-add-setlist-modal-btn"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
                     <i data-lucide="plus" class="w-5 h-5"></i> Criar Nova Setlist
                 </button>
                 <div id="setlists-list" class="space-y-4"></div>
-                 <div id="empty-setlist-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
+                <div id="empty-setlist-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
                     <p class="text-gray-400">Nenhuma setlist encontrada.</p>
-                </div>
-            </div>
-
-            <div id="view-rider" class="hidden">
-                <button id="open-add-rider-modal-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
-                    <i data-lucide="plus" class="w-5 h-5"></i> Criar Novo Rider Técnico
-                </button>
-                <div id="riders-list" class="space-y-6"></div>
-                <div id="empty-rider-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
-                    <p class="text-gray-400">Nenhum Rider Técnico encontrado.</p>
-                </div>
-            </div>
-
-            <div id="view-stageplot" class="hidden">
-                <button id="open-add-stageplot-modal-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
-                    <i data-lucide="plus" class="w-5 h-5"></i> Criar Novo Stage Plot
-                </button>
-                <div id="stageplots-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    </div>
-                <div id="empty-stageplot-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
-                    <p class="text-gray-400">Nenhum Stage Plot encontrado.</p>
                 </div>
             </div>
 
             <div id="view-equipe" class="hidden">
                 <div id="equipe-list" class="space-y-4"></div>
                 <div id="empty-equipe-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
-                <p class="text-gray-400">Nenhum músico encontrado.</p>
-                <p id="empty-equipe-subtext" class="text-gray-500 text-sm mt-2"></p>
-            </div>
+                    <p class="text-gray-400">Nenhum músico encontrado.</p>
+                    <p id="empty-equipe-subtext" class="text-gray-500 text-sm mt-2"></p>
+                </div>
             </div>
 
             <div id="view-dashboard" class="hidden space-y-8">
-                    <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                     <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
                         <h3 class="text-xl font-semibold shrink-0">Mapa de Shows</h3>
-                           <div id="map-filters" class="flex flex-wrap items-center justify-start sm:justify-end gap-x-4 gap-y-2 text-sm">
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" data-type="show" class="map-filter-cb" checked> Shows</label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" data-type="ensaio" class="map-filter-cb" checked> Ensaios</label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" data-type="entrevista" class="map-filter-cb" checked> Entrevistas</label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" data-type="gravacao" class="map-filter-cb" checked> Gravações</label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" data-type="viagem" class="map-filter-cb" checked> Viagens</label>
+                        <div id="map-filters"
+                            class="flex flex-wrap items-center justify-start sm:justify-end gap-x-4 gap-y-2 text-sm">
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                    data-type="show" class="map-filter-cb" checked> Shows</label>
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                    data-type="ensaio" class="map-filter-cb" checked> Ensaios</label>
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                    data-type="entrevista" class="map-filter-cb" checked> Entrevistas</label>
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                    data-type="gravacao" class="map-filter-cb" checked> Gravações</label>
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"
+                                    data-type="viagem" class="map-filter-cb" checked> Viagens</label>
                         </div>
                     </div>
                     <div class="relative">
-                        <div id="mapa-shows" style="height: 400px; border-radius: 12px; background-color: #374151;" class="relative">
-                            <div id="map-loader" class="absolute inset-0 z-[1001] flex items-center justify-center bg-gray-800/50 rounded-lg">
+                        <div id="mapa-shows" style="height: 400px; border-radius: 12px; background-color: #374151;"
+                            class="relative">
+                            <div id="map-loader"
+                                class="absolute inset-0 z-[1001] flex items-center justify-center bg-gray-800/50 rounded-lg">
                                 <i data-lucide="loader-2" class="text-purple-400 w-12 h-12 animate-spin"></i>
                             </div>
-                            </div>
-                        <div id="map-legend" class="absolute bottom-2 right-2 z-[1000] bg-gray-900/70 p-2 rounded-lg text-xs space-y-1">
-                            </div>
+                        </div>
+                        <div id="map-legend"
+                            class="absolute bottom-2 right-2 z-[1000] bg-gray-900/70 p-2 rounded-lg text-xs space-y-1">
+                        </div>
                     </div>
                 </div>
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
@@ -298,7 +356,7 @@
                     <h3 class="text-xl font-semibold mb-4">Locais Mais Frequentes</h3>
                     <canvas id="top-locations-chart"></canvas>
                 </div>
-              <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Artistas Mais Frequentes</h3>
                     <canvas id="top-artists-chart"></canvas>
                 </div>
@@ -308,27 +366,36 @@
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Seu Perfil</h3>
                     <form id="profile-form" class="space-y-4">
-                    <div id="profile-success" class="bg-green-500/20 text-green-300 p-3 rounded-lg text-sm hidden">Perfil atualizado com sucesso!</div>
-                <div>
-                <label for="profile-name" class="text-sm font-medium text-gray-400">Seu Nome</label>
-                <input id="profile-name" type="text" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-            </div>
-            <div>
-                <label for="profile-instrument" class="text-sm font-medium text-gray-400">Seu Instrumento Principal</label>
-                <input id="profile-instrument" type="text" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-            </div>
-            <div class="flex justify-end">
-                <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">Salvar Alterações</button>
-            </div>
-        </form>
-    </div>
+                        <div id="profile-success" class="bg-green-500/20 text-green-300 p-3 rounded-lg text-sm hidden">
+                            Perfil atualizado com sucesso!</div>
+                        <div>
+                            <label for="profile-name" class="text-sm font-medium text-gray-400">Seu Nome</label>
+                            <input id="profile-name" type="text"
+                                class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        </div>
+                        <div>
+                            <label for="profile-instrument" class="text-sm font-medium text-gray-400">Seu Instrumento
+                                Principal</label>
+                            <input id="profile-instrument" type="text"
+                                class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit"
+                                class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">Salvar
+                                Alterações</button>
+                        </div>
+                    </form>
+                </div>
                 <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Cores dos Eventos</h3>
-                    <p class="text-gray-400 text-sm mb-4">Personalize as cores que aparecem na agenda e no calendário para cada tipo de evento.</p>
+                    <p class="text-gray-400 text-sm mb-4">Personalize as cores que aparecem na agenda e no calendário
+                        para cada tipo de evento.</p>
                     <div id="event-colors-container" class="space-y-4"></div>
-                    <div id="colors-success" class="bg-green-500/20 text-green-300 p-3 rounded-lg text-sm hidden mt-4">Cores atualizadas com sucesso!</div>
+                    <div id="colors-success" class="bg-green-500/20 text-green-300 p-3 rounded-lg text-sm hidden mt-4">
+                        Cores atualizadas com sucesso!</div>
                     <div class="flex justify-end mt-4">
-                        <button id="save-colors-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+                        <button id="save-colors-btn"
+                            class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
                             <i data-lucide="save" class="w-5 h-5"></i>
                             <span>Salvar Cores</span>
                         </button>
@@ -347,20 +414,23 @@
                 </div>
 
                 <div id="manager-settings" class="hidden space-y-8">
-                     <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-                         <h3 class="text-xl font-semibold mb-4">Configurações de Gerente</h3>
-                         <div>
-                             <label for="artist-name-input" class="text-sm font-medium text-gray-400">Nome do Artista Principal</label>
-                             <input id="artist-name-input" type="text" placeholder="Ex: Zé Lucas" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                         </div>
-                         <div class="mt-4">
-                              <p class="text-sm font-medium text-gray-400">Seu Código de Convite</p>
-                              <div class="mt-1 flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
-                                  <span id="invite-code" class="text-gray-300 font-mono text-sm"></span>
-                                  <button id="copy-invite-code-btn"><i data-lucide="copy" class="w-4 h-4 text-gray-400"></i></button>
-                              </div>
-                         </div>
-                     </div>
+                    <div class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">Configurações de Gerente</h3>
+                        <div>
+                            <label for="artist-name-input" class="text-sm font-medium text-gray-400">Nome do Artista
+                                Principal</label>
+                            <input id="artist-name-input" type="text" placeholder="Ex: Zé Lucas"
+                                class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        </div>
+                        <div class="mt-4">
+                            <p class="text-sm font-medium text-gray-400">Seu Código de Convite</p>
+                            <div class="mt-1 flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
+                                <span id="invite-code" class="text-gray-300 font-mono text-sm"></span>
+                                <button id="copy-invite-code-btn"><i data-lucide="copy"
+                                        class="w-4 h-4 text-gray-400"></i></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="musician-settings" class="bg-gray-800/50 p-6 rounded-xl shadow-lg">
@@ -371,25 +441,56 @@
                         <button id="unlink-btn" class="mt-4 text-sm text-red-400 hover:underline">Desvincular</button>
                     </div>
                     <form id="link-form" class="">
-                        <label for="manager-code-input" class="text-sm font-medium text-gray-400">Código de Convite do Gerente</label>
-                        <input id="manager-code-input" type="text" class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
-                        <button type="submit" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Vincular Conta</button>
+                        <label for="manager-code-input" class="text-sm font-medium text-gray-400">Código de Convite do
+                            Gerente</label>
+                        <input id="manager-code-input" type="text"
+                            class="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white">
+                        <button type="submit"
+                            class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Vincular
+                            Conta</button>
                     </form>
                 </div>
             </div>
+
+            <div id="view-rider" class="hidden">
+                <button id="open-add-rider-modal-btn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
+                    <i data-lucide="plus" class="w-5 h-5"></i> Criar Novo Rider Técnico
+                </button>
+                <div id="riders-list" class="space-y-6"></div>
+                <div id="empty-rider-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
+                    <p class="text-gray-400">Nenhum Rider Técnico encontrado.</p>
+                </div>
+            </div>
+
+            <div id="view-stageplot" class="hidden">
+                <button id="open-add-stageplot-modal-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-8">
+                    <i data-lucide="plus" class="w-5 h-5"></i> Criar Novo Stage Plot
+                </button>
+                <div id="stageplots-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    </div>
+                <div id="empty-stageplot-state" class="text-center py-10 bg-gray-800 rounded-lg hidden">
+                    <p class="text-gray-400">Nenhum Stage Plot encontrado.</p>
+                </div>
+            </div>
         </div>
-        <button id="open-add-modal-btn" class="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110">
+        <button id="open-add-modal-btn"
+            class="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110">
             <i data-lucide="plus" class="w-8 h-8"></i>
         </button>
     </div>
 
     <div id="add-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
     <div id="edit-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
-    <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
-    <div id="confirm-status-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
+    <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
+    </div>
+    <div id="confirm-status-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50">
+    </div>
     <div id="setlist-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
-    <div id="show-details-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50 p-4">
-        <div id="show-details-content" class="bg-gray-800 rounded-xl p-6 w-full max-w-lg text-left shadow-2xl max-h-[90vh] overflow-y-auto"></div>
+    <div id="show-details-modal"
+        class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50 p-4">
+        <div id="show-details-content"
+            class="bg-gray-800 rounded-xl p-6 w-full max-w-lg text-left shadow-2xl max-h-[90vh] overflow-y-auto"></div>
     </div>
     <div id="equipe-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-50"></div>
 
@@ -403,21 +504,26 @@
                     <input type="hidden" id="rider-id">
                     <div>
                         <label for="rider-name" class="text-sm font-medium text-gray-400 mb-1">Nome do Rider</label>
-                        <input id="rider-name" type="text" placeholder="Ex: Rider Padrão (Palco Grande)" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
+                        <input id="rider-name" type="text" placeholder="Ex: Rider Padrão (Palco Grande)"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white" required>
                     </div>
 
                     <div class="pt-4">
                         <h3 class="text-lg font-semibold text-gray-300 mb-2">Lista de Canais</h3>
                         <div id="rider-channels-container" class="space-y-3">
-                            </div>
-                        <button type="button" id="add-channel-btn" class="mt-4 text-sm text-green-400 hover:text-green-300 font-semibold flex items-center gap-2">
+                        </div>
+                        <button type="button" id="add-channel-btn"
+                            class="mt-4 text-sm text-green-400 hover:text-green-300 font-semibold flex items-center gap-2">
                             <i data-lucide="plus-circle" class="w-4 h-4"></i> Adicionar Canal
                         </button>
                     </div>
 
                     <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-gray-700">
-                        <button type="button" id="cancel-rider-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button>
-                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">Salvar Rider</button>
+                        <button type="button" id="cancel-rider-btn"
+                            class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Cancelar</button>
+                        <button type="submit"
+                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">Salvar
+                            Rider</button>
                     </div>
                 </form>
             </div>
@@ -453,7 +559,7 @@
         </div>
     </div>
 
-
-        <script type="module" src="/main.js"></script>
+    <script type="module" src="/main.js"></script>
 </body>
+
 </html>
