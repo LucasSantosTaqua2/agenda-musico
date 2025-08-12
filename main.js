@@ -2003,12 +2003,14 @@ const renderSetlists = () => {
   emptySetlistState.classList.toggle('hidden', allSetlists.length > 0);
   allSetlists.forEach(setlist => {
     const setlistElement = document.createElement('div');
-    setlistElement.className = 'bg-gray-800 rounded-lg p-5 shadow-md';
+    setlistElement.className = 'bg-gray-800 rounded-lg shadow-md'; // Estilo do container principal
     setlistElement.dataset.type = 'setlist-card';
+
     const songsHTML = (setlist.songs || '')
       .split('\n')
       .map(song => `<li class="text-gray-400">${song}</li>`)
       .join('');
+
     const actionButtons =
       !userSettings.managedBy || setlist.isPersonal
         ? `
@@ -2018,29 +2020,52 @@ const renderSetlists = () => {
             </div>
         `
         : '';
+
     setlistElement.innerHTML = `
-            <div class="flex justify-between items-start">
+            <div class="setlist-header flex justify-between items-center p-5 cursor-pointer">
                 <h3 class="text-xl font-bold text-green-300">${setlist.name}</h3>
-                ${actionButtons}
+                <div class="flex items-center gap-4">
+                    ${actionButtons}
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 transition-transform"></i>
+                </div>
             </div>
-            <ul class="list-disc list-inside mt-2">${songsHTML}</ul>`;
+            <div class="setlist-body hidden p-5 border-t border-gray-700">
+                <ul class="list-disc list-inside">${songsHTML}</ul>
+            </div>`;
     setlistsList.appendChild(setlistElement);
   });
   lucide.createIcons();
 };
 
 setlistsList.addEventListener('click', e => {
+  const header = e.target.closest('.setlist-header');
   const editBtn = e.target.closest('.edit-setlist-btn');
   const deleteBtn = e.target.closest('.delete-setlist-btn');
+
+  // Ação para o botão de editar
   if (editBtn) {
+    e.stopPropagation(); // Impede que o clique no botão acione a expansão/retração
     openSetlistModal(editBtn.dataset.id);
+    return;
   }
+
+  // Ação para o botão de deletar
   if (deleteBtn) {
+    e.stopPropagation(); // Impede que o clique no botão acione a expansão/retração
     itemToModifyId = deleteBtn.dataset.id;
     itemTypeToDelete = 'setlist';
     document.getElementById('delete-confirm-text').textContent =
       'Tem certeza que deseja excluir esta setlist?';
     deleteModal.classList.add('is-open');
+    return;
+  }
+
+  // Ação para expandir/retrair a setlist
+  if (header) {
+    const body = header.nextElementSibling;
+    const icon = header.querySelector('[data-lucide="chevron-down"]');
+    body.classList.toggle('hidden');
+    icon.classList.toggle('rotate-180');
   }
 });
 
