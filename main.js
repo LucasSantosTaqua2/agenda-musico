@@ -125,7 +125,8 @@ const loginError = document.getElementById('login-error');
 const errorBanner = document.getElementById('error-banner');
 const tabRider = document.getElementById('tab-rider');
 const viewRider = document.getElementById('view-rider');
-
+const tabStagePlot = document.getElementById('tab-stage-plot');
+const viewStagePlot = document.getElementById('view-stage-plot');
 
 const showsListAgendados = document.getElementById('shows-list-agendados');
 const showsListRealizados = document.getElementById('shows-list-realizados');
@@ -1738,6 +1739,7 @@ const tabs = [
   tabRider,
   tabEquipe,
   tabDashboard,
+  tabStagePlot,
   tabConfiguracoes,
 ];
 const views = [
@@ -1747,6 +1749,7 @@ const views = [
   viewRider,
   viewEquipe,
   viewDashboard,
+  viewStagePlot,
   viewConfiguracoes,
 ];
 tabs.forEach((tab, index) => {
@@ -2639,3 +2642,113 @@ ridersList.addEventListener('click', e => {
       downloadRiderAsPDF(downloadBtn.dataset.id);
     }
 });
+
+// --- LÓGICA DO STAGE PLOT ---
+
+const stageArea = document.getElementById('stage-area');
+const itemToolbar = document.getElementById('item-toolbar');
+
+// Função para posicionar o item arrastado
+function dragMoveListener(event) {
+    const target = event.target;
+    const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+    const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+    target.style.transform = `translate(${x}px, ${y}px)`;
+    target.setAttribute('data-x', x);
+    target.setAttribute('data-y', y);
+}
+
+// Habilita os itens existentes no palco a serem arrastáveis
+interact('#stage-area .placed-item').draggable({
+    listeners: { move: dragMoveListener },
+    inertia: true,
+    modifiers: [
+        interact.modifiers.restrictRect({
+            restriction: 'parent',
+            endOnly: true
+        })
+    ]
+});
+
+// Habilita a área do palco a receber itens
+interact(stageArea).dropzone({
+    accept: '.stage-item',
+    ondrop: function (event) {
+        const draggableElement = event.relatedTarget;
+        const type = draggableElement.dataset.type;
+
+        const stageRect = stageArea.getBoundingClientRect();
+        const dropX = event.client.x - stageRect.left;
+        const dropY = event.client.y - stageRect.top;
+
+        createItemOnStage(type, dropX, dropY);
+    }
+});
+
+// Habilita os ícones da barra de ferramentas a serem arrastáveis
+interact('.stage-item').draggable({
+    inertia: true,
+    listeners: {
+        start(event) {
+            // Remove o texto de placeholder se for o primeiro item
+            const placeholder = stageArea.querySelector('p');
+            if (placeholder) placeholder.style.display = 'none';
+        },
+        move(event) {
+            const interaction = event.interaction;
+            if (interaction.pointerIsDown && !interaction.interacting()) {
+                const original = event.currentTarget;
+                const clone = original.cloneNode(true);
+                clone.classList.add('draggable-clone');
+                document.body.appendChild(clone);
+                interaction.start({ name: 'drag' }, event.interactable, clone);
+            }
+        }
+    },
+});
+
+// Função para criar um novo item no palco
+function createItemOnStage(type, x, y) {
+    const item = document.createElement('div');
+    item.className = 'placed-item flex flex-col items-center';
+    item.style.left = `${x - 30}px`; // Centraliza o item
+    item.style.top = `${y - 30}px`; 
+    item.setAttribute('data-x', 0);
+    item.setAttribute('data-y', 0);
+    item.dataset.type = type;
+
+    const icon = document.querySelector(`.stage-item[data-type="${type}"] i`).cloneNode(true);
+    const label = document.createElement('input');
+    label.type = 'text';
+    label.placeholder = 'Nome...';
+    label.className = 'bg-transparent text-center text-xs w-16 border-b border-gray-500 focus:outline-none focus:border-purple-400';
+
+    item.appendChild(icon);
+    item.appendChild(label);
+    stageArea.appendChild(item);
+    lucide.createIcons();
+}
+
+// Salvar o Stage Plot (Exemplo, precisa integrar com Firebase)
+document.getElementById('save-stage-plot-btn').addEventListener('click', () => {
+    const items = [];
+    document.querySelectorAll('#stage-area .placed-item').forEach(itemEl => {
+        items.push({
+            type: itemEl.dataset.type,
+            x: itemEl.style.left,
+            y: itemEl.style.top,
+            label: itemEl.querySelector('input').value
+        });
+    });
+    console.log("Salvando Stage Plot:", items);
+    // AQUI você adicionaria a lógica para salvar `items` no Firebase Firestore,
+    // similar a como você salva shows e setlists.
+    alert('Stage Plot salvo no console!');
+});
+
+// Exportar (Exemplo, pode ser melhorado com jsPDF ou outra lib)
+document.getElementById('export-stage-plot-btn').addEventListener('click', () => {
+    alert('Funcionalidade de exportar ainda a ser implementada! Você pode usar jsPDF para converter o conteúdo da div #stage-area em uma imagem e depois para PDF.');
+});
+
