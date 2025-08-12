@@ -128,3 +128,58 @@ input:checked+.slider:before {
     background-color: rgba(75, 85, 99, 0.8); /* bg-gray-600 com opacidade */
     border: 1px solid #4b5563;
 }
+
+#stage-area {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* Estilo para indicar qual item da toolbar está ativo (modo mobile) */
+.stage-item.active {
+    background-color: #4c1d95; /* Cor roxa mais escura */
+    box-shadow: 0 0 0 2px #a78bfa; /* Borda roxa clara */
+    cursor: default;
+}
+
+/* Estilo para os itens no palco quando o modo de exclusão está ativo */
+#stage-area.delete-mode .placed-item {
+    cursor: pointer;
+    border-color: #f87171; /* red-400 */
+    animation: pulse-delete 1.5s infinite;
+}
+
+/* Estilo para o botão de exclusão quando ativo */
+#delete-mode-btn.active {
+    background-color: #dc2626; /* red-600 */
+    color: white;
+}
+
+/* Animação de pulso para o modo de exclusão */
+@keyframes pulse-delete {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Adiciona um pequeno "X" nos itens no modo de exclusão para melhor feedback visual */
+#stage-area.delete-mode .placed-item::after {
+    content: '×';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    background-color: #f87171;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
