@@ -123,7 +123,10 @@ const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
 const loginError = document.getElementById('login-error');
 const errorBanner = document.getElementById('error-banner');
-
+const tabRider = document.getElementById('tab-rider');
+const viewRider = document.getElementById('view-rider');
+const riderModal = document.getElementById('rider-modal');
+const openAddRiderModalBtn = document.getElementById('open-add-rider-modal-btn');
 const showsListAgendados = document.getElementById('shows-list-agendados');
 const showsListRealizados = document.getElementById('shows-list-realizados');
 const loadingState = document.getElementById('loading-state');
@@ -188,6 +191,8 @@ let currentCalendarDate = new Date();
 let showsPerMonthChart = null;
 let topLocationsChart = null;
 let topArtistsChart = null;
+let allRiders = [];
+let unsubscribeRiders = [];
 let allTeamMembers = [];
 let unsubscribeTeam = [];
 let map = null;
@@ -1110,11 +1115,13 @@ const handleUser = async user => {
 
   if (unsubscribeShows) unsubscribeShows.forEach(unsub => unsub());
   if (unsubscribeSetlists) unsubscribeSetlists.forEach(unsub => unsub());
+  if (unsubscribeRiders) unsubscribeRiders.forEach(unsub => unsub());
   if (unsubscribeNotifications) unsubscribeNotifications();
   if (unsubscribeTeam) unsubscribeTeam.forEach(unsub => unsub());
 
   unsubscribeShows = [];
   unsubscribeSetlists = [];
+  unsubscribeRiders = [];
   unsubscribeTeam = [];
 
   if (user) {
@@ -1127,17 +1134,17 @@ const handleUser = async user => {
     let personalShows = [],
       managedShows = [],
       personalSetlists = [],
-      managedSetlists = [];
+      managedSetlists = [],
+      personalRiders = [],
+      managedRiders = [];
 
     const combineAndRenderAll = () => {
       allShows = [
-        // Adiciona a propriedade ownerId para os shows pessoais
         ...personalShows.map(s => ({
           ...s,
           isPersonal: true,
           ownerId: currentUser.uid,
         })),
-        // Adiciona a propriedade ownerId para os shows do gerente
         ...managedShows.map(s => ({
           ...s,
           isPersonal: false,
@@ -1149,11 +1156,17 @@ const handleUser = async user => {
           [...managedSetlists, ...personalSetlists].map(item => [item.id, item])
         ).values(),
       ];
+      allRiders = [
+          ...personalRiders.map(r => ({ ...r, isPersonal: true })),
+          ...managedRiders.map(r => ({ ...r, isPersonal: false }))
+      ];
+      allRiders.sort((a, b) => a.name.localeCompare(b.name));
 
       renderShows();
       renderCalendar();
       renderDashboard();
       renderSetlists();
+      renderRiders(); 
       renderTeam();
       populateSetlistDropdowns();
 
@@ -1184,6 +1197,14 @@ const handleUser = async user => {
         }
       )
     );
+      
+    const personalRidersPath = `artifacts/${appId}/users/${currentUser.uid}/riders`;
+    unsubscribeRiders.push(
+        onSnapshot(query(collection(db, personalRidersPath), orderBy('name', 'asc')), snapshot => {
+            personalRiders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            combineAndRenderAll();
+        })
+    );
 
     if (userSettings.managedBy) {
       const managedShowsPath = `artifacts/${appId}/users/${userSettings.managedBy}/shows`;
@@ -1211,6 +1232,14 @@ const handleUser = async user => {
             combineAndRenderAll();
           }
         )
+      );
+        
+      const managedRidersPath = `artifacts/${appId}/users/${userSettings.managedBy}/riders`;
+      unsubscribeRiders.push(
+          onSnapshot(query(collection(db, managedRidersPath), orderBy('name', 'asc')), snapshot => {
+              managedRiders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              combineAndRenderAll();
+          })
       );
     }
 
@@ -1274,8 +1303,10 @@ const handleUser = async user => {
     loginScreen.style.display = 'flex';
     allShows = [];
     allSetlists = [];
+    allRiders = [];
     allNotifications = [];
     renderShows();
+    renderRiders();
     renderNotifications();
   }
 };
@@ -1581,20 +1612,20 @@ confirmDeleteBtn.addEventListener('click', async () => {
     collectionName = 'shows';
   } else if (itemTypeToDelete === 'setlist') {
     collectionName = 'setlists';
+  } else if (itemTypeToDelete === 'rider') { // Adicionado
+    collectionName = 'riders';
   } else {
-    return; // Sai se o tipo não for reconhecido
+    return;
   }
 
-  // Encontra o show ANTES de tentar deletar para pegar os dados para notificação
   const showToDelete = allShows.find(
     s => s.id === itemToModifyId && s.isPersonal
   );
 
   try {
     const docPath = `artifacts/${appId}/users/${currentUser.uid}/${collectionName}/${itemToModifyId}`;
-    await deleteDoc(doc(db, docPath)); // Deleta o documento
+    await deleteDoc(doc(db, docPath));
 
-    // Se for um show e tiver músicos vinculados, envia a notificação
     if (
       showToDelete &&
       showToDelete.linkedMusicians &&
@@ -1602,10 +1633,10 @@ confirmDeleteBtn.addEventListener('click', async () => {
     ) {
       const message = `Show cancelado/removido: ${showToDelete.artists} em ${showToDelete.location}`;
       notifyLinkedMusicians(
-        showToDelete.linkedMusicians, // Argumento 1: A lista de músicos
-        message, // Argumento 2: A mensagem
-        showToDelete.date, // Argumento 3: A data
-        showToDelete.time // Argumento 4: A hora
+        showToDelete.linkedMusicians,
+        message,
+        showToDelete.date,
+        showToDelete.time
       );
     }
 
@@ -1613,12 +1644,11 @@ confirmDeleteBtn.addEventListener('click', async () => {
     itemToModifyId = null;
     itemTypeToDelete = '';
   } catch (err) {
-    console.error('Erro ao excluir item:', err); // Adiciona um log para facilitar futuras depurações
+    console.error('Erro ao excluir item:', err);
     showError(`Não foi possível excluir o item.`);
     deleteModal.classList.remove('is-open');
   }
 });
-
 cancelDeleteBtn.addEventListener('click', () => {
   deleteModal.classList.remove('is-open');
   itemToModifyId = null;
@@ -1696,6 +1726,7 @@ const tabs = [
   tabAgenda,
   tabCalendario,
   tabSetlists,
+  tabRider,
   tabEquipe,
   tabDashboard,
   tabConfiguracoes,
@@ -1704,6 +1735,7 @@ const views = [
   viewAgenda,
   viewCalendario,
   viewSetlists,
+  viewRider,
   viewEquipe,
   viewDashboard,
   viewConfiguracoes,
@@ -1984,6 +2016,82 @@ const renderTeam = () => {
     equipeList.appendChild(musicoElement);
   });
   lucide.createIcons();
+};
+
+// --- FUNÇÕES DO RIDER TÉCNICO ---
+const ridersList = document.getElementById('riders-list');
+const emptyRiderState = document.getElementById('empty-rider-state');
+
+const renderRiders = () => {
+    ridersList.innerHTML = '';
+    emptyRiderState.classList.toggle('hidden', allRiders.length > 0);
+
+    allRiders.forEach(rider => {
+        const riderElement = document.createElement('div');
+        riderElement.className = 'bg-gray-800 rounded-lg p-5 shadow-md';
+
+        const actionButtons = rider.isPersonal ? `
+            <div class="flex gap-2">
+                <button data-id="${rider.id}" class="edit-rider-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
+                <button data-id="${rider.id}" class="delete-rider-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
+            </div>
+        ` : '';
+
+        riderElement.innerHTML = `
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold text-blue-300">${rider.name}</h3>
+                    <p class="text-sm text-gray-400">${rider.channels ? rider.channels.length : 0} canais</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button data-id="${rider.id}" class="download-rider-btn bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
+                        <i data-lucide="file-down" class="w-4 h-4"></i> PDF
+                    </button>
+                    ${actionButtons}
+                </div>
+            </div>
+        `;
+        ridersList.appendChild(riderElement);
+    });
+    lucide.createIcons();
+};
+
+const addChannelRow = (channel = { name: '', instrument: '', mic: '' }) => {
+    const channelRow = document.createElement('div');
+    channelRow.className = 'grid grid-cols-1 md:grid-cols-4 gap-2 items-center rider-channel-row';
+    channelRow.innerHTML = `
+        <input type="text" value="${channel.name}" data-prop="name" placeholder="Canal (Ex: 01)" class="w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white">
+        <input type="text" value="${channel.instrument}" data-prop="instrument" placeholder="Instrumento (Ex: Voz)" class="w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white md:col-span-2">
+        <div class="flex items-center gap-2">
+            <input type="text" value="${channel.mic}" data-prop="mic" placeholder="Microfone (Ex: SM58)" class="flex-1 w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white">
+            <button type="button" class="remove-channel-btn p-2 text-red-400 hover:text-red-300"><i data-lucide="x-circle" class="w-5 h-5 pointer-events-none"></i></button>
+        </div>
+    `;
+    document.getElementById('rider-channels-container').appendChild(channelRow);
+};
+
+const openRiderModal = (id = null) => {
+    const riderForm = document.getElementById('rider-form');
+    const riderChannelsContainer = document.getElementById('rider-channels-container');
+    const riderModalTitle = document.getElementById('rider-modal-title');
+    
+    riderForm.reset();
+    riderChannelsContainer.innerHTML = '';
+    document.getElementById('rider-id').value = id || '';
+    
+    if (id) {
+        riderModalTitle.innerHTML = '<i data-lucide="pencil" class="text-yellow-400"></i> Editar Rider Técnico';
+        const riderData = allRiders.find(r => r.id === id);
+        if (riderData) {
+            document.getElementById('rider-name').value = riderData.name;
+            (riderData.channels || []).forEach(channel => addChannelRow(channel));
+        }
+    } else {
+        riderModalTitle.innerHTML = '<i data-lucide="plus-circle" class="text-blue-400"></i> Novo Rider Técnico';
+        addChannelRow();
+    }
+    lucide.createIcons();
+    riderModal.classList.add('is-open');
 };
 
 const renderSetlists = () => {
@@ -2421,126 +2529,27 @@ historicoPrevBtn.addEventListener('click', () => {
   }
 });
 
-
-// --- INÍCIO DO CÓDIGO DO RIDER TÉCNICO ---
-
-// --- Constantes para Elementos do DOM (Rider) ---
-const tabRider = document.getElementById('tab-rider');
-const viewRider = document.getElementById('view-rider');
-const openAddRiderModalBtn = document.getElementById('open-add-rider-modal-btn');
-const ridersList = document.getElementById('riders-list');
-const emptyRiderState = document.getElementById('empty-rider-state');
-const riderModal = document.getElementById('rider-modal');
-const riderModalTitle = document.getElementById('rider-modal-title');
+// --- EVENT LISTENERS PARA RIDER TÉCNICO ---
 const riderForm = document.getElementById('rider-form');
-const riderIdInput = document.getElementById('rider-id');
-const riderNameInput = document.getElementById('rider-name');
-const riderChannelsContainer = document.getElementById('rider-channels-container');
-const addChannelBtn = document.getElementById('add-channel-btn');
 const cancelRiderBtn = document.getElementById('cancel-rider-btn');
+const addChannelBtn = document.getElementById('add-channel-btn');
+const riderChannelsContainer = document.getElementById('rider-channels-container');
 
-// --- Variáveis de Estado Global (Rider) ---
-let allRiders = [];
-let unsubscribeRiders = [];
-
-// --- Adicionando o Rider ao sistema de abas ---
-tabs.push(tabRider);
-views.push(viewRider);
-
-// --- Funções do Rider Técnico ---
-
-// Função para renderizar a lista de riders salvos
-const renderRiders = () => {
-    ridersList.innerHTML = '';
-    emptyRiderState.classList.toggle('hidden', allRiders.length > 0);
-
-    allRiders.forEach(rider => {
-        const riderElement = document.createElement('div');
-        riderElement.className = 'bg-gray-800 rounded-lg p-5 shadow-md';
-
-        const actionButtons = rider.isPersonal ? `
-            <div class="flex gap-2">
-                <button data-id="${rider.id}" class="edit-rider-btn bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-400 p-2 rounded-full"><i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i></button>
-                <button data-id="${rider.id}" class="delete-rider-btn bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>
-            </div>
-        ` : '';
-
-        riderElement.innerHTML = `
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="text-xl font-bold text-blue-300">${rider.name}</h3>
-                    <p class="text-sm text-gray-400">${rider.channels ? rider.channels.length : 0} canais</p>
-                </div>
-                <div class="flex items-center gap-4">
-                    <button data-id="${rider.id}" class="download-rider-btn bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
-                        <i data-lucide="file-down" class="w-4 h-4"></i> PDF
-                    </button>
-                    ${actionButtons}
-                </div>
-            </div>
-        `;
-        ridersList.appendChild(riderElement);
-    });
-    lucide.createIcons();
-};
-
-// Função para adicionar uma nova linha de canal no formulário do modal
-const addChannelRow = (channel = { name: '', instrument: '', mic: '' }) => {
-    const channelId = Date.now(); // ID único para a linha
-    const channelRow = document.createElement('div');
-    channelRow.className = 'grid grid-cols-1 md:grid-cols-4 gap-2 items-center rider-channel-row';
-    channelRow.innerHTML = `
-        <input type="text" value="${channel.name}" placeholder="Canal (Ex: 01)" class="w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white">
-        <input type="text" value="${channel.instrument}" placeholder="Instrumento (Ex: Voz)" class="w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white md:col-span-2">
-        <div class="flex items-center gap-2">
-            <input type="text" value="${channel.mic}" placeholder="Microfone (Ex: SM58)" class="flex-1 w-full bg-gray-900/50 border border-gray-600 rounded-lg p-2 text-white">
-            <button type="button" class="remove-channel-btn p-2 text-red-400 hover:text-red-300"><i data-lucide="x-circle" class="w-5 h-5"></i></button>
-        </div>
-    `;
-    riderChannelsContainer.appendChild(channelRow);
-    lucide.createIcons();
-};
-
-// Abre o modal para criar ou editar um Rider
-const openRiderModal = (id = null) => {
-    riderForm.reset();
-    riderChannelsContainer.innerHTML = '';
-    riderIdInput.value = id || '';
-    
-    if (id) {
-        riderModalTitle.innerHTML = '<i data-lucide="pencil" class="text-yellow-400"></i> Editar Rider Técnico';
-        const riderData = allRiders.find(r => r.id === id);
-        if (riderData) {
-            riderNameInput.value = riderData.name;
-            (riderData.channels || []).forEach(channel => addChannelRow(channel));
-        }
-    } else {
-        riderModalTitle.innerHTML = '<i data-lucide="plus-circle" class="text-blue-400"></i> Novo Rider Técnico';
-        addChannelRow(); // Adiciona uma linha em branco para começar
-    }
-    lucide.createIcons();
-    riderModal.classList.add('is-open');
-};
-
-// --- Event Listeners do Rider ---
-
-openAddRiderModalBtn.addEventListener('click', () => openRiderModal());
 cancelRiderBtn.addEventListener('click', () => riderModal.classList.remove('is-open'));
 addChannelBtn.addEventListener('click', () => addChannelRow());
 
-// Delega o evento de clique para remover canais
 riderChannelsContainer.addEventListener('click', e => {
-    if (e.target.closest('.remove-channel-btn')) {
-        e.target.closest('.rider-channel-row').remove();
+    const removeBtn = e.target.closest('.remove-channel-btn');
+    if (removeBtn) {
+        removeBtn.closest('.rider-channel-row').remove();
     }
 });
 
-// Salva ou atualiza o rider no Firestore
 riderForm.addEventListener('submit', async e => {
     e.preventDefault();
     if (!currentUser) return;
 
-    const id = riderIdInput.value;
+    const id = document.getElementById('rider-id').value;
     const channels = [];
     document.querySelectorAll('.rider-channel-row').forEach(row => {
         const inputs = row.querySelectorAll('input');
@@ -2552,7 +2561,7 @@ riderForm.addEventListener('submit', async e => {
     });
 
     const data = {
-        name: riderNameInput.value,
+        name: document.getElementById('rider-name').value,
         channels: channels
     };
 
@@ -2570,7 +2579,6 @@ riderForm.addEventListener('submit', async e => {
     }
 });
 
-// Delega eventos de clique na lista de riders
 ridersList.addEventListener('click', e => {
     const editBtn = e.target.closest('.edit-rider-btn');
     const deleteBtn = e.target.closest('.delete-rider-btn');
@@ -2578,101 +2586,16 @@ ridersList.addEventListener('click', e => {
 
     if (editBtn) {
         openRiderModal(editBtn.dataset.id);
-    } else if (deleteBtn) {
+    }
+    if (deleteBtn) {
         const riderId = deleteBtn.dataset.id;
         const rider = allRiders.find(r => r.id === riderId);
         itemToModifyId = riderId;
         itemTypeToDelete = 'rider';
         document.getElementById('delete-confirm-text').textContent = `Tem certeza que deseja excluir o rider "${rider.name}"?`;
         deleteModal.classList.add('is-open');
-    } else if (downloadBtn) {
-        // A função de download será adicionada no próximo passo
-        alert("Função de Download do PDF do Rider em breve!");
+    }
+    if (downloadBtn) {
+        alert("A função de download em PDF será implementada em breve.");
     }
 });
-
-
-// --- Integração do Rider com o restante do sistema ---
-
-// Sobrescreve a função original para incluir Riders
-const originalCombineAndRenderAll = combineAndRenderAll;
-combineAndRenderAll = () => {
-    // Primeiro, executa a lógica original
-    originalCombineAndRenderAll();
-    
-    // Depois, adiciona a lógica do Rider
-    renderRiders();
-    // Adicionar a função de popular dropdowns de rider aqui quando for criada
-};
-
-
-// Adiciona o listener para a nova coleção de riders no Firestore
-const originalHandleUser = handleUser;
-handleUser = async (user) => {
-    // Executa a lógica original
-    await originalHandleUser(user);
-
-    if (user) {
-        // Limpa a inscrição anterior se existir
-        if (unsubscribeRiders) unsubscribeRiders.forEach(unsub => unsub());
-        unsubscribeRiders = [];
-
-        let personalRiders = [], managedRiders = [];
-
-        const combineAndRenderRiders = () => {
-            allRiders = [
-                ...personalRiders.map(r => ({ ...r, isPersonal: true })),
-                ...managedRiders.map(r => ({ ...r, isPersonal: false }))
-            ];
-            // Ordena por nome
-            allRiders.sort((a, b) => a.name.localeCompare(b.name));
-            renderRiders();
-            // Adicionar a função de popular dropdowns de rider aqui
-        };
-
-        const personalRidersPath = `artifacts/${appId}/users/${user.uid}/riders`;
-        unsubscribeRiders.push(
-            onSnapshot(query(collection(db, personalRidersPath), orderBy('name', 'asc')), snapshot => {
-                personalRiders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                combineAndRenderRiders();
-            })
-        );
-
-        if (userSettings.managedBy) {
-            const managedRidersPath = `artifacts/${appId}/users/${userSettings.managedBy}/riders`;
-            unsubscribeRiders.push(
-                onSnapshot(query(collection(db, managedRidersPath), orderBy('name', 'asc')), snapshot => {
-                    managedRiders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    combineAndRenderRiders();
-                })
-            );
-        }
-    } else {
-        allRiders = [];
-        renderRiders();
-    }
-};
-
-// Sobrescreve a função de deleção para incluir riders
-const originalConfirmDelete = confirmDeleteBtn.onclick;
-confirmDeleteBtn.onclick = async () => {
-    if (itemTypeToDelete === 'rider') {
-        if (!currentUser || !itemToModifyId) return;
-        try {
-            const docPath = `artifacts/${appId}/users/${currentUser.uid}/riders/${itemToModifyId}`;
-            await deleteDoc(doc(db, docPath));
-            deleteModal.classList.remove('is-open');
-            itemToModifyId = null;
-            itemTypeToDelete = '';
-        } catch (err) {
-            showError(`Não foi possível excluir o rider.`);
-            deleteModal.classList.remove('is-open');
-        }
-    } else if (originalConfirmDelete) {
-        // Chama a função original para lidar com shows e setlists
-        originalConfirmDelete();
-    }
-};
-
-
-// --- FIM DO CÓDIGO DO RIDER TÉCNICO ---
