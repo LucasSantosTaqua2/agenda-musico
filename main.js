@@ -2671,7 +2671,6 @@ interact('#stage-area .placed-item').draggable({
     ]
 });
 
-
 // Habilita a área do palco a receber itens
 interact(stageArea).dropzone({
     accept: '.stage-item',
@@ -2681,7 +2680,7 @@ interact(stageArea).dropzone({
         
         const stageRect = stageArea.getBoundingClientRect();
         
-        // CORREÇÃO: Usar event.dragEvent.client
+        // CORREÇÃO: Usar event.dragEvent.client para obter as coordenadas corretas
         const dropX = event.dragEvent.client.x - stageRect.left;
         const dropY = event.dragEvent.client.y - stageRect.top;
 
@@ -2694,7 +2693,6 @@ interact('.stage-item').draggable({
     inertia: true,
     listeners: {
         start(event) {
-            // Remove o texto de placeholder se for o primeiro item
             const placeholder = stageArea.querySelector('p');
             if (placeholder) placeholder.style.display = 'none';
         },
@@ -2711,27 +2709,36 @@ interact('.stage-item').draggable({
     },
 });
 
+// --- FUNÇÃO CORRIGIDA ---
 // Função para criar um novo item no palco
 function createItemOnStage(type, x, y) {
     const item = document.createElement('div');
     item.className = 'placed-item flex flex-col items-center';
-    item.style.left = `${x - 30}px`; // Centraliza o item
-    item.style.top = `${y - 30}px`; 
+    item.style.left = `${x - 30}px`; // Centraliza o item no cursor
+    item.style.top = `${y - 30}px`;
     item.setAttribute('data-x', 0);
     item.setAttribute('data-y', 0);
     item.dataset.type = type;
 
-    const icon = document.querySelector(`.stage-item[data-type="${type}"] i`).cloneNode(true);
+    // CORREÇÃO: Busca o item original na toolbar e clona seu primeiro filho (o ícone <svg>)
+    const originalToolbarItem = document.querySelector(`.stage-item[data-type="${type}"]`);
+    if (originalToolbarItem && originalToolbarItem.children[0]) {
+        const icon = originalToolbarItem.children[0].cloneNode(true);
+        // Garante que o ícone clonado tenha as classes de estilo corretas
+        icon.classList.add('w-8', 'h-8', 'text-gray-300');
+        item.appendChild(icon);
+    }
+
     const label = document.createElement('input');
     label.type = 'text';
     label.placeholder = 'Nome...';
-    label.className = 'bg-transparent text-center text-xs w-16 border-b border-gray-500 focus:outline-none focus:border-purple-400';
-
-    item.appendChild(icon);
+    label.className = 'bg-transparent text-center text-xs w-16 border-b border-gray-500 focus:outline-none focus:border-purple-400 mt-1';
+    
     item.appendChild(label);
     stageArea.appendChild(item);
-    lucide.createIcons();
+    // Não é mais necessário chamar lucide.createIcons() aqui.
 }
+
 
 // Salvar o Stage Plot (Exemplo, precisa integrar com Firebase)
 document.getElementById('save-stage-plot-btn').addEventListener('click', () => {
@@ -2746,12 +2753,45 @@ document.getElementById('save-stage-plot-btn').addEventListener('click', () => {
     });
     console.log("Salvando Stage Plot:", items);
     // AQUI você adicionaria a lógica para salvar `items` no Firebase Firestore,
-    // similar a como você salva shows e setlists.
-    alert('Stage Plot salvo no console!');
+    // criando uma coleção "stage_plots"
+    alert('Stage Plot salvo no console! (Funcionalidade de salvar no Firebase a ser implementada)');
 });
 
-// Exportar (Exemplo, pode ser melhorado com jsPDF ou outra lib)
+// --- NOVA FUNÇÃO DE EXPORTAR PDF ---
 document.getElementById('export-stage-plot-btn').addEventListener('click', () => {
-    alert('Funcionalidade de exportar ainda a ser implementada! Você pode usar jsPDF para converter o conteúdo da div #stage-area em uma imagem e depois para PDF.');
-});
+    const stageArea = document.getElementById('stage-area');
+    const placeholder = stageArea.querySelector('p');
+    
+    // Esconde o placeholder "Arraste os itens..." e inputs temporariamente para a "foto"
+    if (placeholder) placeholder.style.visibility = 'hidden';
+    const inputs = stageArea.querySelectorAll('input');
+    inputs.forEach(input => input.style.border = 'none'); // Remove borda dos inputs para melhor visual
 
+    html2canvas(stageArea, {
+        backgroundColor: '#1f2937' // Cor de fundo do palco (gray-800)
+    }).then(canvas => {
+        // Mostra os elementos novamente
+        if (placeholder) placeholder.style.visibility = 'visible';
+        inputs.forEach(input => input.style.border = ''); // Restaura borda
+
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        
+        // Cria um PDF no modo paisagem para melhor caber o palco
+        const doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+        });
+        
+        doc.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        doc.save('Stage-Plot-BandaSync.pdf');
+
+    }).catch(err => {
+        // Garante que os elementos reapareçam mesmo se houver erro
+        if (placeholder) placeholder.style.visibility = 'visible';
+        inputs.forEach(input => input.style.border = '');
+        console.error("Erro ao gerar PDF:", err);
+        alert("Ocorreu um erro ao gerar o PDF. Verifique o console.");
+    });
+});
