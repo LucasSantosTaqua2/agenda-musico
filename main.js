@@ -126,7 +126,7 @@ const errorBanner = document.getElementById('error-banner');
 const tabRider = document.getElementById('tab-rider');
 const viewRider = document.getElementById('view-rider');
 const riderModal = document.getElementById('rider-modal');
-const openAddRiderModalBtn = document.getElementById('open-add-rider-modal-btn');
+
 const showsListAgendados = document.getElementById('shows-list-agendados');
 const showsListRealizados = document.getElementById('shows-list-realizados');
 const loadingState = document.getElementById('loading-state');
@@ -136,6 +136,7 @@ const filterLocationInput = document.getElementById('filter-location');
 
 const addModal = document.getElementById('add-modal');
 const openAddModalBtn = document.getElementById('open-add-modal-btn');
+const openAddRiderModalBtn = document.getElementById('open-add-rider-modal-btn'); // <-- ADICIONE ESTA LINHA
 const deleteModal = document.getElementById('confirmation-modal');
 const editModal = document.getElementById('edit-modal');
 const confirmStatusModal = document.getElementById('confirm-status-modal');
@@ -2530,7 +2531,10 @@ historicoPrevBtn.addEventListener('click', () => {
 });
 
 // --- EVENT LISTENERS PARA RIDER TÉCNICO ---
-const riderForm = document.getElementById('rider-form');
+
+// Este listener agora vai funcionar porque a constante foi declarada corretamente no topo
+openAddRiderModalBtn.addEventListener('click', () => openRiderModal());
+
 const cancelRiderBtn = document.getElementById('cancel-rider-btn');
 const addChannelBtn = document.getElementById('add-channel-btn');
 const riderChannelsContainer = document.getElementById('rider-channels-container');
