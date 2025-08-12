@@ -1736,20 +1736,20 @@ const tabs = [
   tabAgenda,
   tabCalendario,
   tabSetlists,
-  tabRider,
-  tabEquipe,
+  tabEquipe,       // <--- ADICIONADO
   tabDashboard,
-  tabStagePlot,
+  tabStagePlot,    // <--- ADICIONADO
+  tabRider,        // <--- ADICIONADO
   tabConfiguracoes,
 ];
 const views = [
   viewAgenda,
   viewCalendario,
   viewSetlists,
-  viewRider,
-  viewEquipe,
+  viewEquipe,      // <--- ADICIONADO
   viewDashboard,
-  viewStagePlot,
+  viewStagePlot,   // <--- ADICIONADO
+  viewRider,       // <--- ADICIONADO
   viewConfiguracoes,
 ];
 tabs.forEach((tab, index) => {
