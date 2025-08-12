@@ -94,3 +94,37 @@ input:checked+.slider:before {
     border-radius: 50%;
     font-weight: bold;
 }
+
+.stage-item {
+    cursor: grab;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.stage-item:hover {
+    background-color: #4b5563; /* gray-600 */
+}
+
+.draggable-clone {
+    position: absolute; /* Para que não afete o layout */
+    z-index: 1000;
+    opacity: 0.7;
+    background-color: #374151; /* gray-700 */
+    border: 1px solid #8b5cf6; /* purple-500 */
+    padding: 8px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#stage-area .placed-item {
+    touch-action: none;
+    user-select: none;
+    position: absolute;
+    padding: 8px;
+    border-radius: 8px;
+    background-color: rgba(75, 85, 99, 0.8); /* bg-gray-600 com opacidade */
+    border: 1px solid #4b5563;
+}
