@@ -125,7 +125,7 @@ const loginError = document.getElementById('login-error');
 const errorBanner = document.getElementById('error-banner');
 const tabRider = document.getElementById('tab-rider');
 const viewRider = document.getElementById('view-rider');
-const riderModal = document.getElementById('rider-modal');
+
 
 const showsListAgendados = document.getElementById('shows-list-agendados');
 const showsListRealizados = document.getElementById('shows-list-realizados');
@@ -135,14 +135,17 @@ const filterArtistInput = document.getElementById('filter-artist');
 const filterLocationInput = document.getElementById('filter-location');
 
 const addModal = document.getElementById('add-modal');
-const openAddModalBtn = document.getElementById('open-add-modal-btn');
-const openAddRiderModalBtn = document.getElementById('open-add-rider-modal-btn'); // <-- ADICIONE ESTA LINHA
+const openAddModalBtn = document.getElementById('open-add-modal-btn'); // <-- ADICIONE ESTA LINHA
 const deleteModal = document.getElementById('confirmation-modal');
+const riderModal = document.getElementById('rider-modal');
+const openAddRiderModalBtn = document.getElementById('open-add-rider-modal-btn');
 const riderForm = document.getElementById('rider-form');
 const cancelRiderBtn = document.getElementById('cancel-rider-btn');
 const addChannelBtn = document.getElementById('add-channel-btn');
 const ridersList = document.getElementById('riders-list');
 const riderChannelsContainer = document.getElementById('rider-channels-container');
+const riderModalTitle = document.getElementById('rider-modal-title');
+const emptyRiderState = document.getElementById('empty-rider-state');
 const editModal = document.getElementById('edit-modal');
 const confirmStatusModal = document.getElementById('confirm-status-modal');
 const setlistModal = document.getElementById('setlist-modal');
@@ -2025,7 +2028,6 @@ const renderTeam = () => {
 };
 
 // --- FUNÇÕES DO RIDER TÉCNICO ---
-const emptyRiderState = document.getElementById('empty-rider-state');
 
 const renderRiders = () => {
     ridersList.innerHTML = '';
