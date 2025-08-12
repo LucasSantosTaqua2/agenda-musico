@@ -2693,20 +2693,12 @@ interact('.stage-item').draggable({
     inertia: true,
     listeners: {
         start(event) {
+            // Apenas remove o texto de placeholder se for o primeiro item
             const placeholder = stageArea.querySelector('p');
             if (placeholder) placeholder.style.display = 'none';
         },
-        move(event) {
-            const interaction = event.interaction;
-            if (interaction.pointerIsDown && !interaction.interacting()) {
-                const original = event.currentTarget;
-                const clone = original.cloneNode(true);
-                clone.classList.add('draggable-clone');
-                document.body.appendChild(clone);
-                interaction.start({ name: 'drag' }, event.interactable, clone);
-            }
-        }
-    },
+        // O listener 'move' complexo foi removido. A própria biblioteca cuidará do feedback visual.
+    }
 });
 
 // --- FUNÇÃO CORRIGIDA ---
