@@ -138,6 +138,11 @@ const addModal = document.getElementById('add-modal');
 const openAddModalBtn = document.getElementById('open-add-modal-btn');
 const openAddRiderModalBtn = document.getElementById('open-add-rider-modal-btn'); // <-- ADICIONE ESTA LINHA
 const deleteModal = document.getElementById('confirmation-modal');
+const riderForm = document.getElementById('rider-form');
+const cancelRiderBtn = document.getElementById('cancel-rider-btn');
+const addChannelBtn = document.getElementById('add-channel-btn');
+const ridersList = document.getElementById('riders-list');
+const riderChannelsContainer = document.getElementById('rider-channels-container');
 const editModal = document.getElementById('edit-modal');
 const confirmStatusModal = document.getElementById('confirm-status-modal');
 const setlistModal = document.getElementById('setlist-modal');
@@ -2020,7 +2025,6 @@ const renderTeam = () => {
 };
 
 // --- FUNÇÕES DO RIDER TÉCNICO ---
-const ridersList = document.getElementById('riders-list');
 const emptyRiderState = document.getElementById('empty-rider-state');
 
 const renderRiders = () => {
@@ -2072,9 +2076,6 @@ const addChannelRow = (channel = { name: '', instrument: '', mic: '' }) => {
 };
 
 const openRiderModal = (id = null) => {
-    const riderForm = document.getElementById('rider-form');
-    const riderChannelsContainer = document.getElementById('rider-channels-container');
-    const riderModalTitle = document.getElementById('rider-modal-title');
     
     riderForm.reset();
     riderChannelsContainer.innerHTML = '';
@@ -2531,13 +2532,7 @@ historicoPrevBtn.addEventListener('click', () => {
 });
 
 // --- EVENT LISTENERS PARA RIDER TÉCNICO ---
-
-// Este listener agora vai funcionar porque a constante foi declarada corretamente no topo
 openAddRiderModalBtn.addEventListener('click', () => openRiderModal());
-
-const cancelRiderBtn = document.getElementById('cancel-rider-btn');
-const addChannelBtn = document.getElementById('add-channel-btn');
-const riderChannelsContainer = document.getElementById('rider-channels-container');
 
 cancelRiderBtn.addEventListener('click', () => riderModal.classList.remove('is-open'));
 addChannelBtn.addEventListener('click', () => addChannelRow());
